@@ -1,0 +1,20 @@
+# 技術研討會主題演講風格：產品名稱、術語、數字。內容為測試用途虛構。
+Good morning everyone, and welcome to the conference.
+Today I want to talk about how we are making it easier to build production-ready agents.
+Amazon Bedrock AgentCore gives you three core components: a runtime, a gateway, and memory.
+With AgentCore Runtime, each session runs in its own isolated microVM for up to eight hours.
+Last year, customers ran more than one point five billion inference requests on Amazon Bedrock.
+We are also announcing Graviton5, which delivers up to thirty percent better price performance than Graviton4.
+Our new foundation models support a context window of one million tokens.
+You can deploy inference endpoints across three Availability Zones to improve throughput and resilience.
+With Retrieval-Augmented Generation, you can ground the model's responses in your own data.
+Amazon S3 Vectors reduces the cost of storing and querying vectors by up to ninety percent.
+Serverless inference means you only pay for the tokens you actually use.
+Latency matters: our customers expect a time to first token of less than two hundred milliseconds.
+So what does this mean for your architecture?
+First, start with a small evaluation set, and measure before you optimize.
+Second, use guardrails to keep your agents safe and compliant.
+Third, monitor everything with observability tools like Amazon CloudWatch.
+One customer reduced their deployment time from six weeks to four days.
+That is the power of building on a secure and scalable foundation.
+Thank you, and enjoy the rest of the conference.

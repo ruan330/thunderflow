@@ -56,9 +56,32 @@ public struct AudioGap: Sendable, Equatable {
     public var duration: TimeInterval { to - from }
 
     /// 依開始時間排序，並把相連或重疊（誤差 1 毫秒以內）、原因相同的缺口合併成一筆。
+    ///
+    /// 原因不同的缺口一律不合併；同一個原因的缺口之間就算夾著別的原因，相連或重疊的仍然會合併，
+    /// 所以合併後同一個原因的缺口彼此不重疊，長度可以直接加總。
+    /// 結果依開始時間排序（開始時間相同時依結束時間、原因），與輸入順序無關。
     public static func coalesced(_ gaps: [AudioGap]) -> [AudioGap] {
-        gaps // 尚未實作
+        let ordered = gaps.sorted { lhs, rhs in
+            if lhs.from != rhs.from { return lhs.from < rhs.from }
+            if lhs.to != rhs.to { return lhs.to < rhs.to }
+            return lhs.reason.rawValue < rhs.reason.rawValue
+        }
+        var merged: [AudioGap] = []
+        // 每個原因目前最後一筆（結束時間最晚的一筆）在 merged 裡的位置
+        var lastIndexByReason: [GapReason: Int] = [:]
+        for gap in ordered {
+            if let index = lastIndexByReason[gap.reason], gap.from.seconds <= merged[index].to.seconds + seamTolerance {
+                merged[index].to = max(merged[index].to, gap.to)
+            } else {
+                lastIndexByReason[gap.reason] = merged.count
+                merged.append(gap)
+            }
+        }
+        return merged
     }
+
+    /// 兩個缺口之間的縫隙在這個長度以內（秒）就視為相連。
+    private static let seamTolerance: TimeInterval = 0.001
 }
 
 /// 即時字幕引擎送出的事件。

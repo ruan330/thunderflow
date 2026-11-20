@@ -81,10 +81,16 @@ public final class RecordingSession: @unchecked Sendable {
     ///
     /// 錄音分段放在 `directory.audioDirectoryURL`，第一個樣本進來時才建立；日誌（空的 `journal.jsonl`）立刻建立。
     /// `startedAt` 以整秒記錄（`session.json` 的日期精確到秒），所以 `finish()` 回傳的內容與檔案一致。
+    /// 設定不合理（取樣率、分段長度、每包長度）時，在寫入 `session.json` 之前就丟出錯誤，
+    /// 不會留下一個看起來像是「錄音中被中斷」的場次。
     public init(config: SessionConfig, directory: SessionDirectory, engine: any LiveCaptionEngine) throws {
         self.config = config
         self.directory = directory
         self.engine = engine
+        encoder = try EngineAudioEncoder(
+            sourceRate: config.sampleRate, targetRate: config.engineSampleRate, chunkDuration: config.engineChunkDuration)
+        recorder = try SegmentedRecorder(
+            directory: directory.audioDirectoryURL, sampleRate: config.sampleRate, segmentDuration: config.segmentDuration)
         try directory.create()
         let meta = SessionMeta(
             id: config.id,
@@ -95,10 +101,6 @@ public final class RecordingSession: @unchecked Sendable {
             engine: config.engineName)
         try directory.saveMeta(meta)
         initialMeta = meta
-        recorder = try SegmentedRecorder(
-            directory: directory.audioDirectoryURL, sampleRate: config.sampleRate, segmentDuration: config.segmentDuration)
-        encoder = try EngineAudioEncoder(
-            sourceRate: config.sampleRate, targetRate: config.engineSampleRate, chunkDuration: config.engineChunkDuration)
         journal = try JournalWriter(url: directory.journalURL)
         (audioStream, audioInput) = AsyncStream.makeStream(
             of: AudioChunk.self,

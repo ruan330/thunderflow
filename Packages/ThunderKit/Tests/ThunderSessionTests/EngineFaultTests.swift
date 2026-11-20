@@ -31,9 +31,18 @@ struct EngineFaultTests {
         #expect(meta.state == .finalizing)
         #expect(meta.integrity.isRecordingComplete)
         #expect(try directory.loadMeta() == meta)
+
+        // 每一段音訊不是被引擎取走，就是記成缺口：兩者相加等於整場錄音。
+        // 誤差容許到兩包（0.4 秒）：引擎被取消的瞬間，手上可能正拿著一包還沒算進去。
+        let untranslated = AudioGap.coalesced(try JournalReader.read(directory.journalURL).gaps)
+            .reduce(0) { $0 + $1.duration }
+        #expect(
+            abs(engine.receivedDuration + untranslated - 60) < 0.45,
+            "引擎取走 \(engine.receivedDuration) 秒，缺口 \(untranslated) 秒")
+        #expect(abs(meta.integrity.untranslatedSeconds - untranslated) < 0.001)
     }
 
-    @Test("引擎完全卡住：超出等待區的音訊記成缺口（等待區 10 秒，60 秒的音訊至少有 50 秒沒翻譯到）")
+    @Test("引擎完全卡住：整場 60 秒都記成缺口，包含結束時還留在等待區、沒被取走的最後 10 秒")
     func stalledEngineLeavesGaps() async throws {
         let tmp = try TemporaryDirectory()
         defer { tmp.remove() }
@@ -48,15 +57,20 @@ struct EngineFaultTests {
 
         let gaps = AudioGap.coalesced(try JournalReader.read(directory.journalURL).gaps)
         let untranslated = gaps.reduce(0) { $0 + $1.duration }
-        #expect(untranslated >= 49.5 && untranslated <= 60.001)
-        #expect(abs((gaps.first?.from.seconds ?? -1) - 0) < 0.25)
+        #expect(abs(untranslated - 60) < 0.25)
+        #expect(abs((gaps.first?.from.seconds ?? -1) - 0) < 0.001)
+        #expect(abs((gaps.last?.to.seconds ?? -1) - 60) < 0.25)
         #expect(gaps.allSatisfy { $0.reason == .backpressure || $0.reason == .engineStopped })
-        #expect(gaps.allSatisfy { $0.to.seconds <= 60.001 })
-        #expect(abs(meta.integrity.untranslatedSeconds - untranslated) < 0.5)
+        // 被等待區擠掉的前 50 秒是 backpressure；結束時還留在等待區的最後 10 秒是 engineStopped
+        let squeezedOut = gaps.filter { $0.reason == .backpressure }.reduce(0) { $0 + $1.duration }
+        #expect(abs(squeezedOut - 50) < 0.25)
+        #expect(abs(meta.integrity.untranslatedSeconds - untranslated) < 0.001)
         #expect(engine.receivedChunkCount == 0)
     }
 
-    @Test("引擎中途結束（例如 API Key 失效）：錄音繼續，之後的音訊記成缺口")
+    /// 引擎取走 5 秒的音訊後結束。之後的 53 秒都沒翻譯到，不論那時音訊是還在等待區，還是之後才送進來。
+    /// 缺口從引擎實際取走的位置開始算，所以結果不受執行緒時序影響。
+    @Test("引擎中途結束（例如 API Key 失效）：錄音繼續，引擎沒取走的音訊全部記成缺口")
     func engineEndingEarlyDoesNotStopRecording() async throws {
         let tmp = try TemporaryDirectory()
         defer { tmp.remove() }
@@ -68,20 +82,19 @@ struct EngineFaultTests {
         try feed(session, seconds: 8)
         // 等場次發現引擎已經結束，再送後面的音訊
         #expect(waitUntil { !session.isEngineRunning })
-        let stoppedAt = session.audioTime.seconds
         try feed(session, seconds: 50)
         let meta = try await withDeadline(.seconds(10)) { try await session.finish() }
 
         #expect(try recordedFrames(directory) == Int64(58 * 16_000))
         #expect(abs(meta.durationSeconds - 58) < 0.001)
+        #expect(abs(engine.receivedDuration - 5) < 0.001)
 
         let gaps = AudioGap.coalesced(try JournalReader.read(directory.journalURL).gaps)
-        let afterStop = gaps.filter { $0.reason == .engineStopped }
-        let untranslatedAfterStop = afterStop.reduce(0) { $0 + $1.duration }
-        #expect(untranslatedAfterStop >= 49.5 && untranslatedAfterStop <= 50.5)
-        #expect(abs((afterStop.first?.from.seconds ?? -1) - stoppedAt) < 0.5)
-        #expect(abs((afterStop.last?.to.seconds ?? -1) - 58) < 0.25)
-        #expect(meta.integrity.untranslatedSeconds >= 49.5)
+        #expect(gaps.count == 1, "應該是一段連續的缺口，實際：\(gaps)")
+        #expect(gaps.allSatisfy { $0.reason == .engineStopped })
+        #expect(abs((gaps.first?.from.seconds ?? -1) - 5) < 0.001)
+        #expect(abs((gaps.last?.to.seconds ?? -1) - 58) < 0.25)
+        #expect(abs(meta.integrity.untranslatedSeconds - 53) < 0.25)
     }
 
     @Test("引擎不收尾：結束時最多等設定的時間就放棄，不會無限期等下去")
@@ -106,6 +119,9 @@ struct EngineFaultTests {
         let journal = try JournalReader.read(directory.journalURL)
         #expect(journal.sources.map(\.text) == (1...3).map(ScriptedEngine.sourceText))
         #expect(waitUntil { engine.hasFinished }, "放棄等待後應該取消引擎")
+        // 引擎被放棄之前已經把音訊全部取走，所以沒有任何缺口
+        #expect(journal.gaps.isEmpty)
+        #expect(meta.integrity.untranslatedSeconds == 0)
     }
 
     @Test("引擎消化得慢：錄音完整，來不及消化的部分記成缺口，消化到的部分字幕照常")

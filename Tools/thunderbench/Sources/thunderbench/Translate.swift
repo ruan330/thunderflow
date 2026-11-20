@@ -239,7 +239,8 @@ func translate(_ arguments: Arguments) async throws {
             nextProgress += 300
         }
         if loopMinutes <= 0, offset == 0 { break }
-        try await clock.sleep(until: started + .milliseconds(Int(Double(chunkIndex * chunkMs) / speed)))
+        // 依「已經送出的音訊長度」排程，循環播放時最後一包不滿也不會越送越慢
+        try await clock.sleep(until: started + .milliseconds(Int(Double(sentBytes) / 48.0 / speed)))
     }
     var holdReport: [String: Any] = [:]
     if holdMinutes > 0, sendError == nil, !recorder.isDisconnected {

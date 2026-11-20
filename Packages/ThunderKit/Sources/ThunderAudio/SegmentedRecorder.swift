@@ -113,12 +113,12 @@ public final class SegmentedRecorder {
     /// 結束目前的分段，之後的樣本寫進新的分段。
     /// 用於裝置取樣率改變（傳入新的取樣率）或睡眠喚醒之後。
     /// 目前的分段還沒有任何樣本時不會留下空檔，序號也不會跳號。
-    public func beginNewSegment(sampleRate newRate: Double? = nil) throws {
+    public func beginNewSegment(sampleRate: Double? = nil) throws {
         guard !isClosed else { throw SegmentedRecorderError.closed }
         finishSegment()
-        guard let newRate, newRate != sampleRate else { return }
+        guard let newRate = sampleRate, newRate != self.sampleRate else { return }
         guard newRate.isFinite, newRate > 0 else { throw SegmentedRecorderError.invalidSampleRate(newRate) }
-        sampleRate = newRate
+        self.sampleRate = newRate
         framesPerSegment = Self.frames(segmentDuration, at: newRate)
         framesPerSync = Self.frames(Self.syncInterval, at: newRate)
         buffer = nil

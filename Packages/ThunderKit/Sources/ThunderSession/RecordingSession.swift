@@ -20,19 +20,23 @@ public enum RecordingSessionError: Error, Equatable {
 /// 送給引擎的音訊：
 /// - 等待區是 `bufferingNewest` 的 `AsyncStream`，容量是 `engineBufferDuration ÷ engineChunkDuration` 包。
 ///   放進去一律立即返回；滿了就丟掉最舊的一包，記成原因為 `backpressure` 的缺口。
-/// - 引擎的事件串流自己結束之後（例如回報失敗），之後的音訊不再送出，記成原因為 `engineStopped` 的缺口。
-/// - 缺口一包記一筆，日誌裡的缺口長度加總就是 `integrity.untranslatedSeconds`（加上引擎自己回報的缺口）。
-///   引擎結束或被放棄時還留在等待區、沒被取走的音訊不會記成缺口。
+/// - 引擎拿到的是包在等待區外面的串流，場次因此知道引擎實際取走了多少。
+/// - 引擎結束（事件串流自己結束，例如回報失敗）或結束錄音時被放棄之後，等待區也跟著放棄：
+///   裡面還沒被取走的音訊（一定是連續的一段）記成一筆原因為 `engineStopped` 的缺口，
+///   之後送進來的音訊也一包一包記成 `engineStopped`。這兩者在時間上是接起來的。
+/// - 因此每一段音訊不是被引擎取走，就是記成缺口：引擎取走的長度加上缺口的長度，等於整場錄音。
+///   日誌裡場次記下的缺口加上引擎自己回報的缺口，就是 `integrity.untranslatedSeconds`。
+///   唯一的例外是引擎被取消的那一瞬間手上正拿著、還沒處理完的那一包：它算成已經取走。
 public final class RecordingSession: @unchecked Sendable {
     // @unchecked Sendable：可變狀態分成四組，各自有保護方式——
-    // - 錄音路徑（recorder、encoder）只在持有 `path` 鎖時使用。這把鎖只有 `process` 與 `finish`
-    //   會拿，引擎與事件處理完全碰不到。
+    // - 錄音路徑（recorder、encoder，以及 `PathState` 裡等待區的帳）只在持有 `path` 鎖時使用。
+    //   這把鎖只有 `process` 與 `finish` 會拿，引擎與事件處理完全碰不到。
     // - 暫停、標記、啟動等控制操作的狀態在 `control` 鎖裡；`process` 不拿這把鎖，只讀 `pausedFlag`。
-    // - 跨執行緒讀取的數值（音訊時間、暫停、引擎狀態）是 Atomic；計費與缺口的累計在 `accounting` 鎖裡，
-    //   鎖裡只做加減，不做 I/O。
-    // - 其餘都是建立後不再改變的常數；`JournalWriter` 與 `AsyncStream.Continuation` 本身是 thread-safe 的。
-    // 所以 `process` 可能碰到的別人的鎖只有：日誌的鎖（別人持有時只是在做一次 write(2)）、
-    // `accounting`（只做加減）、AsyncStream 內部的鎖（只搬動緩衝區）。它們都不會被引擎長時間持有。
+    // - 跨執行緒讀取的數值（音訊時間、暫停、引擎狀態）是 Atomic；引擎回報的缺口與計費在 `accounting` 鎖裡，
+    //   鎖裡只做加減，不做 I/O。引擎取走了多少記在 `WaitingArea` 的 Atomic 裡。
+    // - 其餘都是建立後不再改變的常數；`JournalWriter` 與 `WaitingArea` 本身是 thread-safe 的。
+    // 所以 `process` 可能碰到的別人的鎖只有：日誌的鎖（別人持有時只是在做一次 write(2)）
+    // 與 AsyncStream 內部的鎖（只搬動緩衝區）。它們都不會被引擎長時間持有。
     private let config: SessionConfig
     private let directory: SessionDirectory
     private let engine: any LiveCaptionEngine
@@ -40,11 +44,19 @@ public final class RecordingSession: @unchecked Sendable {
     private let journal: JournalWriter
     private let recorder: SegmentedRecorder
     private let encoder: EngineAudioEncoder
-    private let audioStream: AsyncStream<AudioChunk>
-    private let audioInput: AsyncStream<AudioChunk>.Continuation
+    private let waitingArea: WaitingArea
 
+    /// 錄音路徑的狀態。樣本數都是引擎的取樣率；送給引擎的包從 0 開始一包接一包，所以樣本數也就是時間軸上的位置。
     private struct PathState {
         var finished = false
+        /// 放進等待區的樣本數，也就是最後放進去的那一包的結束位置。
+        var queuedFrames: Int64 = 0
+        /// 被等待區擠掉（記成 backpressure）的樣本數。
+        var squeezedOutFrames: Int64 = 0
+        /// 等待區已經放棄：之後的音訊直接記成 engineStopped。
+        var abandoned = false
+        /// 場次自己記下的缺口合計的樣本數。用整數累計，長時間也不會累積浮點誤差。
+        var gapFrames: Int64 = 0
     }
 
     private struct ControlState {
@@ -55,10 +67,8 @@ public final class RecordingSession: @unchecked Sendable {
         var finishTask: Task<SessionMeta, any Error>?
     }
 
+    /// 事件處理寫入、結束時讀取的累計。
     private struct Accounting {
-        /// 場次自己記下的缺口（等待區丟掉的、引擎停止之後的）合計的樣本數（引擎的取樣率）。
-        /// 用整數累計，長時間也不會累積浮點誤差。
-        var droppedEngineFrames: Int64 = 0
         /// 引擎自己回報的缺口合計的長度（秒）。
         var engineReportedGapSeconds: Double = 0
         var billedAudioSeconds: Double = 0
@@ -102,9 +112,7 @@ public final class RecordingSession: @unchecked Sendable {
         try directory.saveMeta(meta)
         initialMeta = meta
         journal = try JournalWriter(url: directory.journalURL)
-        (audioStream, audioInput) = AsyncStream.makeStream(
-            of: AudioChunk.self,
-            bufferingPolicy: .bufferingNewest(Self.bufferedChunkCount(config.engineBufferDuration, config.engineChunkDuration)))
+        waitingArea = WaitingArea(capacity: Self.bufferedChunkCount(config.engineBufferDuration, config.engineChunkDuration))
     }
 
     /// 等待區能放幾包：`engineBufferDuration ÷ engineChunkDuration`，四捨五入。
@@ -127,13 +135,14 @@ public final class RecordingSession: @unchecked Sendable {
     /// 啟動引擎，開始接收字幕。
     ///
     /// 只會呼叫一次 `engine.run(audio:config:)`（帶入 `config.engine`）；重複呼叫或結束之後呼叫不做任何事。
+    /// 引擎拿到的音訊串流就是等待區（包了一層，用來記下引擎取走了多少）。
     /// 事件由一個 task 依序處理：英文、中文寫進日誌；缺口寫進日誌並算進沒翻譯到的長度；用量更新計費秒數。
     public func start() {
         control.withLock { state in
             guard !state.started, !state.finished else { return }
             state.started = true
             engineState.store(.running, ordering: .releasing)
-            let events = engine.run(audio: audioStream, config: config.engine)
+            let events = engine.run(audio: waitingArea.engineStream(), config: config.engine)
             state.eventTask = Task { [self] in
                 for await event in events { handle(event) }
                 engineState.store(.ended, ordering: .releasing)
@@ -154,7 +163,7 @@ public final class RecordingSession: @unchecked Sendable {
                 try recorder.append(samples)
                 framesRecorded.store(recorder.framesWritten, ordering: .releasing)
                 for chunk in try encoder.encode(samples) {
-                    deliver(chunk)
+                    deliver(chunk, &state)
                 }
             }
         }
@@ -184,6 +193,7 @@ public final class RecordingSession: @unchecked Sendable {
     ///
     /// 步驟：不再接受 `process`（之後呼叫丟出 `alreadyFinished`）→ 關閉錄音檔 → 送出最後一包不滿的音訊 →
     /// 結束音訊串流 → 等引擎的事件串流結束，超過 `engineDrainTimeout` 就取消它 →
+    /// 放棄等待區，引擎沒取走的音訊記成 engineStopped 的缺口 →
     /// 寫入最後的 `session.json`（finalizing、錄音長度、計費秒數、完整性）→ 關閉日誌。
     /// 返回時 `isEngineRunning` 一定是 false。同時呼叫好幾次也只會做一次。
     @discardableResult
@@ -203,35 +213,64 @@ public final class RecordingSession: @unchecked Sendable {
     // MARK: 錄音路徑（持有 `path` 鎖）
 
     /// 把一包音訊放進引擎的等待區；放不進去的記成缺口。不等待。
-    private func deliver(_ chunk: AudioChunk) {
-        if engineState.load(ordering: .acquiring) == .ended {
-            recordGap(of: chunk, reason: .engineStopped)
+    ///
+    /// 第一次發現引擎已經結束時，先放棄等待區（裡面引擎沒取走的音訊記成缺口），再把這一包記成 engineStopped。
+    private func deliver(_ chunk: AudioChunk, _ state: inout PathState) {
+        if !state.abandoned, engineState.load(ordering: .acquiring) == .ended {
+            abandonWaitingArea(&state)
+        }
+        if state.abandoned {
+            recordGap(of: chunk, reason: .engineStopped, &state)
             return
         }
-        switch audioInput.yield(chunk) {
+        switch waitingArea.yield(chunk) {
         case .enqueued:
-            break
+            state.queuedFrames += Int64(chunk.frameCount)
         case .dropped(let oldest):
-            recordGap(of: oldest, reason: .backpressure)
+            state.queuedFrames += Int64(chunk.frameCount)
+            state.squeezedOutFrames += Int64(oldest.frameCount)
+            recordGap(of: oldest, reason: .backpressure, &state)
         case .terminated:
-            recordGap(of: chunk, reason: .engineStopped)
+            // 等待區已經關閉（引擎讀音訊的 task 被取消了）：引擎再也收不到音訊
+            abandonWaitingArea(&state)
+            recordGap(of: chunk, reason: .engineStopped, &state)
         @unknown default:
-            recordGap(of: chunk, reason: .unknown)
+            abandonWaitingArea(&state)
+            recordGap(of: chunk, reason: .engineStopped, &state)
         }
     }
 
-    /// 把一包沒送到引擎的音訊記成缺口。日誌寫入失敗不影響錄音（缺口的長度仍然計入完整性）。
+    /// 放棄等待區：引擎已經結束或被放棄。只做一次。
+    ///
+    /// 等待區丟掉的、引擎取走的都是當時最舊的那一包，所以還留在裡面的是從
+    /// 「被擠掉的＋被取走的」那個位置到最後放進去的那一包為止，連續的一段；把它記成一筆 engineStopped 的缺口。
+    /// 放棄之後引擎再也拿不到這些音訊，所以每一包只會被算一次。
+    private func abandonWaitingArea(_ state: inout PathState) {
+        guard !state.abandoned else { return }
+        state.abandoned = true
+        guard let consumedFrames = waitingArea.abandon() else { return }
+        let firstFrame = state.squeezedOutFrames + consumedFrames
+        recordGap(fromFrame: firstFrame, frameCount: state.queuedFrames - firstFrame, reason: .engineStopped, &state)
+    }
+
+    /// 把一包沒送到引擎的音訊記成缺口。
+    private func recordGap(of chunk: AudioChunk, reason: GapReason, _ state: inout PathState) {
+        let firstFrame = Int64((chunk.startTime.seconds * Double(chunk.sampleRate)).rounded())
+        recordGap(fromFrame: firstFrame, frameCount: Int64(chunk.frameCount), reason: reason, &state)
+    }
+
+    /// 把一段沒送到引擎的音訊（引擎取樣率的樣本位置）記成缺口。日誌寫入失敗不影響錄音（長度仍然計入完整性）。
     ///
     /// 缺口的起訖用樣本位置計算，日誌裡才不會出現 `startTime + duration` 的浮點誤差（例如 0.6000000000000001）。
-    private func recordGap(of chunk: AudioChunk, reason: GapReason) {
-        let rate = Double(chunk.sampleRate)
-        let firstFrame = (chunk.startTime.seconds * rate).rounded()
+    private func recordGap(fromFrame firstFrame: Int64, frameCount: Int64, reason: GapReason, _ state: inout PathState) {
+        guard frameCount > 0 else { return }
+        let rate = Double(config.engineSampleRate)
         let gap = AudioGap(
-            from: AudioTime(seconds: firstFrame / rate),
-            to: AudioTime(seconds: (firstFrame + Double(chunk.frameCount)) / rate),
+            from: AudioTime(seconds: Double(firstFrame) / rate),
+            to: AudioTime(seconds: Double(firstFrame + frameCount) / rate),
             reason: reason)
         try? journal.append(.gap(gap))
-        accounting.withLock { $0.droppedEngineFrames += Int64(chunk.frameCount) }
+        state.gapFrames += frameCount
     }
 
     // MARK: 控制與事件
@@ -270,17 +309,22 @@ public final class RecordingSession: @unchecked Sendable {
             return Result {
                 try autoreleasepool {
                     try recorder.close()
-                    if let tail = try encoder.finish() { deliver(tail) }
+                    if let tail = try encoder.finish() { deliver(tail, &state) }
                     return recorder.duration
                 }
             }
         }
-        // 2. 音訊結束：引擎送完剩下的輸出後會自己結束事件串流
-        audioInput.finish()
+        // 2. 音訊結束：引擎取完等待區裡剩下的音訊、送完剩下的輸出後，會自己結束事件串流
+        waitingArea.finish()
         // 3. 等引擎收尾，最多 engineDrainTimeout；超過就取消（引擎必須盡快停止）
         if let eventTask { await drain(eventTask, timeout: config.engineDrainTimeout) }
         engineState.store(.ended, ordering: .releasing)
         defer { journal.close() }
+        // 4. 引擎到這時還沒取走的音訊（例如引擎卡住、被放棄），記成 engineStopped 的缺口
+        let gapFrames = path.withLock { state -> Int64 in
+            abandonWaitingArea(&state)
+            return state.gapFrames
+        }
 
         let durationSeconds = try closing.get()
         let totals = accounting.withLock { $0 }
@@ -289,8 +333,7 @@ public final class RecordingSession: @unchecked Sendable {
         meta.durationSeconds = durationSeconds
         meta.billedAudioSeconds = totals.billedAudioSeconds
         meta.integrity = IntegrityReport(
-            untranslatedSeconds: Double(totals.droppedEngineFrames) / Double(config.engineSampleRate)
-                + totals.engineReportedGapSeconds)
+            untranslatedSeconds: Double(gapFrames) / Double(config.engineSampleRate) + totals.engineReportedGapSeconds)
         try directory.saveMeta(meta)
         return meta
     }

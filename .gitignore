@@ -20,3 +20,7 @@ xcuserdata/
 *.m4a
 Benchmarks/data/
 Benchmarks/private/
+
+# Claude Code 的本機工作目錄與個人設定
+.claude/worktrees/
+.claude/settings.local.json

@@ -1,0 +1,22 @@
+# Build
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Secrets — 憑證只放 Keychain，永遠不進 repo
+.env
+.env.*
+*.pem
+*.key
+
+# 錄音、逐字稿與 benchmark 的私人資料不進 repo
+*.caf
+*.wav
+*.m4a
+Benchmarks/data/
+Benchmarks/private/

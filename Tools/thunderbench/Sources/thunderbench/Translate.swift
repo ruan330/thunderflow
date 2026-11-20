@@ -4,6 +4,8 @@ import Foundation
 final class EventRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private let file: FileHandle
+    /// 有設定的話，把譯文語音（PCM16）原樣寫進這個檔，用來核對長度。
+    var audioFile: FileHandle?
     private let clock = ContinuousClock()
     private let connectedAt: ContinuousClock.Instant
     private var audioStartedAt: ContinuousClock.Instant?
@@ -16,6 +18,7 @@ final class EventRecorder: @unchecked Sendable {
     private(set) var firstTranslationMs: Int?
     private(set) var downstreamAudioBytes = 0
     private(set) var downstreamTextBytes = 0
+    private(set) var downstreamAudioWireBytes = 0
     private(set) var errors: [String] = []
     private(set) var sessionCreated: [String: Any]?
     private(set) var sessionUpdated: [String: Any]?
@@ -58,8 +61,11 @@ final class EventRecorder: @unchecked Sendable {
             case "session.output_audio.delta":
                 // 語音內容不存，只記大小（用來估算頻寬）
                 let base64 = event["delta"] as? String ?? ""
-                let bytes = base64.count * 3 / 4
+                let decoded = Data(base64Encoded: base64) ?? Data()
+                let bytes = decoded.count
                 downstreamAudioBytes += bytes
+                downstreamAudioWireBytes += raw.utf8.count
+                audioFile?.write(decoded)
                 event["delta"] = nil
                 event["audio_bytes"] = bytes
             case "session.input_transcript.delta":
@@ -105,7 +111,8 @@ final class EventRecorder: @unchecked Sendable {
             [
                 "event_counts": counts, "first_source_delta_ms": firstSourceMs as Any,
                 "first_translation_delta_ms": firstTranslationMs as Any, "downstream_audio_bytes": downstreamAudioBytes,
-                "downstream_text_bytes": downstreamTextBytes, "errors": errors, "saw_session_closed": sawClosed,
+                "downstream_text_bytes": downstreamTextBytes, "downstream_audio_wire_bytes": downstreamAudioWireBytes,
+                "errors": errors, "saw_session_closed": sawClosed,
                 "disconnect": disconnect as Any, "source_text": sourceText, "translated_text": translatedText,
                 "session_created": sessionCreated as Any, "session_updated": sessionUpdated as Any,
                 "last_event_rx_ms": lastEventMs,
@@ -133,12 +140,19 @@ func translate(_ arguments: Arguments) async throws {
     let preconnectSeconds = arguments.double("preconnect-seconds", default: 0)
     let closeWait = arguments.double("close-wait", default: 20)
     let skipUpdate = arguments.flags.contains("skip-session-update")
+    /// 第一輪音訊送完後，保持連線但不送音訊這麼多分鐘，然後再送一輪（測試閒置與連線到期的行為）。
+    let holdMinutes = arguments.double("hold-minutes", default: 0)
 
     let outDirectory = URL(fileURLWithPath: outPath, isDirectory: true)
     try FileManager.default.createDirectory(at: outDirectory, withIntermediateDirectories: true)
     let eventsURL = outDirectory.appendingPathComponent("events.jsonl")
     FileManager.default.createFile(atPath: eventsURL.path, contents: nil)
     let recorder = EventRecorder(file: try FileHandle(forWritingTo: eventsURL))
+    if arguments.flags.contains("save-audio") {
+        let audioURL = outDirectory.appendingPathComponent("translated.pcm")
+        FileManager.default.createFile(atPath: audioURL.path, contents: nil)
+        recorder.audioFile = try FileHandle(forWritingTo: audioURL)
+    }
 
     var request = URLRequest(url: URL(string: "wss://api.openai.com/v1/realtime/translations?model=\(model)")!)
     request.setValue("Bearer \(apiKey())", forHTTPHeaderField: "Authorization")
@@ -227,6 +241,53 @@ func translate(_ arguments: Arguments) async throws {
         if loopMinutes <= 0, offset == 0 { break }
         try await clock.sleep(until: started + .milliseconds(Int(Double(chunkIndex * chunkMs) / speed)))
     }
+    var holdReport: [String: Any] = [:]
+    if holdMinutes > 0, sendError == nil, !recorder.isDisconnected {
+        let holdStarted = clock.now
+        print("保持連線、不送音訊 \(holdMinutes) 分鐘（連線已經 \(recorder.sinceConnectMs / 1000) 秒）……")
+        fflush(stdout)
+        var nextReport = 300.0
+        while clock.now - holdStarted < .seconds(holdMinutes * 60), !recorder.isDisconnected {
+            try await Task.sleep(for: .seconds(1))
+            let held = clock.now - holdStarted
+            let heldSeconds = Double(held.components.seconds)
+            if heldSeconds >= nextReport {
+                print("  已閒置 \(Int(heldSeconds / 60)) 分鐘，連線 \(recorder.sinceConnectMs / 1000) 秒，仍在線")
+                fflush(stdout)
+                nextReport += 300
+            }
+        }
+        holdReport["held_seconds"] = Double((clock.now - holdStarted).components.seconds)
+        holdReport["still_connected_after_hold"] = !recorder.isDisconnected
+        holdReport["since_connect_ms_after_hold"] = recorder.sinceConnectMs
+        if !recorder.isDisconnected {
+            // 第二輪：再送一次（最多 20 秒），看閒置之後連線還能不能正常翻譯
+            let secondPassBytes = min(pcm.count, 48_000 * 20)
+            let secondStarted = clock.now
+            var index = 0
+            var position = 0
+            let eventsBefore = recorder.snapshot()["event_counts"] as? [String: Int] ?? [:]
+            while position < secondPassBytes, !recorder.isDisconnected {
+                let end = min(position + bytesPerChunk, secondPassBytes)
+                do {
+                    try await send(["type": "session.input_audio_buffer.append", "audio": pcm.subdata(in: position..<end).base64EncodedString()])
+                } catch {
+                    sendError = redact("第二輪送不出去：\(error)")
+                    break
+                }
+                position = end
+                index += 1
+                recorder.setSent(milliseconds: (sentBytes + position) / 48)
+                try await clock.sleep(until: secondStarted + .milliseconds(index * chunkMs))
+            }
+            try await Task.sleep(for: .seconds(3))
+            let eventsAfter = recorder.snapshot()["event_counts"] as? [String: Int] ?? [:]
+            let key = "session.output_transcript.delta"
+            holdReport["second_pass_audio_seconds"] = Double(position) / 48_000
+            holdReport["second_pass_translation_deltas"] = (eventsAfter[key] ?? 0) - (eventsBefore[key] ?? 0)
+            sentBytes += position
+        }
+    }
     let sentSeconds = Double(sentBytes) / 48_000
     let streamedFor = clock.now - started
 
@@ -257,6 +318,7 @@ func translate(_ arguments: Arguments) async throws {
     summary["close_wait_seconds"] = (seconds(closeTook) * 1000).rounded() / 1000
     summary["closed_cleanly"] = closedCleanly
     summary["send_error"] = sendError as Any
+    summary["hold"] = holdReport
     summary["upstream_audio_bytes_base64"] = sentBytes * 4 / 3
     try JSONSerialization.data(withJSONObject: summary, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
         .write(to: outDirectory.appendingPathComponent("summary.json"))
@@ -273,6 +335,7 @@ func translate(_ arguments: Arguments) async throws {
     let down = summary["downstream_audio_bytes"] as? Int ?? 0
     print("下行語音 \(down / 1024) KB（每小時約 \(Int(Double(down) / max(sentSeconds, 1) * 3600 / 1_048_576)) MB）；收尾 \(closedCleanly ? "正常" : "未收到 session.closed")，等了 \(String(format: "%.1f", seconds(closeTook))) 秒")
     if let disconnect = summary["disconnect"] as? [String: Any] { print("連線中斷：\(disconnect)") }
+    if !holdReport.isEmpty { print("閒置測試：\(holdReport)") }
     if let sendError { print("傳送錯誤：\(sendError)") }
     for error in summary["errors"] as? [String] ?? [] { print("錯誤事件：\(error.prefix(400))") }
     print("英文：\((summary["source_text"] as? String ?? "").prefix(160))")

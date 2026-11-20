@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "description": "ThunderFlow 的效能預算。超過預算，對應的測試就會失敗。說明見 DESIGN.md 第 9.8 節。",
+  "referenceMachine": "MacBook Pro（M1 Max），release 模式",
+  "factorEnvironmentVariable": "THUNDER_PERF_FACTOR",
+  "budgets": {
+    "ring.throughput.realtimeFactor.min": {
+      "value": 1000, "unit": "倍速", "milestone": "M1",
+      "note": "RingBuffer：48 kHz 單聲道、10 ms 一包，單執行緒來回"
+    },
+    "recorder.throughput.realtimeFactor.min": {
+      "value": 300, "unit": "倍速", "milestone": "M1",
+      "note": "CAF 分段寫入：48 kHz 單聲道、20 ms 一包"
+    },
+    "encoder.throughput.realtimeFactor.min": {
+      "value": 300, "unit": "倍速", "milestone": "M1",
+      "note": "48 kHz 轉 24 kHz PCM16 並切成 200 ms 一包"
+    },
+    "session.pipeline.realtimeFactor.min": {
+      "value": 200, "unit": "倍速", "milestone": "M1",
+      "note": "整條錄音管線（寫檔＋轉格式＋送引擎＋日誌）。200 倍速等於即時錄音只用單核的 0.5%"
+    },
+    "journal.append.microseconds.max": {
+      "value": 200, "unit": "微秒／筆", "milestone": "M1",
+      "note": "日誌追加一筆的平均時間"
+    },
+    "session.memoryGrowth.megabytes.max": {
+      "value": 20, "unit": "MB", "milestone": "M1",
+      "note": "30 分鐘音訊：第 5 分鐘到結束的記憶體成長（每次提交都跑）"
+    },
+    "session.soak8h.memoryGrowth.megabytes.max": {
+      "value": 50, "unit": "MB", "milestone": "M1",
+      "note": "8 小時音訊：第 1 小時到結束的記憶體成長（make test-soak）"
+    },
+    "session.startToCapture.milliseconds.max": {
+      "value": 300, "unit": "毫秒", "milestone": "M2",
+      "note": "按下開始到第一個樣本進來。待實機校正"
+    },
+    "ui.eventCostGrowth.ratio.max": {
+      "value": 1.5, "unit": "倍", "milestone": "M2",
+      "note": "第 8 小時每個字幕事件的處理成本，相對於第 1 分鐘"
+    },
+    "ui.mainThreadHitch.milliseconds.max": {
+      "value": 100, "unit": "毫秒", "milestone": "M2",
+      "note": "錄音中主執行緒最長的一次卡頓"
+    },
+    "app.launch.firstFrame.milliseconds.max": {
+      "value": 400, "unit": "毫秒", "milestone": "M2",
+      "note": "程序啟動到第一個畫面（熱啟動，中位數）。待 M2 校正"
+    },
+    "app.launch.vsEmptyShell.ratio.max": {
+      "value": 1.3, "unit": "倍", "milestone": "M2",
+      "note": "啟動時間相對於空白 SwiftUI App"
+    },
+    "app.idle.cpuPercent.max": {
+      "value": 0.5, "unit": "%（單核）", "milestone": "M2",
+      "note": "閒置時的 CPU，且不可以有定時喚醒"
+    },
+    "app.recording.cpuPercent.max": {
+      "value": 5, "unit": "%（單核）", "milestone": "M2",
+      "note": "錄音與即時翻譯中的平均 CPU"
+    },
+    "app.idle.footprintOverEmptyShell.megabytes.max": {
+      "value": 30, "unit": "MB", "milestone": "M2",
+      "note": "閒置時的記憶體，相對於空白 SwiftUI App"
+    },
+    "app.bundleSize.megabytes.max": {
+      "value": 15, "unit": "MB", "milestone": "M2",
+      "note": "ThunderFlow.app 的大小"
+    },
+    "library.scan500.milliseconds.max": {
+      "value": 50, "unit": "毫秒", "milestone": "M3",
+      "note": "載入 500 場的清單。實測 9–24 ms"
+    },
+    "library.openSession8h.milliseconds.max": {
+      "value": 100, "unit": "毫秒", "milestone": "M3",
+      "note": "打開一場 8 小時的紀錄到內容可見"
+    },
+    "library.search500.milliseconds.max": {
+      "value": 200, "unit": "毫秒", "milestone": "M3",
+      "note": "搜尋 500 場（約 100 MB 逐字稿）。實測 140 ms"
+    },
+    "session.stopToTranscript.milliseconds.max": {
+      "value": 500, "unit": "毫秒", "milestone": "M3",
+      "note": "按下停止到逐字稿可讀"
+    },
+    "finalize.audioPerRecordedHour.seconds.max": {
+      "value": 10, "unit": "秒／每小時錄音", "milestone": "M3",
+      "note": "合併成 m4a 的時間。實測約 8 秒"
+    }
+  }
+}

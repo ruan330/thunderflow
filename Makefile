@@ -2,7 +2,7 @@
 
 PKG := Packages/ThunderKit
 
-.PHONY: build test test-tsan test-perf test-soak check
+.PHONY: build test test-tsan test-perf test-soak check app run
 
 ## 編譯全部（含測試）
 build:
@@ -28,3 +28,11 @@ test-soak:
 check: build test test-tsan test-perf
 	Scripts/check-no-dependencies.sh
 	Scripts/list-tests.py --check
+
+## 把 App 編成 build/ThunderFlow.app（不需要開 Xcode）
+app:
+	Scripts/build-app.sh
+
+## 編好之後直接開啟
+run: app
+	open build/ThunderFlow.app

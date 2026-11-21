@@ -13,6 +13,8 @@ case "transcribe":
     try await transcribe(arguments)
 case "analyze":
     try analyze(arguments)
+case "live":
+    try await live(arguments)
 default:
     fail(
         """
@@ -30,6 +32,8 @@ default:
                                   [--chunk-ms 200] [--speed 1] [--loop-minutes N] [--hold-minutes N]
               把音檔串流到純轉錄的連線（gpt-live-transcribe），錄下所有事件與時間（會產生 API 費用）。
               加 --no-audio（可搭配 --session-json）只送設定、不送音訊，用來試哪些設定會被接受（免費）。
+          thunderbench live <音檔.wav> [--seconds N] [--keywords <一行一個的檔案>] [--title <標題>] [--no-provisional] [--delay low] [--quiet]
+              用正式的引擎（TranscribeTranslateEngine）以即時速度處理音檔，印出每個字幕事件與時間（會產生 API 費用）。
           thunderbench analyze <translate 的輸出資料夾> [--terms <terms.json> --name keynote]
               分析譯文：簡體或繁體、中國大陸用語、術語與數字的正確率。
         """)

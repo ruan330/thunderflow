@@ -27,6 +27,9 @@ public enum AudioCaptureError: Error, CustomStringConvertible {
     case noInputDevice
     case deviceNotFound(String)
     case coreAudio(operation: String, status: OSStatus)
+    /// 系統音訊的裝置建立了，卻沒辦法開始收音。實機上看到的原因：還沒有允許「錄製系統音訊」
+    /// （第一次使用、或開發版重新打包之後）。macOS 跳出授權視窗的同時，開始收音就直接失敗，不會等使用者回答。
+    case systemAudioNotStarted(status: OSStatus)
     case unreadableFile(String)
 
     public var description: String {
@@ -34,6 +37,7 @@ public enum AudioCaptureError: Error, CustomStringConvertible {
         case .noInputDevice: "找不到可以收音的裝置"
         case .deviceNotFound(let uid): "找不到先前選擇的裝置（\(uid)）"
         case .coreAudio(let operation, let status): "\(operation) 失敗（Core Audio 錯誤 \(status)）"
+        case .systemAudioNotStarted(let status): "系統音訊沒辦法開始（Core Audio 錯誤 \(status)）"
         case .unreadableFile(let detail): "音檔讀不出來：\(detail)"
         }
     }

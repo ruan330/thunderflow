@@ -32,3 +32,17 @@ struct SystemAudioDeviceTests {
         #expect(taps.first?[kAudioSubTapDriftCompensationKey] as? Bool == true)
     }
 }
+
+/// 系統音訊沒辦法開始時給使用者的說明。真正的失敗需要實機（還沒有允許「錄製系統音訊」的 App），
+/// 這裡確認說明本身。
+@Suite("系統音訊：沒辦法開始時的說明")
+struct SystemAudioNotStartedTests {
+    @Test("系統音訊沒辦法開始時，說明告訴使用者在授權視窗按「允許」，再按一次開始")
+    func notStartedExplainsPermission() {
+        // 實機：還沒有允許時，macOS 跳出授權視窗，開始收音同時就失敗（Core Audio 錯誤 268451843）
+        let message = AudioCaptureError.systemAudioNotStarted(status: 268_451_843).description
+        #expect(message.contains("268451843"))
+        #expect(message.contains("允許"))
+        #expect(message.contains("再按一次開始"))
+    }
+}

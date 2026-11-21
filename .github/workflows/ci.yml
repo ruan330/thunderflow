@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift --version
+      - run: Scripts/check-no-dependencies.sh
+      - run: Scripts/list-tests.py --check
+      - run: make build
+      - run: make test
+
+  tsan:
+    name: Thread Sanitizer
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test-tsan
+
+  perf:
+    name: Performance budgets
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      # 共用的 CI 機器比參考機器（M1 Max）慢而且不穩，預算放寬 3 倍，只抓大幅退步。
+      THUNDER_PERF_FACTOR: "3"
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test-perf
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

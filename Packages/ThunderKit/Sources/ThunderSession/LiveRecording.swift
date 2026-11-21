@@ -108,6 +108,9 @@ public final class LiveRecording: @unchecked Sendable {
     /// 裝置的 callback 到目前為止被呼叫了幾次。一直沒有增加，代表沒有收到聲音。
     public var captureCallbackCount: Int { capture.mixer.callbackCount }
 
+    /// 裝置第一次送來樣本的時間（`CLOCK_UPTIME_RAW` 的奈秒）。音檔來源不經過裝置，一直是 nil。
+    public var firstSampleUptimeNanoseconds: UInt64? { capture.mixer.firstFramesUptimeNanoseconds }
+
     public func pause() { session?.pause() }
     public func resume() { session?.resume() }
     public func mark() { session?.mark() }

@@ -2,15 +2,19 @@
 
 > 由 `Scripts/list-tests.py` 從測試原始碼產生，請勿手動編輯。
 > 測試就是規格：每一行是一個必須成立的行為。流程與分層見 [DESIGN.md](DESIGN.md) 第 9 節。
-> 目前共 351 個測試。
+> 目前共 352 個測試。
 
-## ThunderAudioTests（54 個測試）
+## ThunderAudioTests（55 個測試）
 
 ### 效能預算 Perf：音訊元件（只在 release 模式執行：`make test-perf`）
 
 - RingBuffer：一小時的音訊（48 kHz、10 ms 一包）來回一趟
 - SegmentedRecorder：寫入 10 分鐘的音訊（48 kHz、20 ms 一包）
 - EngineAudioEncoder：轉換 10 分鐘的音訊（48 kHz 轉 24 kHz）
+
+### 擷取外殼：第一次收到樣本的時間
+
+- 還沒收到樣本時沒有時間；空的 callback 不算；收到第一批之後記下時間，之後的 callback 不改變它
 
 ### 擷取外殼：音訊 callback 只把樣本寫進 RingBuffer
 

@@ -41,6 +41,12 @@ public final class CaptureMixer: @unchecked Sendable {
     /// 一次送來的樣本超過暫存區大小的次數（超過的部分被丟掉了）。
     public var oversizedCallbackCount: Int { oversized.load(ordering: .relaxed) }
 
+    /// 第一次收到樣本的時間（`clock_gettime_nsec_np(CLOCK_UPTIME_RAW)` 的奈秒）。還沒收到時是 nil。
+    /// 用來量「按下開始到第一個樣本進來」（DESIGN.md 9.8 節的 `session.startToCapture`）。
+    ///
+    /// 尚未實作：介面先行，見 `CaptureMixerFirstFramesTests`。
+    public var firstFramesUptimeNanoseconds: UInt64? { nil }
+
     /// 處理裝置給的一批樣本。只能由裝置的 IO 執行緒呼叫。
     ///
     /// - Parameters:

@@ -93,24 +93,49 @@ class Run:
         self.reference = [(normalize(word), index) for index, s in enumerate(self.sentences) for word in split_tokens(s["text"])]
 
         # --- 對齊 ---
-        matcher = difflib.SequenceMatcher(a=[w for w, _ in self.reference], b=[w["norm"] for w in self.words], autojunk=False)
+        # 循環播放時一輪一輪對：同一份稿子重複出現，整段一起比對會對到別輪去。
+        # 每一輪只拿「上一輪對完之後、這一輪結束後 3 秒以內」收到的字來比對。
         self.aligned = {}  # 稿子的第幾個字 -> 收到的第幾個字
         self.substitutions = self.deletions = self.insertions = 0
         self.differences = []
-        for tag, a0, a1, b0, b1 in matcher.get_opcodes():
-            if tag == "equal":
-                for k in range(a1 - a0):
-                    self.aligned[a0 + k] = b0 + k
-                continue
-            if tag == "replace":
-                self.substitutions += min(a1 - a0, b1 - b0)
-                self.deletions += max(0, (a1 - a0) - (b1 - b0))
-                self.insertions += max(0, (b1 - b0) - (a1 - a0))
-            elif tag == "delete":
-                self.deletions += a1 - a0
-            elif tag == "insert":
-                self.insertions += b1 - b0
-            self.differences.append((" ".join(w for w, _ in self.reference[a0:a1]), " ".join(w["norm"] for w in self.words[b0:b1])))
+        per_loop = len(self.clip["sentences"])
+        pointer = 0
+        reference_offset = 0
+        for loop in range(loops):
+            loop_sentences = range(loop * per_loop, min((loop + 1) * per_loop, len(self.sentences)))
+            reference = [(w, i) for w, i in self.reference if i in loop_sentences]
+            if not reference:
+                break
+            is_last = loop == loops - 1 or (loop + 1) * per_loop >= len(self.sentences)
+            limit = float("inf") if is_last else (loop + 1) * duration + 3.0
+            stop = pointer
+            while stop < len(self.words) and self.words[stop]["t"] < limit:
+                stop += 1
+            heard = self.words[pointer:stop]
+            matcher = difflib.SequenceMatcher(a=[w for w, _ in reference], b=[w["norm"] for w in heard], autojunk=False)
+            opcodes = matcher.get_opcodes()
+            last_matched = -1
+            for tag, a0, a1, b0, b1 in opcodes:
+                if tag == "equal":
+                    last_matched = b1 - 1
+            for tag, a0, a1, b0, b1 in opcodes:
+                if tag == "equal":
+                    for k in range(a1 - a0):
+                        self.aligned[reference_offset + a0 + k] = pointer + b0 + k
+                    continue
+                if not is_last and b0 > last_matched and a0 == a1:
+                    continue  # 這一輪對完之後多出來的字屬於下一輪
+                if tag == "replace":
+                    self.substitutions += min(a1 - a0, b1 - b0)
+                    self.deletions += max(0, (a1 - a0) - (b1 - b0))
+                    self.insertions += max(0, (b1 - b0) - (a1 - a0))
+                elif tag == "delete":
+                    self.deletions += a1 - a0
+                elif tag == "insert":
+                    self.insertions += b1 - b0
+                self.differences.append((" ".join(w for w, _ in reference[a0:a1]), " ".join(w["norm"] for w in heard[b0:b1])))
+            pointer += last_matched + 1
+            reference_offset += len(reference)
         self.wer = (self.substitutions + self.deletions + self.insertions) / max(1, len(self.reference))
         # 每一句對到的字（收到的第幾個字）
         self.sentence_words = {}

@@ -53,19 +53,21 @@ public final class LiveCaptionModel {
     }
 
     /// 立刻套用佇列裡的事件。
+    ///
+    /// 字幕直接在原處更新：一場長的錄音有幾千行，每次更新都複製一份再比較，成本會隨場次變長
+    /// （DESIGN.md 9.8 節：第 8 小時每個事件的處理成本不超過第 1 分鐘的 1.5 倍）。
+    /// 畫面也要配合：只拿最後幾行出來畫，不要一直拿著整份字幕，否則下一次更新還是會整份複製。
     public func flush() {
         let events = inbox.drain()
         guard !events.isEmpty else { return }
-        var updated = board
         for event in events {
             switch event {
             case .status(let status): engineStatus = status
             case .usage(let seconds): billedSeconds = seconds
             case .gap(let gap): gapSeconds += gap.duration
-            default: updated.apply(event)
+            default: board.apply(event)
             }
         }
-        if updated != board { board = updated }
         updateCount += 1
     }
 }

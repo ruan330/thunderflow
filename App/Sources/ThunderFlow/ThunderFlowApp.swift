@@ -96,12 +96,14 @@ struct FloatingCaptionsView: View {
 
     var body: some View {
         let board = model.captions.board
+        // 只複製最後兩行出來（不引用整份字幕，見 CaptionsView.visibleLines 的說明）
+        let recent = Array(board.lines.suffix(2))
         let mode = model.settings.displayMode
         let showsProvisional = model.settings.showsProvisional
         VStack(alignment: .leading, spacing: 6) {
             if mode != .english {
-                ForEach(board.lines.suffix(2)) { line in
-                    let text = board.chinese(for: line, showingProvisional: showsProvisional)
+                ForEach(recent) { line in
+                    let text = line.chinese.isEmpty ? (showsProvisional ? line.provisional : "") : line.chinese
                     Text(text.isEmpty ? line.english : text)
                         .foregroundStyle(line.chinese.isEmpty ? .secondary : .primary)
                 }

@@ -163,11 +163,21 @@ struct LiveView: View {
 struct CaptionsView: View {
     @Environment(AppModel.self) private var model
 
+    /// 畫面上最多畫幾行（約半小時）。只畫最後這幾行，畫面的成本才不會隨場次變長。
+    /// 而且畫面不能一直拿著整份字幕：拿著的話，下一次更新時整份字幕都要複製一次（見 `LiveCaptionModel.flush`），
+    /// 所以這裡只把最後幾行複製出來，下面的內容也不引用整份字幕。更早的內容在結束後的逐字稿裡。
+    static let visibleLines = 400
+
     var body: some View {
         let board = model.captions.board
+        let lines = Array(board.lines.suffix(Self.visibleLines))
+        let earlier = board.lines.count - lines.count
+        let liveEnglish = board.liveEnglish
+        let liveChinese = board.liveChinese
         let mode = model.settings.displayMode
         let size = model.settings.fontSize
-        if board.lines.isEmpty, board.liveEnglish.isEmpty {
+        let showsProvisional = model.settings.showsProvisional
+        if lines.isEmpty, liveEnglish.isEmpty {
             ContentUnavailableView(
                 "按下「開始錄音」", systemImage: "waveform",
                 description: Text("講者說英文時，這裡會即時出現英文逐字稿與台灣繁體中文翻譯。"))
@@ -175,22 +185,24 @@ struct CaptionsView: View {
             VSplitView {
                 if mode != .english {
                     CaptionZone(title: "中文", updates: model.captions.updateCount) {
-                        ForEach(board.lines) { line in
-                            chinese(line, board: board).font(.system(size: size))
+                        if earlier > 0 { EarlierNote(count: earlier) }
+                        ForEach(lines) { line in
+                            ChineseLine(line: line, showsProvisional: showsProvisional).font(.system(size: size))
                         }
-                        if model.settings.showsProvisional, !board.liveChinese.isEmpty {
-                            Text(board.liveChinese).font(.system(size: size)).foregroundStyle(.tertiary)
+                        if showsProvisional, !liveChinese.isEmpty {
+                            Text(liveChinese).font(.system(size: size)).foregroundStyle(.tertiary)
                         }
                     }
                     .frame(minHeight: 120)
                 }
                 if mode != .chinese {
                     CaptionZone(title: "English", updates: model.captions.updateCount) {
-                        ForEach(board.lines) { line in
+                        if earlier > 0 { EarlierNote(count: earlier) }
+                        ForEach(lines) { line in
                             Text(line.english).font(.system(size: mode == .english ? size : size * 0.72)).foregroundStyle(.secondary)
                         }
-                        if !board.liveEnglish.isEmpty {
-                            Text(board.liveEnglish.trimmingCharacters(in: .whitespaces))
+                        if !liveEnglish.isEmpty {
+                            Text(liveEnglish.trimmingCharacters(in: .whitespaces))
                                 .font(.system(size: mode == .english ? size : size * 0.72))
                                 .foregroundStyle(.tertiary)
                         }
@@ -200,9 +212,24 @@ struct CaptionsView: View {
             }
         }
     }
+}
 
-    @ViewBuilder private func chinese(_ line: CaptionBoard.Line, board: CaptionBoard) -> some View {
-        let text = board.chinese(for: line, showingProvisional: model.settings.showsProvisional)
+/// 畫面上沒有畫出來的較早內容。
+private struct EarlierNote: View {
+    let count: Int
+
+    var body: some View {
+        Text("較早的 \(count) 段在結束後的逐字稿裡").font(.caption).foregroundStyle(.secondary)
+    }
+}
+
+/// 一行中文：有定稿用定稿；沒有的話，允許時顯示暫定譯文（淡色）；確定不會有定稿時先顯示英文並標示「未翻譯」。
+private struct ChineseLine: View {
+    let line: CaptionBoard.Line
+    let showsProvisional: Bool
+
+    var body: some View {
+        let text = line.chinese.isEmpty ? (showsProvisional ? line.provisional : "") : line.chinese
         if !line.chinese.isEmpty {
             Text(text)
         } else if line.untranslated {

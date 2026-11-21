@@ -5,14 +5,16 @@ import Synchronization
 ///
 /// 檔案格式（v1）：
 ///
-///     {"k":"src","t":12.5,"x":"Hello","end":true}     英文；`end` 為 true 表示一句結束，false 時省略
-///     {"k":"tr","t":13.25,"x":"你好","end":true}       中文
-///     {"k":"gap","from":30,"to":42.5,"why":"network"} 沒翻譯到的音訊
+///     {"k":"src","t":12.5,"x":"Hello","end":true,"seg":3}   英文；`end` 為 true 表示一段結束，false 時省略
+///     {"k":"tr","t":13.25,"x":"你好","end":true,"seg":3}     中文定稿；`seg` 是段號，和它的英文相同
+///     {"k":"gap","from":30,"to":42.5,"why":"network"}       沒有字幕的音訊
 ///     {"k":"mark","t":95}                              重點標記
 ///     {"k":"pause","t":120}                            暫停
 ///     {"k":"resume","t":120}                           繼續
 ///
 /// `t`、`from`、`to` 都是音訊時間（秒）。文字以 UTF-8 原文存放，不做 \u 跳脫。
+/// `seg` 沒有段號時省略（不分段的引擎，以及加入段號之前寫下的日誌）；讀到不是整數的 `seg` 當成沒有。
+/// 同一個段號出現不只一筆 `end` 為 true 的紀錄時（補上晚到的標點或尾巴），以最後一筆為準。
 /// `why` 是 network／backpressure／engineStopped，讀到不認識的原因會變成 `.unknown`。
 public enum JournalEntry: Sendable, Equatable {
     case source(CaptionText)
@@ -25,7 +27,7 @@ public enum JournalEntry: Sendable, Equatable {
 
 extension JournalEntry: Codable {
     private enum Key: String, CodingKey {
-        case kind = "k", time = "t", text = "x", end, from, to, why
+        case kind = "k", time = "t", text = "x", end, from, to, why, segment = "seg"
     }
 
     /// `k` 欄位的值。
@@ -56,7 +58,8 @@ extension JournalEntry: Codable {
             let text = CaptionText(
                 text: try container.decode(String.self, forKey: .text),
                 kind: try container.decodeIfPresent(Bool.self, forKey: .end) == true ? .segmentEnd : .delta,
-                at: try container.decode(AudioTime.self, forKey: .time))
+                at: try container.decode(AudioTime.self, forKey: .time),
+                segment: (try? container.decodeIfPresent(Int.self, forKey: .segment)) ?? nil)
             self = kind == .source ? .source(text) : .translation(text)
         case .gap:
             let why = try container.decodeIfPresent(String.self, forKey: .why)
@@ -82,6 +85,7 @@ extension JournalEntry: Codable {
             try container.encode(text.at, forKey: .time)
             try container.encode(text.text, forKey: .text)
             if text.kind == .segmentEnd { try container.encode(true, forKey: .end) }
+            try container.encodeIfPresent(text.segment, forKey: .segment)
         case .gap(let gap):
             try container.encode(gap.from, forKey: .from)
             try container.encode(gap.to, forKey: .to)
@@ -224,6 +228,10 @@ enum JournalLine {
             append(#","x":"#, to: &line)
             appendString(text.text, to: &line)
             if text.kind == .segmentEnd { append(#","end":true"#, to: &line) }
+            if let segment = text.segment {
+                append(#","seg":"#, to: &line)
+                append(String(segment), to: &line)
+            }
         case .gap(let gap):
             append(#","from":"#, to: &line)
             try appendNumber(gap.from.seconds, to: &line)

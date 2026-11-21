@@ -64,43 +64,233 @@ public struct Segmenter: Sendable {
 
     public let configuration: Configuration
 
+    // 目前這一段
+    private var segment = 0
+    private var pending = ""
+    /// `pending` 裡有沒有真正的內容（字母、數字或中文字）。只有空白與開頭的引號時是 false。
+    private var pendingHasContent = false
+    private var lastTextAt: TimeInterval = 0
+    /// 等確認的句號出現的時間。句號（連同後面的引號、括號）一定在 `pending` 的最後。
+    private var sentenceCandidateAt: TimeInterval?
+    private var pause: (speechEnd: TimeInterval, detectedAt: TimeInterval)?
+    /// 上一段：晚到的標點與尾巴要接在它後面。
+    private var previous: (segment: Int, text: String, reason: Reason, finishedAt: TimeInterval)?
+    private var clock: TimeInterval = 0
+
     public init(configuration: Configuration = Configuration()) {
         self.configuration = configuration
     }
 
     /// 目前這一段（還沒確定）已經收到的文字，去掉頭尾的空白。
     public var pendingText: String {
-        // 尚未實作（M2）
-        ""
+        pending.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// 下一個計時到期的時間；沒有任何計時在等就是 nil。呼叫端在這個時間呼叫 `advance(to:)`。
     public var nextDeadline: TimeInterval? {
-        // 尚未實作（M2）
-        nil
+        nextTimer()?.due
     }
 
     /// 收到一段增量文字。
     public mutating func receive(_ text: String, at now: TimeInterval) -> [Output] {
-        // 尚未實作（M2）
-        []
+        var outputs = advance(to: now)
+        var delta = ""
+
+        func flushDelta(_ outputs: inout [Output], _ delta: inout String, segment: Int) {
+            if !delta.isEmpty { outputs.append(.delta(segment: segment, text: delta)) }
+            delta = ""
+        }
+
+        for character in text {
+            // 這一段還沒有任何內容時，先到的收尾標點屬於上一段
+            if !pendingHasContent, Self.trailingPunctuation.contains(character) {
+                if var last = previous {
+                    last.text.append(character)
+                    previous = last
+                    outputs.append(.amended(segment: last.segment, text: last.text))
+                }
+                continue
+            }
+
+            if sentenceCandidateAt != nil {
+                if Self.closers.contains(character) {
+                    // 引號、括號跟著句號，仍然屬於這一句
+                } else if character.isWhitespace {
+                    flushDelta(&outputs, &delta, segment: segment)
+                    finish(.sentenceEnd, &outputs)
+                } else {
+                    sentenceCandidateAt = nil  // 例如 1.5 的小數點
+                }
+            } else if character.isWhitespace, pendingHasContent, !(pending.last?.isWhitespace ?? true) {
+                // 一個字剛結束：檢查長度
+                let words = Self.wordCount(pending)
+                let endsWithComma = pending.last.map { Self.commas.contains($0) } ?? false
+                if words >= Double(configuration.hardWordLimit)
+                    || (endsWithComma && words >= Double(configuration.softWordLimit))
+                {
+                    flushDelta(&outputs, &delta, segment: segment)
+                    finish(.tooLong, &outputs)
+                }
+            }
+
+            pending.append(character)
+            delta.append(character)
+            if !character.isWhitespace {
+                lastTextAt = clock
+                if character.isLetter || character.isNumber { pendingHasContent = true }
+            }
+
+            if Self.wideTerminators.contains(character) {
+                // 中文的句號不會和小數點、縮寫混淆
+                flushDelta(&outputs, &delta, segment: segment)
+                finish(.sentenceEnd, &outputs)
+            } else if Self.wideCommas.contains(character), Self.wordCount(pending) >= Double(configuration.softWordLimit) {
+                flushDelta(&outputs, &delta, segment: segment)
+                finish(.tooLong, &outputs)
+            } else if Self.terminators.contains(character), pendingHasContent {
+                sentenceCandidateAt = (character == "." && Self.endsWithAbbreviation(pending)) ? nil : clock
+            }
+        }
+        flushDelta(&outputs, &delta, segment: segment)
+        return outputs
     }
 
     /// 停頓偵測回報了一次停頓。`speechEnd` 是講者停下來的時間，`now` 是偵測到的時間，兩者和文字用同一條時間軸。
     public mutating func pauseDetected(speechEnd: TimeInterval, at now: TimeInterval) -> [Output] {
-        // 尚未實作（M2）
-        []
+        var outputs = advance(to: now)
+        pause = (speechEnd: speechEnd, detectedAt: clock)
+        outputs += advance(to: now)
+        return outputs
     }
 
     /// 時間前進到 `now`：處理已經到期的計時。
     public mutating func advance(to now: TimeInterval) -> [Output] {
-        // 尚未實作（M2）
-        []
+        clock = max(clock, now)
+        var outputs: [Output] = []
+        while let timer = nextTimer(), timer.due <= clock {
+            switch timer.kind {
+            case .sentence:
+                finish(.sentenceEnd, &outputs)
+            case .pause:
+                if Self.wordCount(pending) >= Double(configuration.minimumWordsAtPause) {
+                    finish(.pause, &outputs)
+                }
+                pause = nil
+            case .idle:
+                finish(.idle, &outputs)
+            }
+        }
+        expirePauseIfNeeded()
+        return outputs
     }
 
     /// 收尾：把手上還沒確定的文字當成一段。沒有文字就什麼都不做。之後還可以繼續使用，段號接著編。
     public mutating func flush(at now: TimeInterval) -> [Output] {
-        // 尚未實作（M2）
-        []
+        var outputs = advance(to: now)
+        if pendingHasContent {
+            finish(.flush, &outputs)
+        } else {
+            pending = ""
+        }
+        return outputs
+    }
+
+    // MARK: 計時
+
+    private enum TimerKind { case sentence, pause, idle }
+
+    /// 最早到期的那一個計時。
+    private func nextTimer() -> (kind: TimerKind, due: TimeInterval)? {
+        guard pendingHasContent else { return nil }
+        var timers: [(kind: TimerKind, due: TimeInterval)] = []
+        if let candidateAt = sentenceCandidateAt {
+            timers.append((.sentence, candidateAt + configuration.sentenceConfirmation))
+        }
+        if let pause, lastTextAt <= pause.speechEnd + configuration.pausePatience {
+            timers.append((.pause, max(lastTextAt + configuration.quietAfterPause, pause.detectedAt)))
+        }
+        timers.append((.idle, lastTextAt + configuration.idleTimeout))
+        return timers.min { $0.due < $1.due }
+    }
+
+    /// 停頓開始後太久，文字都沒有安靜下來（或一直沒有字）：放棄這次停頓。
+    private mutating func expirePauseIfNeeded() {
+        guard let current = pause else { return }
+        let limit = current.speechEnd + configuration.pausePatience
+        if pendingHasContent ? lastTextAt > limit : clock > limit + configuration.quietAfterPause {
+            pause = nil
+        }
+    }
+
+    // MARK: 段
+
+    private mutating func finish(_ reason: Reason, _ outputs: inout [Output]) {
+        let text = pendingText
+        if pendingHasContent {
+            if reason == .sentenceEnd, var last = previous, last.reason == .pause,
+                clock - last.finishedAt <= configuration.lateTailWindow,
+                Self.wordCount(pending) <= Double(configuration.lateTailWords)
+            {
+                // 停頓前的最後一兩個字晚到了：併回剛確定的那一段
+                last.text += " " + text
+                last.reason = .sentenceEnd
+                previous = last
+                outputs.append(.extended(segment: last.segment, text: last.text))
+            } else {
+                outputs.append(.finished(segment: segment, text: text, reason: reason))
+                previous = (segment: segment, text: text, reason: reason, finishedAt: clock)
+                segment += 1
+            }
+        }
+        pending = ""
+        pendingHasContent = false
+        sentenceCandidateAt = nil
+    }
+
+    // MARK: 字元的分類
+
+    private static let terminators: Set<Character> = [".", "?", "!"]
+    private static let wideTerminators: Set<Character> = ["。", "？", "！"]
+    private static let commas: Set<Character> = [",", ";", ":"]
+    private static let wideCommas: Set<Character> = ["，", "；", "：", "、"]
+    /// 跟在句號後面、仍然屬於同一句的引號與括號。
+    private static let closers: Set<Character> = ["\"", "'", "”", "’", ")", "]", "}", "」", "』"]
+    /// 出現在一段的開頭時，其實屬於上一段的標點。
+    private static let trailingPunctuation: Set<Character> = [
+        ".", ",", ";", ":", "!", "?", "。", "，", "；", "：", "？", "！", "、", "”", "’", ")", "]", "}", "」", "』", "…",
+    ]
+    private static let abbreviations: Set<String> = ["mr", "mrs", "ms", "dr", "prof", "vs", "st", "jr", "sr", "inc", "ltd"]
+
+    /// `text` 以句點結尾。句點前面的那個字是不是縮寫（`Dr.`）或字母縮寫（`U.S.`、`e.g.`）。
+    private static func endsWithAbbreviation(_ text: String) -> Bool {
+        let body = text.dropLast()
+        guard let token = body.split(whereSeparator: \.isWhitespace).last else { return false }
+        let word = token.drop { !$0.isLetter && !$0.isNumber }.lowercased()
+        if abbreviations.contains(word) { return true }
+        // 每一節都只有一個字母：U、U.S、e.g
+        let parts = word.split(separator: ".", omittingEmptySubsequences: false)
+        return !parts.isEmpty && parts.allSatisfy { $0.count == 1 && ($0.first?.isLetter ?? false) }
+    }
+
+    /// 字數：以空白分開、含有字母或數字的算一個字；中文字每 2 個算一個字。
+    private static func wordCount(_ text: String) -> Double {
+        var total = 0.0
+        for token in text.split(whereSeparator: \.isWhitespace) {
+            var ideographs = 0
+            var hasOther = false
+            for character in token {
+                if isIdeograph(character) {
+                    ideographs += 1
+                } else if character.isLetter || character.isNumber {
+                    hasOther = true
+                }
+            }
+            total += Double(ideographs) / 2 + (hasOther ? 1 : 0)
+        }
+        return total
+    }
+
+    private static func isIdeograph(_ character: Character) -> Bool {
+        character.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) || (0x3400...0x4DBF).contains($0.value) }
     }
 }

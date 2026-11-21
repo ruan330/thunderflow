@@ -111,6 +111,7 @@ final class AppModel {
 
     func start() async {
         guard liveState == .idle else { return }
+        PerfProbe.startPressed()
         // 先佔住狀態：等鑰匙圈或麥克風權限的時候再按一次開始，不會建立第二場
         liveState = .starting
         banner = nil
@@ -174,6 +175,7 @@ final class AppModel {
         liveState = .recording
         // 錄音中不讓電腦因為閒置而睡眠
         activity = ProcessInfo.processInfo.beginActivity(options: [.idleSystemSleepDisabled, .userInitiated], reason: "錄音中")
+        PerfProbe.recordingStarted()
         startTicker()
     }
 
@@ -184,6 +186,7 @@ final class AppModel {
         liveState = .stopping
         ticker?.cancel()
         ticker = nil
+        PerfProbe.recordingStopped()
         if let activity { ProcessInfo.processInfo.endActivity(activity) }
         activity = nil
         var failed = false
@@ -244,6 +247,7 @@ final class AppModel {
                 guard let self, let recording = self.recording else { return }
                 self.elapsed = recording.audioTime.seconds
                 self.level = recording.level
+                PerfProbe.check(firstSample: recording.firstSampleUptimeNanoseconds)
                 // 錄音檔寫不進去（例如磁碟滿了）：停止錄音，已經錄下的部分照常收尾
                 if recording.unrecordedSeconds > 0 {
                     self.banner = "錄音檔寫不進去（磁碟可能滿了），所以停止了錄音。已經錄下的部分都保存了，請清出空間再開始。"

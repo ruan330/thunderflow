@@ -205,12 +205,18 @@ enum SelfTest {
             diagnoseCapture()
             return
         }
-        let systemAudio = defaults.string(forKey: "selfTestSource") == "system"
-        guard systemAudio || defaults.string(forKey: "selfTestFile") != nil else { return }
+        // 來源：`-selfTestSource system`（系統音訊）、`-selfTestSource microphone`（預設的麥克風），或 `-selfTestFile <音檔>`
+        let device: AppModel.SourceChoice? =
+            switch defaults.string(forKey: "selfTestSource") {
+            case "system": .system
+            case "microphone": .microphone(uid: "")
+            default: nil
+            }
+        guard device != nil || defaults.string(forKey: "selfTestFile") != nil else { return }
         let seconds = defaults.double(forKey: "selfTestSeconds")
         let prefix = defaults.string(forKey: "selfTestSnapshot")
         Task {
-            model.source = systemAudio ? .system : .file(URL(fileURLWithPath: defaults.string(forKey: "selfTestFile") ?? ""))
+            model.source = device ?? .file(URL(fileURLWithPath: defaults.string(forKey: "selfTestFile") ?? ""))
             model.title = defaults.string(forKey: "selfTestTitle") ?? ""
             await model.start()
             print("selfTest: started state=\(model.liveState) banner=\(model.banner ?? "-") \(model.captureDiagnostics)")

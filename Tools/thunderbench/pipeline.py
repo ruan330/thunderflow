@@ -65,6 +65,7 @@ quiet = float(option("--quiet", "0.35"))
 patience = float(option("--patience", "1.5"))
 min_words = int(option("--min-words", "3"))
 max_words = int(option("--max-words", "0"))
+merge_late_tail = not flag("--no-tail-merge")
 with_partials = flag("--partials")
 show = flag("--show")
 dry_run = flag("--dry-run")
@@ -174,7 +175,7 @@ for position, (confirmed, reason) in ordered:
         continue
     if reason == "pause" and len(text.split()) < min_words:
         continue  # 太短，不切，併到下一段
-    if (reason == "period" and segments and segments[-1]["reason"] == "pause" and len(text.split()) <= 2
+    if (merge_late_tail and reason == "period" and segments and segments[-1]["reason"] == "pause" and len(text.split()) <= 2
             and confirmed - segments[-1]["t"] <= 1.5):
         # 停頓前的最後一兩個字比較晚才到（連同句號）：併回剛剛那一段，那一段的定稿時間跟著延後
         previous = segments[-1]
@@ -279,6 +280,18 @@ print(f"{run.name}［{label}］：{len(segments)} 段、{len(requests)} 個翻�
 if dry_run:
     for segment in segments:
         print(f"  {segment['t']:7.2f} {segment['reason']:6} {segment['text']}")
+    if run.spoken:
+        # 不呼叫翻譯也能算：每一段的英文在說完後多久確定
+        ready, sizes = [], []
+        for segment in segments:
+            span = run.spoken_span(segment["start"], segment["end"])
+            if span:
+                ready.append(segment["t"] - span[1])
+                sizes.append(len(segment["text"].split()))
+        ordered = sorted(ready)
+        leading = sum(1 for segment in segments if segment["text"][:1] in ".,;:?!")
+        print(f"# 段數 {len(segments)}；≤2 個字的段 {sum(1 for n in sizes if n <= 2)}；開頭是標點的段 {leading}；"
+              f"英文確定（距離說完）中位數 {statistics.median(ready):.2f}、P95 {ordered[int(0.95 * (len(ordered) - 1))]:.2f}")
     sys.exit(0)
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:

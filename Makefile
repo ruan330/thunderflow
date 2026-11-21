@@ -14,7 +14,7 @@ test:
 
 ## Thread Sanitizer：跨執行緒的元件
 test-tsan:
-	swift test --package-path $(PKG) --sanitize=thread --filter 'RingBufferTests|PumpTests|JournalTests'
+	swift test --package-path $(PKG) --sanitize=thread --filter 'RingBufferTests|PumpTests|JournalTests|CaptureMixer|LiveCaptionModel|EngineContract|TranscribeTranslateEngine|LiveRecording'
 
 ## 效能預算（release 模式、一次跑一個）。預算在 Benchmarks/perf-budgets.json
 test-perf:

@@ -2,9 +2,9 @@
 
 macOS 原生的即時翻譯與錄音 App：聽英文演講、課程或線上會議時，即時顯示英文逐字稿與台灣繁體中文翻譯，同時把整場錄下來，結束後留下錄音、中英逐字稿與摘要。
 
-*An open-source, native macOS app for live English → Traditional Chinese (Taiwan) captions with full local recording. Early development; not usable yet.*
+*An open-source, native macOS app for live English → Traditional Chinese (Taiwan) captions with full local recording. Early development: a first developer build runs, but it is not ready for real use.*
 
-> **狀態：開發中，還不能使用。** 目前完成的是錄音核心（M1）與 API 實驗（M0）。App 本身還沒有開始做。進度見 [DESIGN.md](DESIGN.md) 第 12.1 節。
+> **狀態：開發中。** 已經有第一個可以試用的開發版（`make run`）：即時字幕、錄音、中英逐字稿、摘要與過去錄音的瀏覽都跑得起來，但麥克風與系統音訊的擷取還沒有經過完整的實機驗證，也還沒有簽章與公證的發行版。進度見 [DESIGN.md](DESIGN.md) 第 12.1 節。
 
 ## 它要做的事
 
@@ -27,6 +27,7 @@ macOS 原生的即時翻譯與錄音 App：聽英文演講、課程或線上會�
 需要 macOS 26 以上、Xcode 26 以上（Swift 6.2 以上）。所有邏輯都在 `Packages/ThunderKit`，不需要開 Xcode：
 
 ```sh
+make run         # 打包成 build/ThunderFlow.app 並開啟（開發版，ad-hoc 簽章）
 make test        # 單元、整合、當機安全、30 分鐘記憶體測試
 make test-tsan   # Thread Sanitizer
 make test-perf   # 效能預算（release 模式）

@@ -20,7 +20,7 @@ let package = Package(
         .target(name: "ThunderEngines", dependencies: ["ThunderCore"]),
 
         // 測試工具：合成音訊、腳本引擎、效能預算等。不隨 App 出貨。
-        .target(name: "ThunderTestKit", dependencies: ["ThunderCore", "ThunderAudio"]),
+        .target(name: "ThunderTestKit", dependencies: ["ThunderCore", "ThunderAudio", "ThunderEngines"]),
 
         .testTarget(name: "ThunderTestKitTests", dependencies: ["ThunderTestKit"]),
         .testTarget(name: "ThunderCoreTests", dependencies: ["ThunderCore", "ThunderTestKit"]),

@@ -14,9 +14,10 @@ struct ThunderFlowApp: App {
             print(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev")
             exit(0)
         }
-        // 固定深色（DESIGN.md 4.10.1 節、D27）：不跟隨系統的外觀設定，也不提供外觀的選項
-        NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
         LaunchProbe.appInit()
+        // 固定深色（DESIGN.md 4.10.1 節、D27）：不跟隨系統的外觀設定，也不提供外觀的選項。
+        // 放在量測點之後：這一行會建立 NSApplication（約 50 ms），量測點量的是載入程式與框架的時間
+        NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
         // 只有一個主視窗：沒有分頁（分頁的「＋」會開出第二個視窗）
         NSWindow.allowsAutomaticWindowTabbing = false
     }

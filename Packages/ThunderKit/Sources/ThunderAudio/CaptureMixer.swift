@@ -17,6 +17,8 @@ public final class CaptureMixer: @unchecked Sendable {
     private let callbacks = Atomic<Int>(0)
     private let discontinuities = Atomic<Int>(0)
     private let oversized = Atomic<Int>(0)
+    /// 第一次收到樣本的時間；0 代表還沒收到。
+    private let firstFrames = Atomic<UInt64>(0)
     /// 下一次 callback 預期的樣本位置的位元表示；還沒收到過任何 callback 時是「沒有」。
     private let expectedSampleTime = Atomic<UInt64>(CaptureMixer.none)
     private static let none = UInt64.max
@@ -43,9 +45,10 @@ public final class CaptureMixer: @unchecked Sendable {
 
     /// 第一次收到樣本的時間（`clock_gettime_nsec_np(CLOCK_UPTIME_RAW)` 的奈秒）。還沒收到時是 nil。
     /// 用來量「按下開始到第一個樣本進來」（DESIGN.md 9.8 節的 `session.startToCapture`）。
-    ///
-    /// 尚未實作：介面先行，見 `CaptureMixerFirstFramesTests`。
-    public var firstFramesUptimeNanoseconds: UInt64? { nil }
+    public var firstFramesUptimeNanoseconds: UInt64? {
+        let value = firstFrames.load(ordering: .relaxed)
+        return value == 0 ? nil : value
+    }
 
     /// 處理裝置給的一批樣本。只能由裝置的 IO 執行緒呼叫。
     ///
@@ -67,6 +70,10 @@ public final class CaptureMixer: @unchecked Sendable {
             channelCount += channels
         }
         guard frames > 0, channelCount > 0 else { return }
+        // 讀時鐘只是讀共用記憶體，不呼叫系統、不上鎖，可以在即時執行緒上做
+        if firstFrames.load(ordering: .relaxed) == 0 {
+            firstFrames.store(clock_gettime_nsec_np(CLOCK_UPTIME_RAW), ordering: .relaxed)
+        }
 
         if let sampleTime {
             let expected = expectedSampleTime.load(ordering: .relaxed)

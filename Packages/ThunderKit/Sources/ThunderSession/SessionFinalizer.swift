@@ -25,12 +25,15 @@ public struct FinalizationOptions: Sendable {
     public var summaryModel: String
     /// 是否自動產生摘要。false 時略過摘要（不算失敗）。
     public var summarize: Bool
+    /// 產生摘要時最多等文字模型多久；超過就算摘要失敗（可以重試），不會讓場次一直停在處理中。
+    public var summaryTimeout: Duration
 
     public init(libraryRoot: URL) {
         self.libraryRoot = libraryRoot
         textModel = nil
         summaryModel = "gpt-6-luna"
         summarize = true
+        summaryTimeout = .seconds(300)
     }
 }
 
@@ -39,6 +42,14 @@ public enum SessionFinalizerError: Error, Equatable {
     case stillRecording
     /// 合併出來的 `recording.m4a` 和 CAF 分段的總長不一致（秒）。CAF 分段原封不動，沒有留下 m4a。
     case durationMismatch(recorded: TimeInterval, merged: TimeInterval)
+    /// 沒有設定文字模型，不能產生摘要。
+    case missingTextModel
+    /// 逐字稿沒有任何文字，沒有東西可以摘要。
+    case emptyTranscript
+    /// 文字模型超過時限沒有回完。
+    case summaryTimedOut
+    /// 文字模型回傳的摘要沒有內容（沒有一句話總結、重點與章節）。
+    case emptySummary
 }
 
 /// 結束處理：把剛錄完的場次做成成品（段落、逐字稿、錄音檔），搬進 Library，再產生摘要。
@@ -104,6 +115,20 @@ public struct SessionFinalizer: Sendable {
             try await Self.inBackground { try Self.update(current) { $0.state = .complete } }
         }
         return directory
+    }
+
+    /// 重新產生摘要：覆寫 `summary.md` 與 `.thunderflow/summary.json`，更新 `session.json` 的一句話總結，
+    /// 把摘要記成已完成並清掉「摘要失敗」。回傳場次資料夾的位置。
+    ///
+    /// - 和結束處理的摘要步驟做同樣的事，所以還沒有標題的場次會用摘要的標題命名，資料夾跟著改名：
+    ///   這時回傳的是新的位置。已經有標題的場次不會改名，位置不變。
+    /// - 不看 `summarize`（這是使用者明確要求的）。沒有文字模型丟出 `missingTextModel`，
+    ///   逐字稿沒有文字丟出 `emptyTranscript`。
+    /// - 失敗時丟出錯誤，原有的摘要與 `session.json` 都不動。
+    @discardableResult
+    public func regenerateSummary(_ directory: SessionDirectory) async throws -> SessionDirectory {
+        // 尚未實作（M4）
+        directory
     }
 
     // MARK: 步驟

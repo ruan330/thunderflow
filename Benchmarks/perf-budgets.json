@@ -68,6 +68,14 @@
       "value": 15, "unit": "MB", "milestone": "M2",
       "note": "ThunderFlow.app 的大小"
     },
+    "engines.pauseDetector.realtimeFactor.min": {
+      "value": 1000, "unit": "倍速", "milestone": "M2",
+      "note": "停頓偵測：24 kHz、200 ms 一包。1000 倍速等於即時執行只用單核的 0.1%"
+    },
+    "engines.segmenter.microsecondsPerDelta.max": {
+      "value": 20, "unit": "微秒／筆", "milestone": "M2",
+      "note": "切段：8 小時的增量文字（約 8.6 萬筆），平均每筆的處理時間。不可以隨場次長度變慢"
+    },
     "library.scan500.milliseconds.max": {
       "value": 50, "unit": "毫秒", "milestone": "M3",
       "note": "載入 500 場的清單。實測 9–24 ms"

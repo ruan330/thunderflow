@@ -31,4 +31,9 @@
 | `rejected-delay.jsonl` | 沒有送音訊 | `delay: "bogus"` | 設定被拒絕：`error` 事件、`code: invalid_value` |
 | `rejected-turn-detection.jsonl` | 沒有送音訊 | `turn_detection: server_vad` | 設定被拒絕：這個模型不支援伺服器端的斷句 |
 
+另外有一個不是事件的檔案：
+
+- `keynote.pauses.json`：keynote 音檔裡每一次停頓的時間（最後一格語音結束、偵測到停頓），以及每一句的起訖與文字。
+  停頓由 `Tools/thunderbench/vad-plan.py` 以預設值算出。和 `keynote-*.jsonl` 一起重播，用來測切段。
+
 音檔的稿子在 `Benchmarks/synthetic/`，每句的起訖時間由 `thunderbench synth` 產生（不進 repo，可以重新產生）。

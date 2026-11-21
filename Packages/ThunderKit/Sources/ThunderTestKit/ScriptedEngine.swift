@@ -17,6 +17,9 @@ public final class ScriptedEngine: LiveCaptionEngine, @unchecked Sendable {
         case endsEarly(after: TimeInterval)
         /// 正常消化並送字幕（每 2 秒一句），但音訊結束後不收尾，被取消才結束。
         case neverEnds
+        /// 像真正的引擎一樣分段：每消化 `every` 秒的音訊完成一段（段號從 0 開始）。
+        /// 每一段依序送出：暫定譯文、英文（一段結束）、中文定稿（一段結束），三者帶同一個段號。
+        case segments(every: TimeInterval)
 
         /// 所有故障行為，給參數化測試用。
         public static let allFaults: [Behavior] = [
@@ -33,6 +36,7 @@ public final class ScriptedEngine: LiveCaptionEngine, @unchecked Sendable {
             case .slow(let perChunk): "消化很慢（每包 \(perChunk)）"
             case .endsEarly(let after): "\(after) 秒後失敗並結束"
             case .neverEnds: "不收尾"
+            case .segments(let every): "分段（每 \(every) 秒一段，含暫定譯文）"
             }
         }
     }
@@ -81,6 +85,7 @@ public final class ScriptedEngine: LiveCaptionEngine, @unchecked Sendable {
 
     public static func sourceText(_ index: Int) -> String { "en \(index)" }
     public static func translationText(_ index: Int) -> String { "中文 \(index)" }
+    public static func provisionalText(_ index: Int) -> String { "暫定 \(index)" }
 
     /// 消化 `seconds` 秒的音訊後，劇本會送出幾句字幕。
     /// 第 k 句在消化到 (k − 0.5) × every 秒時送出，刻意避開整數邊界，不受重取樣的微小誤差影響。
@@ -126,6 +131,10 @@ public final class ScriptedEngine: LiveCaptionEngine, @unchecked Sendable {
         case .neverEnds:
             await consume(audio, captionsEvery: 2, into: output)
             await sleepUntilCancelled()
+
+        case .segments(let every):
+            await consume(audio, captionsEvery: every, segmented: true, into: output)
+            if !Task.isCancelled { output.yield(.usage(audioSeconds: receivedDuration)) }
         }
     }
 
@@ -134,6 +143,7 @@ public final class ScriptedEngine: LiveCaptionEngine, @unchecked Sendable {
         captionsEvery every: TimeInterval,
         delayPerChunk: Duration? = nil,
         stopAfter: TimeInterval? = nil,
+        segmented: Bool = false,
         into output: AsyncStream<CaptionEvent>.Continuation
     ) async {
         output.yield(.status(.connecting))
@@ -154,9 +164,20 @@ public final class ScriptedEngine: LiveCaptionEngine, @unchecked Sendable {
                 return state.duration
             }
             while consumed >= (Double(nextCaption) - 0.5) * every {
-                output.yield(.source(CaptionText(text: Self.sourceText(nextCaption), kind: .segmentEnd, at: chunk.endTime)))
+                let segment: Int? = segmented ? nextCaption - 1 : nil
+                if segmented {
+                    output.yield(
+                        .provisional(
+                            CaptionText(
+                                text: Self.provisionalText(nextCaption), kind: .delta, at: chunk.endTime, segment: segment)))
+                }
                 output.yield(
-                    .translation(CaptionText(text: Self.translationText(nextCaption), kind: .segmentEnd, at: chunk.endTime)))
+                    .source(
+                        CaptionText(text: Self.sourceText(nextCaption), kind: .segmentEnd, at: chunk.endTime, segment: segment)))
+                output.yield(
+                    .translation(
+                        CaptionText(
+                            text: Self.translationText(nextCaption), kind: .segmentEnd, at: chunk.endTime, segment: segment)))
                 nextCaption += 1
             }
             if let stopAfter, consumed >= stopAfter { return }

@@ -290,6 +290,9 @@ public final class RecordingSession: @unchecked Sendable {
             try? journal.append(.source(text))
         case .translation(let text):
             try? journal.append(.translation(text))
+        case .provisional:
+            // 暫定譯文只給畫面用，會被定稿取代，不寫進日誌
+            break
         case .gap(let gap):
             try? journal.append(.gap(gap))
             accounting.withLock { $0.engineReportedGapSeconds += gap.duration }

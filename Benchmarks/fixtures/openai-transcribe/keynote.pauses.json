@@ -1,0 +1,180 @@
+{
+ "description": "keynote 合成語音裡的停頓，由 Tools/thunderbench/vad-plan.py 以預設值（靜音滿 300 ms、自適應門檻）算出。時間是音訊位置（毫秒）。搭配同一段音檔錄下的事件（keynote-*.jsonl）重播，用來測切段。",
+ "audio": "keynote",
+ "silence_ms": 300,
+ "pauses": [
+  {
+   "speech_end_ms": 3440,
+   "detected_ms": 3740
+  },
+  {
+   "speech_end_ms": 8340,
+   "detected_ms": 8640
+  },
+  {
+   "speech_end_ms": 14600,
+   "detected_ms": 14900
+  },
+  {
+   "speech_end_ms": 20500,
+   "detected_ms": 20800
+  },
+  {
+   "speech_end_ms": 26440,
+   "detected_ms": 26740
+  },
+  {
+   "speech_end_ms": 33460,
+   "detected_ms": 33760
+  },
+  {
+   "speech_end_ms": 37880,
+   "detected_ms": 38180
+  },
+  {
+   "speech_end_ms": 43620,
+   "detected_ms": 43920
+  },
+  {
+   "speech_end_ms": 48920,
+   "detected_ms": 49220
+  },
+  {
+   "speech_end_ms": 54620,
+   "detected_ms": 54920
+  },
+  {
+   "speech_end_ms": 58880,
+   "detected_ms": 59180
+  },
+  {
+   "speech_end_ms": 64920,
+   "detected_ms": 65220
+  },
+  {
+   "speech_end_ms": 67500,
+   "detected_ms": 67800
+  },
+  {
+   "speech_end_ms": 72720,
+   "detected_ms": 73020
+  },
+  {
+   "speech_end_ms": 76680,
+   "detected_ms": 76980
+  },
+  {
+   "speech_end_ms": 81400,
+   "detected_ms": 81700
+  },
+  {
+   "speech_end_ms": 85640,
+   "detected_ms": 85940
+  },
+  {
+   "speech_end_ms": 89280,
+   "detected_ms": 89580
+  },
+  {
+   "speech_end_ms": 92360,
+   "detected_ms": 92660
+  }
+ ],
+ "sentences": [
+  {
+   "start_ms": 500,
+   "end_ms": 3428,
+   "text": "Good morning everyone, and welcome to the conference."
+  },
+  {
+   "start_ms": 3778,
+   "end_ms": 8338,
+   "text": "Today I want to talk about how we are making it easier to build production-ready agents."
+  },
+  {
+   "start_ms": 8688,
+   "end_ms": 14594,
+   "text": "Amazon Bedrock AgentCore gives you three core components: a runtime, a gateway, and memory."
+  },
+  {
+   "start_ms": 14944,
+   "end_ms": 20489,
+   "text": "With AgentCore Runtime, each session runs in its own isolated microVM for up to eight hours."
+  },
+  {
+   "start_ms": 20839,
+   "end_ms": 26425,
+   "text": "Last year, customers ran more than one point five billion inference requests on Amazon Bedrock."
+  },
+  {
+   "start_ms": 26775,
+   "end_ms": 33450,
+   "text": "We are also announcing Graviton5, which delivers up to thirty percent better price performance than Graviton4."
+  },
+  {
+   "start_ms": 33800,
+   "end_ms": 37890,
+   "text": "Our new foundation models support a context window of one million tokens."
+  },
+  {
+   "start_ms": 38240,
+   "end_ms": 43643,
+   "text": "You can deploy inference endpoints across three Availability Zones to improve throughput and resilience."
+  },
+  {
+   "start_ms": 43993,
+   "end_ms": 48923,
+   "text": "With Retrieval-Augmented Generation, you can ground the model's responses in your own data."
+  },
+  {
+   "start_ms": 49273,
+   "end_ms": 54650,
+   "text": "Amazon S3 Vectors reduces the cost of storing and querying vectors by up to ninety percent."
+  },
+  {
+   "start_ms": 55000,
+   "end_ms": 58903,
+   "text": "Serverless inference means you only pay for the tokens you actually use."
+  },
+  {
+   "start_ms": 59253,
+   "end_ms": 64940,
+   "text": "Latency matters: our customers expect a time to first token of less than two hundred milliseconds."
+  },
+  {
+   "start_ms": 65290,
+   "end_ms": 67507,
+   "text": "So what does this mean for your architecture?"
+  },
+  {
+   "start_ms": 67857,
+   "end_ms": 72718,
+   "text": "First, start with a small evaluation set, and measure before you optimize."
+  },
+  {
+   "start_ms": 73068,
+   "end_ms": 76673,
+   "text": "Second, use guardrails to keep your agents safe and compliant."
+  },
+  {
+   "start_ms": 77023,
+   "end_ms": 81402,
+   "text": "Third, monitor everything with observability tools like Amazon CloudWatch."
+  },
+  {
+   "start_ms": 81752,
+   "end_ms": 85624,
+   "text": "One customer reduced their deployment time from six weeks to four days."
+  },
+  {
+   "start_ms": 85974,
+   "end_ms": 89279,
+   "text": "That is the power of building on a secure and scalable foundation."
+  },
+  {
+   "start_ms": 89629,
+   "end_ms": 92358,
+   "text": "Thank you, and enjoy the rest of the conference."
+  }
+ ]
+}

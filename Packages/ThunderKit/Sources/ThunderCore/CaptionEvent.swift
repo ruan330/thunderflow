@@ -13,11 +13,15 @@ public struct CaptionText: Sendable, Equatable {
     public var kind: TextKind
     /// 收到這段文字時，已經送給引擎的音訊時間。
     public var at: AudioTime
+    /// 段號：一段英文和它的中文（定稿與暫定譯文）用同一個號碼，從 0 開始、只增不減。
+    /// 不分段的引擎，以及加入段號之前寫下的日誌，這個值是 nil。
+    public var segment: Int?
 
-    public init(text: String, kind: TextKind, at: AudioTime) {
+    public init(text: String, kind: TextKind, at: AudioTime, segment: Int? = nil) {
         self.text = text
         self.kind = kind
         self.at = at
+        self.segment = segment
     }
 }
 
@@ -87,9 +91,14 @@ public struct AudioGap: Sendable, Equatable {
 /// 即時字幕引擎送出的事件。
 public enum CaptionEvent: Sendable, Equatable {
     /// 來源語言的文字（英文）。
+    /// - `delta`：這一段新增的文字，接在同一段已經出現的文字後面。
+    /// - `segmentEnd`：這一段確定了，`text` 是整段的完整文字。同一個段號之後如果又出現一次（補上晚到的標點），以最後一次為準。
     case source(CaptionText)
-    /// 翻譯後的文字（中文）。
+    /// 翻譯後的文字（中文定稿）。一段送一次（`segmentEnd`，`text` 是整段的譯文），取代這一段的暫定譯文。
     case translation(CaptionText)
+    /// 暫定譯文：這一段還沒說完時先翻出來給畫面顯示的中文。`text` 是到目前為止整段的暫定譯文，
+    /// 取代同一段上一次的暫定譯文。只給畫面用，不寫進日誌。
+    case provisional(CaptionText)
     case status(EngineStatus)
     case gap(AudioGap)
     /// 到目前為止累計計費的音訊秒數。

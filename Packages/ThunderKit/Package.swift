@@ -10,11 +10,14 @@ let package = Package(
         .library(name: "ThunderCore", targets: ["ThunderCore"]),
         .library(name: "ThunderAudio", targets: ["ThunderAudio"]),
         .library(name: "ThunderSession", targets: ["ThunderSession"]),
+        .library(name: "ThunderEngines", targets: ["ThunderEngines"]),
     ],
     targets: [
         .target(name: "ThunderCore"),
         .target(name: "ThunderAudio", dependencies: ["ThunderCore"]),
         .target(name: "ThunderSession", dependencies: ["ThunderCore", "ThunderAudio"]),
+        // 即時字幕引擎的各個部分：停頓偵測、切段、轉錄連線、翻譯排程。不依賴 ThunderAudio。
+        .target(name: "ThunderEngines", dependencies: ["ThunderCore"]),
 
         // 測試工具：合成音訊、腳本引擎、效能預算等。不隨 App 出貨。
         .target(name: "ThunderTestKit", dependencies: ["ThunderCore", "ThunderAudio"]),
@@ -23,5 +26,6 @@ let package = Package(
         .testTarget(name: "ThunderCoreTests", dependencies: ["ThunderCore", "ThunderTestKit"]),
         .testTarget(name: "ThunderAudioTests", dependencies: ["ThunderAudio", "ThunderTestKit"]),
         .testTarget(name: "ThunderSessionTests", dependencies: ["ThunderSession", "ThunderTestKit"]),
+        .testTarget(name: "ThunderEnginesTests", dependencies: ["ThunderEngines", "ThunderTestKit"]),
     ]
 )

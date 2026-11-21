@@ -13,6 +13,8 @@ struct ThunderFlowApp: App {
             print(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev")
             exit(0)
         }
+        // 只有一個主視窗：沒有分頁（分頁的「＋」會開出第二個視窗）
+        NSWindow.allowsAutomaticWindowTabbing = false
     }
 
     var body: some Scene {
@@ -22,6 +24,10 @@ struct ThunderFlowApp: App {
                 .frame(minWidth: 900, minHeight: 600)
         }
         .defaultSize(width: 1_100, height: 720)
+        .commands {
+            // ⌘N 是「開始錄音」（DESIGN.md 4.8 節），不是開新視窗。只有一個主視窗
+            CommandGroup(replacing: .newItem) {}
+        }
     }
 }
 
@@ -47,7 +53,7 @@ struct RootView: View {
             }
         }
         // 畫面先出現，資料隨後補上
-        .task { model.didAppear() }
+        .task { await model.didAppear() }
     }
 }
 
@@ -123,6 +129,9 @@ struct FloatingCaptionsView: View {
 /// 自我檢查：用音檔當來源跑完一整場，並把畫面存成圖檔。只在啟動參數要求時執行，給開發時驗證用。
 ///
 ///     ThunderFlow -selfTestFile <音檔> [-selfTestSeconds 30] [-selfTestSnapshot <路徑前綴>]
+///                 [-selfTestQuit YES] [-libraryPath <資料夾>] [-workingPath <資料夾>] [-apiKeyFromStdin YES]
+///
+/// 用法見 CLAUDE.md。
 @MainActor
 enum SelfTest {
     static func runIfRequested(_ model: AppModel) {

@@ -16,7 +16,7 @@
 
 1. **開發版做出來了**（`make run`）。即時翻譯、錄音、中英逐字稿、摘要、過去錄音的瀏覽都跑得通，用音檔當來源驗證過完整的一場。
 2. **最大的未知：麥克風與系統音訊從來沒有在真的裝置上跑過。** 到交接為止，沒有任何人在 App 裡按過「開始錄音」。
-3. **最嚴重的已知問題：錄音途中再開一個視窗（或第二個 App 實體），正在錄的那一場會被當成「上次中斷的場次」拿去收尾，之後的聲音靜靜地遺失。** 見第 4 節 P1。先修這個。
+3. **已修正（2026-11-21）**：錄音途中多開視窗或 App，正在錄的那一場會被當成「上次中斷的場次」拿去收尾（原 P1）；錄音檔寫不進去時沒有任何提示（原 P2）。做法見 DESIGN.md 5.5、5.7 節，驗證見第 3 節。
 4. **「快與輕」只證明了一半**：23 項效能預算裡有 13 項沒有測試（第 5 節階段 C）。
 5. **v1 還缺的功能**：精修中文、首次啟動引導、靜音不送、裝置消失與睡眠的處理、逐字稿全文搜尋等（第 6 節）。
 6. **這個分支沒有第二個人看過**：22 個提交、約 11,000 行，M2–M4 新增的 173 個測試也沒有先給專案負責人審就實作了。
@@ -25,7 +25,7 @@
 
 | 項目 | 狀態 |
 |---|---|
-| 分支 | `m2/assemble` = `main`（0344b79，和 `origin/main` 相同）加上 22 個提交與這份文件的提交。沒有推送 |
+| 分支 | `m2/assemble` = `main`（0344b79，和 `origin/main` 相同）加上 22 個提交、這份文件，以及之後修正 P1、P2 的提交。沒有推送 |
 | 測試 | 交接時在 a6f775c 重跑，全部通過：`make test` 338 個（6 個測試 target）、`make test-tsan` 48 個、`make test-perf` 7 個。8 小時長跑（`make test-soak`）上一次是 M1 完成時跑的 |
 | App | `build/ThunderFlow.app`，2.9 MB，ad-hoc 簽章（`build/` 不進 git） |
 | 里程碑 | M0、M1 完成；M2、M3、M4 進行中（DESIGN.md 12.1 節） |
@@ -55,6 +55,7 @@
 | 引擎對真正的服務 | `thunderbench live` 跑 40 秒合成語音：9 段全部有台灣繁體的定稿，沒有簡體字 | 合成語音；結果沒有存成報告 |
 | 整個 App 跑完一場 | App 隱藏的自我檢查，用音檔當來源錄 45 秒：畫面上有字幕（看過截圖），產生了 `recording.m4a`（45.29 秒，和 `session.json` 的長度一致）、`transcript.md`、`summary.md`，場次自動命名，完整性計數全部是 0 | 來源是音檔，沒有經過 Core Audio 的裝置 |
 | 當機復原 | 一場錄到一半 App 被結束，下次啟動時自動復原並做完結束處理 | 只發生過一次，是意外，不是刻意設計的測試 |
+| 多開 App 不會拿走錄音中的場次 | 兩個隱藏的 App 實體、暫存的工作目錄：A 錄音到第 12 秒時啟動 B。A 的場次留在工作目錄沒有被收尾；A 錄滿 30.22 秒並完成五個步驟，錄音檔長度一致 | 來源是音檔；同一個程式多開視窗的情況只有單元測試（鎖）與程式碼保證（啟動後的工作只做一次） |
 | 閒置時的負擔（非正式） | App 開著 15 分鐘沒有操作，用 `top` 看 9 秒：CPU 0.0%、記憶體約 60 MB、4 條執行緒 | 不是 DESIGN.md 9.8 節規定的量法（要和空白 SwiftUI App 比） |
 
 ### 沒驗證過
@@ -72,30 +73,7 @@
 
 ## 4. 已知的問題
 
-依嚴重程度排列。位置是交接時（a6f775c）的行號。
-
-### P1　錄音途中，正在錄的場次會被當成中斷的場次拿去收尾（會遺失錄音）
-
-- **查證**：讀程式碼確認了每一步。我試著用兩個隱藏的 App 實體重現，但測試實體卡在鑰匙圈的授權視窗（見第 8 節），沒有重現成功。
-- **經過**：
-  1. `RecordingSession` 一建立就把 `session.json` 寫成 `recording`。
-  2. [`AppModel.didAppear()`](App/Sources/ThunderFlow/AppModel.swift#L74) 由 `RootView` 的 `.task` 呼叫（[ThunderFlowApp.swift:50](App/Sources/ThunderFlow/ThunderFlowApp.swift#L50)），所以每開一個視窗就執行一次，不是每個程序一次。
-  3. `didAppear()` 會呼叫 [`resumeUnfinished()`](App/Sources/ThunderFlow/AppModel.swift#L306)：把工作目錄裡所有狀態是 `recording` 的場次復原（[`SessionRecovery.findInterrupted`](Packages/ThunderKit/Sources/ThunderSession/SessionRecovery.swift#L29) 只看狀態，分不出「正在錄」和「上次中斷」），再對它們執行結束處理。
-  4. 結束處理會把 CAF 分段合併成 m4a、**刪掉 CAF 分段**（[SessionFinalizer.swift:189](Packages/ThunderKit/Sources/ThunderSession/SessionFinalizer.swift#L189)）、把資料夾搬進 Library。
-  5. 仍在進行的錄音繼續寫進已經被刪除或搬走的檔案；下一個分段建立失敗時錯誤被吞掉（P2）。那之後的聲音都沒有留下，畫面上沒有任何提示。
-- **會觸發的操作**（推測，還沒實機確認）：
-  - 錄音中按 ⌘N。`WindowGroup` 預設有「新增視窗 ⌘N」；錄音中「開始錄音」的按鈕不在畫面上，所以 ⌘N 會開出第二個視窗。
-  - 錄音中關掉主視窗（例如只留浮動字幕），再從 Dock 點開。
-  - 同時執行第二個 App 實體。自我檢查用的 `open -n` 就是這樣，而且工作目錄不能用參數換掉。
-- **建議的修法**：
-  1. 錄音中持有場次資料夾裡一個檔案的 `flock`；復原時先試著取得鎖，拿不到就跳過。程序結束時核心會自動釋放鎖，所以真正中斷的場次仍然找得到，也同時擋住兩個實體。先在 `ThunderSessionTests` 寫測試：「正在錄的場次不會被回報成中斷」、「錄音的程序被結束之後才會被回報」。
-  2. 啟動後的工作每個程序只做一次。主視窗改成單一視窗（`Window`，不是 `WindowGroup`），同時解決 ⌘N 的衝突。
-
-### P2　錄音檔寫入失敗時沒有任何提示
-
-- **查證**：讀程式碼確認，沒有實際觸發。
-- [`LiveRecording.swift:83`](Packages/ThunderKit/Sources/ThunderSession/LiveRecording.swift#L83) 用 `try?` 呼叫 `session.process`；[`RecordingSession.process`](Packages/ThunderKit/Sources/ThunderSession/RecordingSession.swift#L160) 在錄音檔寫不進去時會丟出錯誤。錯誤被丟掉之後，沒有計數、沒有日誌、沒有橫幅：聲音沒有被錄下來，畫面上只看得到時間停住。
-- DESIGN.md 2.1 節要求磁碟空間不足時「安全地收尾」，並且每一場都要記錄有沒有掉音。目前只在開始時檢查剩餘空間，錄音中不檢查。
+依嚴重程度排列。位置是交接時（a6f775c）的行號，之後的修改可能讓行號移動。P1、P2 已修正，從這裡刪掉了。
 
 ### P3　裝置消失、預設裝置改變、睡眠與喚醒都沒有處理
 
@@ -118,7 +96,7 @@
 ### P5　按下開始時，會等待的工作在主執行緒上執行
 
 - **查證**：讀鑰匙圈會卡住主執行緒是已實測（用 `sample` 看到主執行緒停在 `SecItemCopyMatching`）；其餘讀程式碼確認，沒有量過時間。
-- [`AppModel.start()`](App/Sources/ThunderFlow/AppModel.swift#L87) 在主執行緒上讀鑰匙圈（90 行）、開始收音（137 行，包含建立擷取點與啟動裝置）。鑰匙圈跳出授權視窗時，整個畫面會凍結到使用者回答為止。
+- [`AppModel.start()`](App/Sources/ThunderFlow/AppModel.swift#L87) 在主執行緒上開始收音（包含建立擷取點與啟動裝置）。讀鑰匙圈已經移到背景（2026-11-21），授權視窗出現時畫面不再凍結。
 - [`refreshDevices()`](App/Sources/ThunderFlow/AppModel.swift#L81) 在第一個畫面出現之後、在主執行緒上第一次碰 Core Audio。
 - 對應的預算：按下開始到開始收音 ≤ 300 ms、主執行緒最長的卡頓 ≤ 100 ms。兩項都還沒有量。
 
@@ -132,9 +110,7 @@
 ### P7　畫面的狀態與判斷放在沒有測試的地方
 
 - [AppModel.swift](App/Sources/ThunderFlow/AppModel.swift) 有 374 行，裡面有開始與停止的狀態轉換、沒有聲音的判斷門檻、結束處理與復原的安排。CLAUDE.md 規定 `App/` 不放判斷，這裡違反了。P1 就出在這裡。
-- 另外兩個讀程式碼確認的小問題：
-  - `start()` 在等待麥克風權限（97 行）之後才把狀態改成 `starting`（105 行）。授權視窗還開著時再按一次開始，會建立兩場錄音，第一場沒有辦法停止。
-  - `stop()` 失敗時（162–164 行）場次要等下次啟動才會復原。
+- 原本的兩個小問題已修正（2026-11-21）：等權限或鑰匙圈時再按一次開始會建立兩場；結束失敗時要等下次啟動才復原。
 
 ### P8　其他比較小的
 
@@ -154,14 +130,9 @@
 
 原則照 DESIGN.md 2.3 節：先量測再決定、測試先行。**沒有量測結果或會失敗的測試，就不要動手優化。**
 
-### 階段 A　先確保不會遺失錄音
+### 階段 A　先確保不會遺失錄音（已完成，2026-11-21）
 
-1. 修 P1（測試先行，修法見上）。
-2. 修 P2：寫入失敗要計入完整性計數、記進日誌，並讓畫面知道。
-3. 修 P7 的兩個小問題。
-4. 讓 App 自己把 Key 存進鑰匙圈（見第 8 節「鑰匙圈」），自我檢查才能無人值守地執行。
-
-完成條件：新的測試先失敗後通過；`make test`、`make test-tsan`、`make test-perf` 通過；用自我檢查重跑一次完整的場次。
+修正了 P1、P2 與 P7 的兩個小問題；自動測試改成不碰鑰匙圈（見第 8 節）。
 
 ### 階段 B　第一次實機驗證（需要專案負責人在電腦前，約 20 分鐘，API 費用不到 US$0.1）
 
@@ -248,22 +219,14 @@
 - 開發用的 Key 在鑰匙圈項目 `thunderflow-openai-dev`（帳號 `$USER`）。只在執行時讀取：`security find-generic-password -a "$USER" -s thunderflow-openai-dev -w`。不要印出來，不要放進指令的參數、檔案、log 或提交。
 - App 讀的是它自己的項目：service 是 Bundle ID `io.github.ruan330.thunderflow`，帳號 `openai-api-key`。我把開發用的 Key 複製了一份到這個項目，負責人知道這件事；設定頁可以刪除。
 - **已實測：用 `security add-generic-password -T <App>` 建立的項目，App 讀取時仍然會跳出授權視窗。** 交接當天試了兩次（原本的項目，以及刪掉重建之後），App 都卡在讀取。先前我以為「每次重新編譯之後重建項目就不會問」，這個說法不成立；先前的自我檢查為什麼跑得過，我沒有查出來。
-- 所以目前的狀況是：這個版本第一次按「開始錄音」時，會跳出鑰匙圈的授權視窗，而且視窗出現時畫面會凍結（P5）。輸入 Mac 的登入密碼並按「永遠允許」之後，這個版本就不會再問。
-- 建議的做法（階段 A 第 4 項）：加一個只在命令列使用的模式，從標準輸入讀 Key、由 App 自己存進鑰匙圈然後結束，寫法比照現有的 `--version`。App 自己建立的項目，同一個版本讀取時不會詢問。這是推測，做完要確認。
+- 所以目前的狀況是：每個新編譯的版本第一次讀 Key 時（按「開始錄音」，或結束處理要產生摘要時）會跳出鑰匙圈的授權視窗。輸入 Mac 的登入密碼並按「永遠允許」之後，這個版本就不會再問。讀取已經移到背景，視窗出現時畫面不會凍結。
+- 自動測試不讀鑰匙圈：Key 經由 FIFO 從標準輸入傳入（`-apiKeyFromStdin YES`，見 CLAUDE.md），只放在記憶體裡。
 
 ### 自我檢查
 
-```sh
-open -W -n -g -j build/ThunderFlow.app --args \
-  -selfTestFile "$PWD/Benchmarks/data/keynote.wav" -selfTestSeconds 30 \
-  -selfTestSnapshot <暫存資料夾>/shot -selfTestQuit YES -libraryPath <暫存資料夾>/lib
-```
-
-- `Benchmarks/data/` 不進 git，音檔由 `thunderbench synth` 從 `Benchmarks/synthetic/` 產生。
-- 一定要隱藏執行（`-g -j`）並指定暫存的 `-libraryPath`。看得到的視窗會被點到，測試的場次也不該出現在負責人的「文件」資料夾。
-- **工作目錄不能用參數換掉**，固定在 `~/Library/Application Support/ThunderFlow/Working`，和負責人開著的 App 共用。P1 修好之前，先確認那個資料夾是空的、沒有人在錄音，才能執行。
-- 會讀鑰匙圈。上面的問題解決之前，它會卡在授權視窗（視窗會出現在負責人的螢幕上）。卡住時用 `pkill -f -- "-selfTestFile"` 結束它。
-- 這些參數是從 UserDefaults 讀的，不要用 `defaults write` 寫進去，否則每次啟動都會執行。
+- 指令見 CLAUDE.md 的「實驗工具」。一定要隱藏執行（`-g -j`），並用 `-workingPath`、`-libraryPath` 指定暫存的資料夾：看得到的視窗會被點到，測試的場次也不該出現在負責人的資料夾。
+- 同一個資料夾可以同時開好幾個測試實體：錄音中與結束處理中的場次有鎖，不會互相拿走。
+- 卡住時用 `pkill -f -- "-selfTestFile"` 結束它。
 
 ### 測試與提交
 

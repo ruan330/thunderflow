@@ -60,8 +60,12 @@ final class AppSettings {
     var libraryRoot: URL { URL(fileURLWithPath: libraryPath, isDirectory: true) }
 
     /// 錄音中的暫存位置。不放在「文件」裡，避免 iCloud 在錄音途中上傳暫存檔。
+    /// 自動測試用啟動參數 `-workingPath <資料夾>` 換掉，和使用者自己開著的 App 分開。
     var workingRoot: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        if let path = defaults.string(forKey: "workingPath"), !path.isEmpty {
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("ThunderFlow/Working", isDirectory: true)
     }
 

@@ -179,7 +179,15 @@ struct SessionDetailView: View {
     private var integrityNote: String? {
         let integrity = item.meta.integrity
         var notes: [String] = []
-        if !integrity.isRecordingComplete { notes.append("錄音可能有掉音（\(integrity.ringDroppedSamples) 個樣本、\(integrity.captureDiscontinuities) 次中斷）") }
+        if integrity.ringDroppedSamples > 0 || integrity.captureDiscontinuities > 0 {
+            notes.append("錄音可能有掉音（\(integrity.ringDroppedSamples) 個樣本、\(integrity.captureDiscontinuities) 次中斷）")
+        }
+        if integrity.unrecordedSeconds > 0 {
+            let length =
+                integrity.unrecordedSeconds < 60
+                ? String(format: "%.1f 秒", integrity.unrecordedSeconds) : Format.duration(integrity.unrecordedSeconds)
+            notes.append("有 \(length) 的聲音因為錄音檔寫不進去（例如磁碟滿了）而沒有錄到")
+        }
         if integrity.untranslatedSeconds >= 1 { notes.append("有 \(Format.duration(integrity.untranslatedSeconds)) 的聲音沒有字幕") }
         if integrity.untranslatedSegments > 0 { notes.append("有 \(integrity.untranslatedSegments) 段沒有翻譯") }
         if item.meta.recovered { notes.append("這一場是從異常結束中復原的") }

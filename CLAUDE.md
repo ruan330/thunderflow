@@ -44,7 +44,17 @@ make run         # 打包之後開啟
 
 `Tools/thunderbench` 是探索 API 用的命令列工具與分析腳本（獨立的小 package，不屬於 ThunderKit），會產生 API 費用。
 `thunderbench live <音檔.wav>` 用正式的引擎處理一個音檔，印出每個字幕事件：改動引擎之後用它對真正的服務確認一次。
-App 有隱藏的自我檢查（啟動參數 `-selfTestFile <音檔> -selfTestSeconds 30 -selfTestSnapshot <路徑前綴> -selfTestQuit YES -libraryPath <暫存資料夾>`）：用音檔跑完一整場並把畫面存成圖檔。
+App 有隱藏的自我檢查：用音檔跑完一整場並把畫面存成圖檔。一律隱藏執行、用暫存的工作目錄與 Library（不和使用者開著的 App 共用），Key 經由 FIFO 從標準輸入傳入（不碰 App 的鑰匙圈項目，不會跳出授權視窗，Key 也不落地）：
+
+```sh
+S=<暫存資料夾>; mkdir -p $S; mkfifo -m 600 $S/key
+security find-generic-password -a "$USER" -s thunderflow-openai-dev -w > $S/key &
+open -W -n -g -j build/ThunderFlow.app --stdin $S/key --stdout $S/out --args -apiKeyFromStdin YES \
+  -selfTestFile Benchmarks/data/keynote.wav -selfTestSeconds 30 -selfTestSnapshot $S/shot -selfTestQuit YES \
+  -workingPath $S/working -libraryPath $S/lib
+```
+
+`Benchmarks/data/` 的音檔由 `thunderbench synth` 產生（不進 git）。這些參數只從啟動參數讀，不要用 `defaults write` 寫進去。
 實驗報告在 `Benchmarks/results/`，錄下來的 API 事件在 `Benchmarks/fixtures/`（給引擎測試重播）。
 
 ## 目前進度

@@ -60,6 +60,13 @@ final class AppModel {
     /// 連續幾次量到的音量都接近零；以及這一場到目前為止有沒有聽到過聲音。
     private var quietTicks = 0
     private var heardSound = false
+    /// 錄音中經過的 tick 數（每 0.25 秒一次），用來每 10 秒檢查一次剩餘空間。
+    private var ticks = 0
+    private var warnedLowDisk = false
+    /// 啟動之後的工作做過了沒有：每個程式只做一次。
+    private var didStart = false
+    /// 只放在記憶體裡的 API Key（自動測試用 `-apiKeyFromStdin YES` 從標準輸入讀進來）。有值時完全不碰鑰匙圈。
+    private var keyOverride: String?
 
     init() {
         let key = UserDefaults.standard.string(forKey: "sourceKey") ?? "system"
@@ -71,7 +78,14 @@ final class AppModel {
     // MARK: 啟動之後
 
     /// 第一個畫面出現之後才做的事：讀清單、把上次沒做完的場次接著做完。不擋畫面。
-    func didAppear() {
+    ///
+    /// 每個程式只做一次。視窗關掉再打開時不會重做（重做的話，會把上次沒做完的場次再排一次）。
+    func didAppear() async {
+        guard !didStart else { return }
+        didStart = true
+        if UserDefaults.standard.bool(forKey: "apiKeyFromStdin") {
+            keyOverride = await Task.detached { Self.readKeyFromStandardInput() }.value
+        }
         refreshDevices()
         reloadLibrary()
         resumeUnfinished()
@@ -86,8 +100,11 @@ final class AppModel {
 
     func start() async {
         guard liveState == .idle else { return }
+        // 先佔住狀態：等鑰匙圈或麥克風權限的時候再按一次開始，不會建立第二場
+        liveState = .starting
         banner = nil
-        guard let key = Credentials.load(), !key.isEmpty else {
+        guard let key = await loadKey(), !key.isEmpty else {
+            liveState = .idle
             settings.hasKey = false
             banner = "還沒有設定 OpenAI API Key。請到「設定」貼上你的 Key，再回來按開始。"
             page = .settings
@@ -95,6 +112,7 @@ final class AppModel {
         }
         settings.hasKey = true
         if case .microphone = source, !(await Permissions.microphone()) {
+            liveState = .idle
             banner = "沒有麥克風的權限，所以沒有開始錄音。請到「系統設定 → 隱私權與安全性 → 麥克風」打開 ThunderFlow。"
             return
         }
@@ -102,7 +120,6 @@ final class AppModel {
             banner = "磁碟剩餘空間不到 2 GB。錄音每小時約需要 350 MB 的暫存空間。"
         }
 
-        liveState = .starting
         captions.reset()
         elapsed = 0
         let keywords = AppSettings.lines(settings.keywords) + AppSettings.lines(sessionKeywords)
@@ -148,23 +165,34 @@ final class AppModel {
         startTicker()
     }
 
-    func stop() async {
+    /// 結束這一場並交給結束處理。`showingResult` 是 false 時，做完不切換到那一場（例如因為磁碟滿了而自動停止，
+    /// 使用者要先看到即時翻譯頁上的說明）。
+    func stop(showingResult: Bool = true) async {
         guard let recording, isRecording else { return }
         liveState = .stopping
         ticker?.cancel()
         ticker = nil
         if let activity { ProcessInfo.processInfo.endActivity(activity) }
         activity = nil
+        var failed = false
         do {
             try await recording.stop()
             captions.engineEnded()
-            finalize(recording.directory, id: recording.id, showWhenReady: true)
+            finalize(recording.directory, id: recording.id, showWhenReady: showingResult)
         } catch {
-            banner = "結束錄音時發生錯誤：\(error)。已經錄下的聲音還在，下次開啟 App 時會自動復原。"
+            failed = true
+            banner = "結束錄音時發生錯誤：\(error)。已經錄下的聲音還在，App 會自動復原這一場。"
         }
         self.recording = nil
         level = 0
         liveState = .idle
+        if failed {
+            // 錄音的物件放掉之後，場次的鎖才會交出來（見 SessionLock）：等這個函式結束再復原，不用等下次開啟 App
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(1))
+                self?.resumeUnfinished()
+            }
+        }
     }
 
     func togglePause() {
@@ -196,12 +224,33 @@ final class AppModel {
         silentTicks = 0
         quietTicks = 0
         heardSound = false
+        ticks = 0
+        warnedLowDisk = false
         ticker = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(250))
                 guard let self, let recording = self.recording else { return }
                 self.elapsed = recording.audioTime.seconds
                 self.level = recording.level
+                // 錄音檔寫不進去（例如磁碟滿了）：停止錄音，已經錄下的部分照常收尾
+                if recording.unrecordedSeconds > 0 {
+                    self.banner = "錄音檔寫不進去（磁碟可能滿了），所以停止了錄音。已經錄下的部分都保存了，請清出空間再開始。"
+                    Task { await self.stop(showingResult: false) }
+                    return
+                }
+                // 每 10 秒看一次剩餘空間：不夠時先提醒；快用完時停止，留下收尾（合併錄音、寫逐字稿）需要的空間
+                self.ticks += 1
+                if self.ticks % 40 == 0, let free = Self.freeSpace(at: self.settings.workingRoot, important: false) {
+                    if free < 500_000_000 {
+                        self.banner = "磁碟剩餘空間不到 500 MB，所以停止了錄音。已經錄下的部分都保存了。"
+                        Task { await self.stop(showingResult: false) }
+                        return
+                    }
+                    if free < 1_000_000_000, !self.warnedLowDisk {
+                        self.warnedLowDisk = true
+                        self.banner = "磁碟剩餘空間不到 1 GB（錄音每小時約需要 350 MB）。剩下不到 500 MB 時會自動停止錄音。"
+                    }
+                }
                 if case .file = self.source { continue }
                 let count = recording.captureCallbackCount
                 self.silentTicks = count == self.lastCallbackCount ? self.silentTicks + 1 : 0
@@ -234,19 +283,41 @@ final class AppModel {
         return parts.joined(separator: " ")
     }
 
-    private static func freeSpace(at url: URL) -> Int64? {
+    /// 剩餘空間。`important` 是 true 時包含系統可以清掉的空間（算起來比較慢，只在開始時用）；
+    /// 錄音中定期檢查用 false：只算真的空著的空間，又快又保守。
+    private static func freeSpace(at url: URL, important: Bool = true) -> Int64? {
         let existing = url.deletingLastPathComponent().deletingLastPathComponent()
-        return try? existing.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-            .volumeAvailableCapacityForImportantUsage
+        if important {
+            return try? existing.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+                .volumeAvailableCapacityForImportantUsage
+        }
+        return (try? existing.resourceValues(forKeys: [.volumeAvailableCapacityKey]).volumeAvailableCapacity).map(Int64.init)
+    }
+
+    // MARK: API Key
+
+    /// 讀 API Key。鑰匙圈可能跳出授權視窗、等使用者回答，所以不在主執行緒上讀，畫面不會卡住。
+    private func loadKey() async -> String? {
+        if let keyOverride { return keyOverride }
+        return await Task.detached(priority: .userInitiated) { Credentials.load() }.value
+    }
+
+    /// 自動測試用：從標準輸入讀 Key（`open --stdin <FIFO>` 加上啟動參數 `-apiKeyFromStdin YES`）。
+    /// Key 只放在記憶體裡，不寫進鑰匙圈或任何檔案。
+    nonisolated private static func readKeyFromStandardInput() -> String? {
+        let data = FileHandle.standardInput.readDataToEndOfFile()
+        let key = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        return key.isEmpty ? nil : key
     }
 
     // MARK: 結束處理與清單
 
-    private func finalizer() -> SessionFinalizer {
+    /// `needsModel` 是 false 時（不自動產生摘要）不讀 Key，也就不會因為鑰匙圈跳出授權視窗。
+    private func finalizer(needsModel: Bool) async -> SessionFinalizer {
         var options = FinalizationOptions(libraryRoot: settings.libraryRoot)
         options.summarize = settings.autoSummary
         options.summaryModel = settings.postTextModel
-        if settings.hasKey, let key = Credentials.load(), !key.isEmpty {
+        if needsModel, keyOverride != nil || settings.hasKey, let key = await loadKey(), !key.isEmpty {
             options.textModel = OpenAITextModel(apiKey: key, baseURL: settings.textBaseURL)
         }
         return SessionFinalizer(options: options)
@@ -255,7 +326,11 @@ final class AppModel {
     /// 在背景把一場做完：段落、逐字稿、m4a、搬進資料夾、摘要。不擋下一場錄音。
     func finalize(_ directory: SessionDirectory, id: UUID, showWhenReady: Bool) {
         processing[id] = "處理中"
-        let finalizer = finalizer()
+        Task { await runFinalization(directory, id: id, showWhenReady: showWhenReady) }
+    }
+
+    private func runFinalization(_ directory: SessionDirectory, id: UUID, showWhenReady: Bool) async {
+        let finalizer = await finalizer(needsModel: settings.autoSummary)
         Task.detached(priority: .utility) { [weak self] in
             var failure: String?
             do {
@@ -273,6 +348,8 @@ final class AppModel {
                         }
                     }
                 }
+            } catch SessionFinalizerError.inProgress {
+                // 另一個 ThunderFlow 正在處理這一場：交給它
             } catch {
                 failure = "\(error)"
             }
@@ -331,10 +408,20 @@ final class AppModel {
 
     func regenerateSummary(_ item: SessionLibrary.Item) {
         processing[item.id] = "產生摘要中"
-        let finalizer = finalizer()
+        Task { await runRegeneration(item) }
+    }
+
+    private func runRegeneration(_ item: SessionLibrary.Item) async {
+        let finalizer = await finalizer(needsModel: true)
         Task.detached(priority: .utility) { [weak self] in
             var failure: String?
-            do { try await finalizer.regenerateSummary(item.directory) } catch { failure = "\(error)" }
+            do {
+                try await finalizer.regenerateSummary(item.directory)
+            } catch SessionFinalizerError.inProgress {
+                failure = "這一場正在處理中，請等它做完再試一次"
+            } catch {
+                failure = "\(error)"
+            }
             await MainActor.run {
                 self?.processing[item.id] = nil
                 if let failure { self?.banner = "摘要沒有產生成功：\(failure)" }

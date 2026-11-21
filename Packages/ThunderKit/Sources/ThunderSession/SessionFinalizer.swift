@@ -25,12 +25,15 @@ public struct FinalizationOptions: Sendable {
     public var summaryModel: String
     /// 是否自動產生摘要。false 時略過摘要（不算失敗）。
     public var summarize: Bool
+    /// 產生摘要時最多等文字模型多久；超過就算摘要失敗（可以重試），不會讓場次一直停在處理中。
+    public var summaryTimeout: Duration
 
     public init(libraryRoot: URL) {
         self.libraryRoot = libraryRoot
         textModel = nil
         summaryModel = "gpt-6-luna"
         summarize = true
+        summaryTimeout = .seconds(300)
     }
 }
 
@@ -39,6 +42,14 @@ public enum SessionFinalizerError: Error, Equatable {
     case stillRecording
     /// 合併出來的 `recording.m4a` 和 CAF 分段的總長不一致（秒）。CAF 分段原封不動，沒有留下 m4a。
     case durationMismatch(recorded: TimeInterval, merged: TimeInterval)
+    /// 沒有設定文字模型，不能產生摘要。
+    case missingTextModel
+    /// 逐字稿沒有任何文字，沒有東西可以摘要。
+    case emptyTranscript
+    /// 文字模型超過時限沒有回完。
+    case summaryTimedOut
+    /// 文字模型回傳的摘要沒有內容（沒有一句話總結、重點與章節）。
+    case emptySummary
 }
 
 /// 結束處理：把剛錄完的場次做成成品（段落、逐字稿、錄音檔），搬進 Library，再產生摘要。
@@ -48,6 +59,8 @@ public enum SessionFinalizerError: Error, Equatable {
 /// - 每一步重做的結果都一樣（不變條件 4）：同樣的日誌產生同樣的 `blocks.jsonl` 與 `transcript.md`；
 ///   錄音已經合併好就不再動它；已經在 Library 裡就不再搬。
 /// - 前四步失敗會丟出錯誤，已經完成的成品不受影響，之後可以再呼叫一次。
+/// - 摘要失敗（沒有網路、文字模型回錯誤或逾時、回傳的內容不能用）不會丟出錯誤：場次照樣完成，
+///   只把 `summary` 記進 `failedSteps`，之後可以用 `regenerateSummary` 或再呼叫一次 `finalize` 重試。
 /// - 每一步只在記錄的那一瞬間重新讀取並改寫 `session.json`，所以處理途中別人對它的修改（例如使用者改了標題）
 ///   不會被蓋掉。
 /// - 會等磁碟、會占 CPU 的工作（合併錄音每小時錄音要好幾秒）在低優先權的背景佇列執行，
@@ -61,8 +74,10 @@ public struct SessionFinalizer: Sendable {
 
     /// 依序執行還沒記在 `completedSteps` 裡的步驟，回傳場次資料夾最後的位置（在 Library 裡）。
     ///
-    /// - 每處理完一步（做完，或摘要被略過）：先把結果原子寫入 `session.json`，再呼叫 `onProgress`，
-    ///   帶入這一步與場次資料夾**當下**的位置（發布之後資料夾會換位置）。已經完成的步驟不會再回報。
+    /// - 每處理完一步（做完，或摘要被略過、失敗）：先把結果原子寫入 `session.json`，再呼叫 `onProgress`，
+    ///   帶入這一步與場次資料夾**當下**的位置（發布、自動命名之後資料夾會換位置）。已經完成的步驟不會再回報。
+    /// - 摘要：`summarize` 是 false、沒有文字模型、或逐字稿沒有任何文字時略過（不算完成也不算失敗，
+    ///   下次呼叫會再看一次）；失敗時記進 `failedSteps`。兩種情況場次都照樣完成。
     /// - 這一次要處理的最後一步記錄時，狀態同時改為 `complete`；在那之前（包含發布之後）都是 `finalizing`。
     /// - 狀態還是 `recording` 的場次丟出 `SessionFinalizerError.stillRecording`，什麼都不動。
     /// - 呼叫端的工作被取消時，做完目前這一步就停下來（丟出 `CancellationError`），之後可以再呼叫接著做。
@@ -94,8 +109,7 @@ public struct SessionFinalizer: Sendable {
             case .publish:
                 directory = try await Self.inBackground { try Self.publish(current, into: libraryRoot, isLast: isLast) }
             case .summary:
-                // 摘要還沒有實作（下一批）：一律略過，不算完成也不算失敗
-                try await Self.inBackground { try Self.update(current) { if isLast { $0.state = .complete } } }
+                directory = try await summaryStep(in: current, isLast: isLast)
             }
             onProgress?(step, directory)
         }
@@ -104,6 +118,20 @@ public struct SessionFinalizer: Sendable {
             try await Self.inBackground { try Self.update(current) { $0.state = .complete } }
         }
         return directory
+    }
+
+    /// 重新產生摘要：覆寫 `summary.md` 與 `.thunderflow/summary.json`，更新 `session.json` 的一句話總結，
+    /// 把摘要記成已完成並清掉「摘要失敗」。回傳場次資料夾的位置。
+    ///
+    /// - 和結束處理的摘要步驟做同樣的事，所以還沒有標題的場次會用摘要的標題命名，資料夾跟著改名：
+    ///   這時回傳的是新的位置。已經有標題的場次不會改名，位置不變。
+    /// - 不看 `summarize`（這是使用者明確要求的）。沒有文字模型丟出 `missingTextModel`，
+    ///   逐字稿沒有文字丟出 `emptyTranscript`。
+    /// - 失敗時丟出錯誤，原有的摘要與 `session.json` 都不動。
+    @discardableResult
+    public func regenerateSummary(_ directory: SessionDirectory) async throws -> SessionDirectory {
+        guard let model = options.textModel else { throw SessionFinalizerError.missingTextModel }
+        return try await writeSummary(in: directory, model: model, isLast: false)
     }
 
     // MARK: 步驟
@@ -183,6 +211,100 @@ public struct SessionFinalizer: Sendable {
         // 先搬再記錄：就算剛搬完就被中斷，重做時會發現已經在 Library 裡，只補上記錄
         try update(published) { complete(.publish, in: &$0, isLast: isLast) }
         return published
+    }
+
+    // MARK: 摘要
+
+    /// 步驟 7：摘要。略過或失敗都不丟出錯誤（只有工作被取消例外：那時不記成失敗，下次接著做）。
+    private func summaryStep(in directory: SessionDirectory, isLast: Bool) async throws -> SessionDirectory {
+        var failed = false
+        if options.summarize, let model = options.textModel {
+            let blocks = try? await Self.inBackground { try TranscriptBlocks.read(directory.blocksURL) }
+            // 讀得到段落、而且一個字都沒有：沒有東西可以摘要，略過。讀不到段落時照常進行，由下面記成失敗
+            if blocks?.contains(where: { !$0.en.isEmpty }) != false {
+                do {
+                    return try await writeSummary(in: directory, model: model, isLast: isLast)
+                } catch {
+                    if Task.isCancelled || error is CancellationError { throw CancellationError() }
+                    failed = true
+                }
+            }
+        }
+        let summaryFailed = failed
+        try await Self.inBackground {
+            try Self.update(directory) { meta in
+                let name = FinalizationStep.summary.rawValue
+                if summaryFailed, !meta.failedSteps.contains(name) { meta.failedSteps.append(name) }
+                if isLast { meta.state = .complete }
+            }
+        }
+        return directory
+    }
+
+    /// 向文字模型要摘要並存檔。任何一步失敗都丟出錯誤，這時 `session.json` 沒有被改動。
+    private func writeSummary(
+        in directory: SessionDirectory, model: any TextModel, isLast: Bool
+    ) async throws -> SessionDirectory {
+        let (meta, blocks) = try await Self.inBackground {
+            (try directory.loadMeta(), try TranscriptBlocks.read(directory.blocksURL))
+        }
+        guard blocks.contains(where: { !$0.en.isEmpty }) else { throw SessionFinalizerError.emptyTranscript }
+        let request = SummaryRequest.make(model: options.summaryModel, meta: meta, blocks: blocks)
+        let output = try await Self.withTimeout(options.summaryTimeout) { try await model.complete(request) }
+        try Task.checkCancellation()
+        let summary = try SessionSummary.parse(output).keepingChapters(within: meta.durationSeconds)
+        guard !summary.isEmpty else { throw SessionFinalizerError.emptySummary }
+        return try await Self.inBackground { try Self.store(summary, in: directory, isLast: isLast) }
+    }
+
+    /// 寫出 `summary.json` 與 `summary.md`，沒有標題的場次順便命名，最後才把結果記進 `session.json`。
+    ///
+    /// 自動命名：場次還沒有標題時用摘要的標題，`transcript.md` 的標題跟著換，資料夾依新的標題改名
+    /// （名稱被占用時加序號）。改名在記錄之前：就算剛改完名就被中斷，重做時標題還是空的，會整個再做一次。
+    private static func store(_ summary: SessionSummary, in directory: SessionDirectory, isLast: Bool) throws -> SessionDirectory {
+        var meta = try directory.loadMeta()
+        let isUntitled: (SessionMeta) -> Bool = { $0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        let naming = isUntitled(meta) && !summary.title.isEmpty
+        if naming { meta.title = summary.title }
+
+        try summary.write(to: directory.summaryDataURL)
+        try directory.writeText(SummaryMarkdown.render(meta: meta, summary: summary), to: directory.summaryURL)
+        var current = directory
+        if naming {
+            if FileManager.default.fileExists(atPath: directory.transcriptURL.path) {
+                let blocks = try TranscriptBlocks.read(directory.blocksURL)
+                try directory.writeText(TranscriptMarkdown.render(meta: meta, blocks: blocks), to: directory.transcriptURL)
+            }
+            let name = SessionLibrary.folderName(for: meta)
+            if directory.url.lastPathComponent != name {
+                current = SessionDirectory(
+                    url: try SessionLibrary.move(
+                        directory.url, into: directory.url.deletingLastPathComponent(), named: name,
+                        stagingName: ".renaming-\(meta.id.uuidString)"))
+            }
+        }
+        try update(current) { latest in
+            if naming, isUntitled(latest) { latest.title = summary.title }
+            latest.oneLiner = summary.oneLiner
+            complete(.summary, in: &latest, isLast: isLast)
+        }
+        return current
+    }
+
+    /// 執行 `operation`，超過 `limit` 就取消它並丟出 `summaryTimedOut`。
+    private static func withTimeout<Value: Sendable>(
+        _ limit: Duration, _ operation: @escaping @Sendable () async throws -> Value
+    ) async throws -> Value {
+        try await withThrowingTaskGroup(of: Value.self) { group in
+            group.addTask { try await operation() }
+            group.addTask {
+                try await Task.sleep(for: limit)
+                throw SessionFinalizerError.summaryTimedOut
+            }
+            defer { group.cancelAll() }
+            guard let first = try await group.next() else { throw CancellationError() }
+            return first
+        }
     }
 
     // MARK: session.json

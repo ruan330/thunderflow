@@ -1,7 +1,10 @@
 import Foundation
 import ThunderCore
 
-// 尚未實作：這個提交只有介面，讓測試可以編譯、執行並失敗。實作在下一個提交。
+/// 字幕畫面的內容：已經確定的每一段（一行），加上正在說的那一段。
+///
+/// 純資料，不碰畫面：把引擎的事件一個一個套上去（`apply`），畫面照著 `lines`、`liveEnglish`、`liveChinese` 畫。
+/// 英文和它的中文用段號配對（DESIGN.md 5.6.1 節），所以中文定稿比下一段英文晚到，也會出現在自己那一行。
 public struct CaptionBoard: Sendable, Equatable {
     /// 已經確定的一段。
     public struct Line: Sendable, Equatable, Identifiable {
@@ -19,12 +22,101 @@ public struct CaptionBoard: Sendable, Equatable {
     }
 
     public private(set) var lines: [Line] = []
+    /// 正在說的那一段的段號。
     public private(set) var liveSegment: Int?
+    /// 正在說的那一段目前的英文。
     public private(set) var liveEnglish = ""
+    /// 正在說的那一段目前的暫定譯文。
     public private(set) var liveChinese = ""
+    /// 暫定譯文屬於哪一段。
+    private var liveChineseSegment: Int?
 
     public init() {}
-    public mutating func apply(_ event: CaptionEvent) {}
-    public mutating func engineEnded() {}
-    public func chinese(for line: Line, showingProvisional: Bool) -> String { "" }
+
+    /// 套用一個引擎事件。狀態、缺口、用量不影響字幕，會被忽略。
+    public mutating func apply(_ event: CaptionEvent) {
+        switch event {
+        case .source(let text):
+            if text.kind == .delta {
+                let segment = text.segment ?? lines.count
+                if liveSegment != segment {
+                    liveSegment = segment
+                    liveEnglish = ""
+                }
+                liveEnglish += text.text
+            } else {
+                finishSource(text)
+            }
+        case .provisional(let text):
+            guard let segment = text.segment else { return }
+            if let index = index(of: segment) {
+                // 這一段的英文已經確定：暫定譯文只在定稿到之前有用
+                if lines[index].chinese.isEmpty { lines[index].provisional = text.text }
+            } else {
+                liveChineseSegment = segment
+                liveChinese = text.text
+            }
+        case .translation(let text):
+            // 沒有段號的引擎：照順序配給第一行還沒有中文的
+            guard let index = text.segment.flatMap(index(of:)) ?? lines.firstIndex(where: { $0.chinese.isEmpty && !$0.untranslated })
+            else { return }
+            lines[index].chinese = text.text
+            lines[index].provisional = ""
+            lines[index].untranslated = false
+            // 定稿依段的順序送出：輪到這一段了，前面還沒有中文的就是沒翻到
+            var earlier = index - 1
+            while earlier >= 0, lines[earlier].chinese.isEmpty, !lines[earlier].untranslated {
+                lines[earlier].untranslated = true
+                lines[earlier].provisional = ""
+                earlier -= 1
+            }
+        case .status, .gap, .usage:
+            break
+        }
+    }
+
+    /// 引擎結束了：還沒有中文的段不會再有定稿。
+    public mutating func engineEnded() {
+        for index in lines.indices where lines[index].chinese.isEmpty {
+            lines[index].untranslated = true
+            lines[index].provisional = ""
+        }
+        liveChinese = ""
+        liveChineseSegment = nil
+    }
+
+    /// 這一行要顯示的中文：有定稿用定稿；沒有的話，允許時顯示暫定譯文。
+    public func chinese(for line: Line, showingProvisional: Bool) -> String {
+        if !line.chinese.isEmpty { return line.chinese }
+        return showingProvisional ? line.provisional : ""
+    }
+
+    private mutating func finishSource(_ text: CaptionText) {
+        let segment = text.segment ?? lines.count
+        if let index = index(of: segment) {
+            // 同一段再確定一次：補上了晚到的標點或尾巴，以這一次為準
+            lines[index].english = text.text
+        } else {
+            let carried = liveChineseSegment == segment ? liveChinese : ""
+            lines.append(Line(id: segment, english: text.text, chinese: "", provisional: carried, untranslated: false, at: text.at))
+        }
+        // 進行中的那一行到此為止（它不是剛確定的這一段，就是被併進上一段的尾巴）
+        liveEnglish = ""
+        liveSegment = nil
+        if liveChineseSegment == nil || liveChineseSegment == segment || liveChineseSegment == segment + 1 {
+            liveChinese = ""
+            liveChineseSegment = nil
+        }
+    }
+
+    /// 第 `segment` 段在 `lines` 裡的位置。段是依序加進去的，最近的幾段在最後面，所以從後面找。
+    private func index(of segment: Int) -> Int? {
+        var index = lines.count - 1
+        while index >= 0 {
+            if lines[index].id == segment { return index }
+            if lines[index].id < segment { return nil }
+            index -= 1
+        }
+        return nil
+    }
 }

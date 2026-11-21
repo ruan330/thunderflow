@@ -4,6 +4,7 @@ import Observation
 import SwiftUI
 import ThunderCore
 import ThunderSession
+import ThunderUI
 
 /// 過去錄音（DESIGN.md 4.5、4.6 節）：左邊是清單，右邊是選中那一場的摘要、逐字稿與播放器。
 struct LibraryView: View {
@@ -31,6 +32,8 @@ struct LibraryView: View {
                                 Button("刪除（移到垃圾桶）", role: .destructive) { model.delete(item) }
                             }
                     }
+                    // 清單的底透出內容區的墨黑；選取的列維持系統的樣子
+                    .scrollContentBackground(.hidden)
                 }
             }
             .frame(minWidth: 260, idealWidth: 320, maxWidth: 420)
@@ -58,7 +61,10 @@ struct SessionRow: View {
             HStack {
                 Text(item.meta.title.isEmpty ? "未命名" : item.meta.title).font(.headline).lineLimit(1)
                 Spacer()
-                StatusChip(text: stateLabel, color: stateColor).font(.caption)
+                // 只有例外才掛狀態標籤；正常完成的不掛（DESIGN.md 4.5 節）
+                if let badge = Indicator.sessionBadge(item.meta, progress: progress) {
+                    IndicatorView(badge).font(.caption).layoutPriority(1)
+                }
             }
             Text("\(Format.date(item.meta.startedAt)) · \(Format.duration(item.meta.durationSeconds))")
                 .font(.caption).foregroundStyle(.secondary)
@@ -67,18 +73,6 @@ struct SessionRow: View {
             }
         }
         .padding(.vertical, 3)
-    }
-
-    private var stateLabel: String {
-        if let progress { return progress }
-        if item.meta.state != .complete { return "處理中" }
-        if item.meta.failedSteps.contains("summary") { return "摘要失敗" }
-        return item.meta.recovered ? "已復原" : "完成"
-    }
-
-    private var stateColor: Color {
-        if progress != nil || item.meta.state != .complete { return .orange }
-        return item.meta.failedSteps.isEmpty ? .green : .red
     }
 }
 
@@ -103,7 +97,8 @@ struct SessionDetailView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 200)
+            // 和標題的左邊對齊
+            .fixedSize()
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             Group {
@@ -144,9 +139,11 @@ struct SessionDetailView: View {
                 Button("在 Finder 中顯示") { NSWorkspace.shared.activateFileViewerSelecting([item.directory.url]) }
                 Menu {
                     Button("重新產生摘要") { model.regenerateSummary(item) }
-                    Button("複製全文（雙語）") { copy(blocks.map { "\($0.en)\n\($0.zh)" }.joined(separator: "\n\n")) }
-                    Button("複製全文（中文）") { copy(blocks.map(\.zh).joined(separator: "\n\n")) }
-                    Button("複製全文（英文）") { copy(blocks.map(\.en).joined(separator: "\n\n")) }
+                    Button("複製全文（雙語）") {
+                        copy(blocks.map { "\($0.en)\n\($0.zh)" }.joined(separator: "\n\n"), as: "雙語全文")
+                    }
+                    Button("複製全文（中文）") { copy(blocks.map(\.zh).joined(separator: "\n\n"), as: "中文全文") }
+                    Button("複製全文（英文）") { copy(blocks.map(\.en).joined(separator: "\n\n"), as: "英文全文") }
                     Divider()
                     Button("刪除（移到垃圾桶）", role: .destructive) { model.delete(item) }
                 } label: {
@@ -210,15 +207,7 @@ struct SessionDetailView: View {
                                 Button {
                                     player.seek(to: chapter.startSec, play: true)
                                 } label: {
-                                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                                        Text(Format.timecode(chapter.startSec)).monospacedDigit().foregroundStyle(.tint)
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(chapter.title).font(.headline)
-                                            Text(chapter.summary).foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .contentShape(Rectangle())
+                                    ChapterRow(chapter: chapter)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -310,21 +299,28 @@ struct SessionDetailView: View {
         return blocks.last { $0.start <= player.position }?.id
     }
 
-    private func copy(_ text: String) {
+    /// 複製全文，並用提示說出複製了什麼、多少字（結果在畫面上看不到）。
+    private func copy(_ text: String, as name: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+        model.notify(.copied, "已複製\(name)（\(text.count.formatted()) 字）")
     }
 }
 
+/// 逐字稿的一個段落。點下去就從這裡播放：滑過時加底色、時間碼旁出現播放符號；
+/// 目前播放的段落左邊一條綠線（DESIGN.md 4.10.5 節）。
 struct BlockView: View {
     let block: TranscriptBlock
     let isCurrent: Bool
+    @State private var hovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(Format.timecode(block.start)).font(.caption.monospacedDigit()).foregroundStyle(.tint)
-                if block.marked { Image(systemName: "flag.fill").font(.caption).foregroundStyle(.orange) }
+                Text(Format.timecode(block.start)).font(.system(.caption, design: .monospaced)).foregroundStyle(Theme.bolt)
+                // 一直佔著位置，只在滑過時看得到：旁邊的旗子不會跟著移動
+                Image(systemName: "play.fill").font(.system(size: 8)).foregroundStyle(Theme.bolt).opacity(hovering ? 1 : 0)
+                if block.marked { Image(systemName: "flag.fill").font(.caption).foregroundStyle(Theme.mark) }
             }
             if block.zh.isEmpty {
                 Text("（這一段沒有中文）").foregroundStyle(.tertiary)
@@ -335,8 +331,47 @@ struct BlockView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(isCurrent ? AnyShapeStyle(.tint.opacity(0.12)) : AnyShapeStyle(.clear), in: RoundedRectangle(cornerRadius: 8))
+        .background(
+            Color.white.opacity(hovering ? 0.045 : 0), in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+        )
+        .overlay(alignment: .leading) {
+            if isCurrent {
+                Capsule().fill(Theme.bolt).frame(width: 3).padding(.vertical, 6).accessibilityHidden(true)
+            }
+        }
         .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .animation(Theme.quick, value: hovering)
+        .accessibilityAddTraits(isCurrent ? .isSelected : [])
+    }
+}
+
+/// 摘要的一個章節：和逐字稿段落一樣，滑過時加底色、時間碼旁出現播放符號，點下去就從這裡播放。
+private struct ChapterRow: View {
+    let chapter: SessionSummary.Chapter
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            HStack(spacing: 4) {
+                Text(Format.timecode(chapter.startSec)).font(.system(.body, design: .monospaced)).foregroundStyle(Theme.bolt)
+                Image(systemName: "play.fill").font(.system(size: 9)).foregroundStyle(Theme.bolt).opacity(hovering ? 1 : 0)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(chapter.title).font(.headline)
+                Text(chapter.summary).foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(
+            Color.white.opacity(hovering ? 0.045 : 0), in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+        )
+        // 底色往外多畫一點，文字和上面的標題仍然對齊
+        .padding(.horizontal, -8)
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .animation(Theme.quick, value: hovering)
     }
 }
 

@@ -633,21 +633,3 @@ struct BannerView: View {
         .background(Theme.ink1)
     }
 }
-
-/// 過去錄音的清單還在用的狀態標籤（下一個提交換成 IndicatorView 之後刪掉）。
-struct StatusChip: View {
-    let text: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 5) {
-            Circle().fill(color).frame(width: 7, height: 7)
-            Text(text).lineLimit(1)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 3)
-        .background(color.opacity(0.12), in: Capsule())
-        // 狀態最重要：先分到空間，不折行
-        .layoutPriority(1)
-    }
-}

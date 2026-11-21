@@ -20,7 +20,11 @@ import Foundation
 /// - 檔案以一個換行結尾；沒有任何段落時只有前兩行。
 public enum TranscriptMarkdown {
     public static func render(meta: SessionMeta, blocks: [TranscriptBlock], timeZone: TimeZone = .current) -> String {
-        // 尚未實作（M3）
-        ""
+        var text = SessionHeader.render(title: meta.displayTitle, meta: meta, timeZone: timeZone)
+        for block in blocks {
+            text += "\n### \(Timecode.clock(block.start))\(block.marked ? " ⚑" : "")\n\(block.en)\n"
+            if !block.zh.isEmpty { text += "\n\(block.zh)\n" }
+        }
+        return text
     }
 }

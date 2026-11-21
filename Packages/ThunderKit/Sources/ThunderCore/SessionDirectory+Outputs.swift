@@ -21,6 +21,6 @@ extension SessionDirectory {
     /// 原子寫入文字檔（UTF-8），給 `transcript.md`、`summary.md` 用：
     /// 先寫進同一個資料夾裡的暫存檔並 fsync，再以 rename(2) 取代原檔；成功之後不留下暫存檔。
     public func writeText(_ text: String, to url: URL) throws {
-        // 尚未實作（M3）
+        try FileIO.writeAtomically(Data(text.utf8), to: url)
     }
 }

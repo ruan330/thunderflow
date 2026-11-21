@@ -42,6 +42,16 @@ public enum SessionFinalizerError: Error, Equatable {
 }
 
 /// 結束處理：把剛錄完的場次做成成品（段落、逐字稿、錄音檔），搬進 Library，再產生摘要。
+///
+/// - 每一步做完就記進 `session.json` 的 `completedSteps`，所以可以中斷後接著做：再呼叫一次 `finalize`，
+///   只會做還沒完成的步驟。
+/// - 每一步重做的結果都一樣（不變條件 4）：同樣的日誌產生同樣的 `blocks.jsonl` 與 `transcript.md`；
+///   錄音已經合併好就不再動它；已經在 Library 裡就不再搬。
+/// - 前四步失敗會丟出錯誤，已經完成的成品不受影響，之後可以再呼叫一次。
+/// - 每一步只在記錄的那一瞬間重新讀取並改寫 `session.json`，所以處理途中別人對它的修改（例如使用者改了標題）
+///   不會被蓋掉。
+/// - 會等磁碟、會占 CPU 的工作（合併錄音每小時錄音要好幾秒）在低優先權的背景佇列執行，
+///   不占住 Swift concurrency 的執行緒，不影響進行中的下一場錄音與字幕。不同的場次可以同時處理。
 public struct SessionFinalizer: Sendable {
     private let options: FinalizationOptions
 
@@ -50,13 +60,163 @@ public struct SessionFinalizer: Sendable {
     }
 
     /// 依序執行還沒記在 `completedSteps` 裡的步驟，回傳場次資料夾最後的位置（在 Library 裡）。
-    /// 每處理完一步：先記進 `session.json`，再呼叫 `onProgress`，帶入這一步與場次資料夾當下的位置。
+    ///
+    /// - 每處理完一步（做完，或摘要被略過）：先把結果原子寫入 `session.json`，再呼叫 `onProgress`，
+    ///   帶入這一步與場次資料夾**當下**的位置（發布之後資料夾會換位置）。已經完成的步驟不會再回報。
+    /// - 這一次要處理的最後一步記錄時，狀態同時改為 `complete`；在那之前（包含發布之後）都是 `finalizing`。
+    /// - 狀態還是 `recording` 的場次丟出 `SessionFinalizerError.stillRecording`，什麼都不動。
+    /// - 呼叫端的工作被取消時，做完目前這一步就停下來（丟出 `CancellationError`），之後可以再呼叫接著做。
+    /// - 同一個場次不要同時呼叫兩次。
     @discardableResult
     public func finalize(
         _ directory: SessionDirectory,
         onProgress: (@Sendable (FinalizationStep, SessionDirectory) -> Void)? = nil
     ) async throws -> SessionDirectory {
-        // 尚未實作（M3）
-        directory
+        let meta = try directory.loadMeta()
+        guard meta.state != .recording else { throw SessionFinalizerError.stillRecording }
+        let libraryRoot = options.libraryRoot
+        var directory = directory
+        let pending = FinalizationStep.allCases.filter { !meta.completedSteps.contains($0.rawValue) }
+        for (index, step) in pending.enumerated() {
+            try Task.checkCancellation()
+            let isLast = index == pending.count - 1
+            let current = directory
+            switch step {
+            case .blocks:
+                try await Self.inBackground { try Self.buildBlocks(in: current, isLast: isLast) }
+            case .transcript:
+                try await Self.inBackground {
+                    try Self.writeTranscript(in: current)
+                    try Self.update(current) { Self.complete(.transcript, in: &$0, isLast: isLast) }
+                }
+            case .audio:
+                try await Self.inBackground { try Self.mergeAudio(in: current, isLast: isLast) }
+            case .publish:
+                directory = try await Self.inBackground { try Self.publish(current, into: libraryRoot, isLast: isLast) }
+            case .summary:
+                // 摘要還沒有實作（下一批）：一律略過，不算完成也不算失敗
+                try await Self.inBackground { try Self.update(current) { if isLast { $0.state = .complete } } }
+            }
+            onProgress?(step, directory)
+        }
+        if pending.isEmpty, meta.state != .complete {
+            let current = directory
+            try await Self.inBackground { try Self.update(current) { $0.state = .complete } }
+        }
+        return directory
+    }
+
+    // MARK: 步驟
+
+    /// 步驟 2：日誌 → `blocks.jsonl`，並記下沒翻到的段數。
+    private static func buildBlocks(in directory: SessionDirectory, isLast: Bool) throws {
+        // 日誌不見了（資料夾被動過）也不擋住後面的步驟：當成沒有字幕，錄音照樣要處理完
+        let entries =
+            FileManager.default.fileExists(atPath: directory.journalURL.path)
+            ? try JournalReader.read(directory.journalURL).entries : []
+        let result = TranscriptBlocks.build(from: entries)
+        try TranscriptBlocks.write(result.blocks, to: directory.blocksURL)
+        try update(directory) { meta in
+            meta.integrity.untranslatedSegments = result.untranslatedSegments
+            complete(.blocks, in: &meta, isLast: isLast)
+        }
+    }
+
+    /// 步驟 3：`blocks.jsonl` → `transcript.md`。
+    private static func writeTranscript(in directory: SessionDirectory) throws {
+        let blocks = try TranscriptBlocks.read(directory.blocksURL)
+        let markdown = TranscriptMarkdown.render(meta: try directory.loadMeta(), blocks: blocks)
+        try directory.writeText(markdown, to: directory.transcriptURL)
+    }
+
+    /// 合併出來的時長和 CAF 分段的總長相差在這個範圍內（秒）才算一致。
+    private static let durationTolerance = 0.2
+
+    /// 步驟 4：CAF 分段 → `recording.m4a`；確認時長一致之後才刪除 CAF 分段與空的 `audio/`。
+    ///
+    /// 重做時不會把已經合併好的錄音換成比較短的：`recording.m4a` 已經存在、而且不比還在的 CAF 分段短，
+    /// 代表上次已經合併並確認過（中斷在刪除 CAF 的前後），這時只把剩下的 CAF 刪掉。
+    /// 完全沒有聲音的場次不會產生檔案。`session.json` 的錄音長度是 0 時（復原的場次）順便補上。
+    private static func mergeAudio(in directory: SessionDirectory, isLast: Bool) throws {
+        let fileManager = FileManager.default
+        let target = directory.recordingURL
+        let segments = try RecordingFiles.segments(in: directory.audioDirectoryURL)
+        let audible = segments.filter { $0.frameCount > 0 }
+        let existing = fileManager.fileExists(atPath: target.path) ? (try? RecordingMerger.duration(of: target)) : nil
+        var duration = existing
+        if !audible.isEmpty {
+            let recorded = RecordingFiles.totalDuration(of: audible)
+            if let existing, existing >= recorded - durationTolerance {
+                duration = existing > recorded + durationTolerance ? existing : recorded
+            } else {
+                let merged = try RecordingMerger.merge(segments: audible, to: target)
+                guard abs(merged - recorded) <= durationTolerance else {
+                    try? fileManager.removeItem(at: target)
+                    throw SessionFinalizerError.durationMismatch(recorded: recorded, merged: merged)
+                }
+                duration = recorded
+            }
+        }
+        // 到這裡錄音已經完整地在 recording.m4a 裡（或根本沒有聲音）：CAF 分段可以刪了
+        for segment in segments { try fileManager.removeItem(at: segment.url) }
+        rmdir(directory.audioDirectoryURL.path)  // 空的才刪得掉
+
+        if let duration, duration > 0, try directory.loadMeta().durationSeconds == 0 {
+            try update(directory) { $0.durationSeconds = duration }
+            // 逐字稿的資訊列有錄音長度，跟著更新
+            if fileManager.fileExists(atPath: directory.transcriptURL.path) { try writeTranscript(in: directory) }
+        }
+        try update(directory) { complete(.audio, in: &$0, isLast: isLast) }
+    }
+
+    /// 步驟 5：把資料夾搬進 Library。已經在 Library 裡（任何一層）就不動。回傳資料夾現在的位置。
+    private static func publish(_ directory: SessionDirectory, into libraryRoot: URL, isLast: Bool) throws -> SessionDirectory {
+        var published = directory
+        if !SessionLibrary.contains(directory.url, in: libraryRoot) {
+            let meta = try directory.loadMeta()
+            try FileManager.default.createDirectory(at: libraryRoot, withIntermediateDirectories: true)
+            published = SessionDirectory(
+                url: try SessionLibrary.move(
+                    directory.url, into: libraryRoot, named: SessionLibrary.folderName(for: meta),
+                    stagingName: ".publishing-\(meta.id.uuidString)"))
+        }
+        // 先搬再記錄：就算剛搬完就被中斷，重做時會發現已經在 Library 裡，只補上記錄
+        try update(published) { complete(.publish, in: &$0, isLast: isLast) }
+        return published
+    }
+
+    // MARK: session.json
+
+    /// 重新讀取 `session.json`、套用變更、原子寫回。
+    private static func update(_ directory: SessionDirectory, _ change: (inout SessionMeta) -> Void) throws {
+        var meta = try directory.loadMeta()
+        change(&meta)
+        try directory.saveMeta(meta)
+    }
+
+    /// 把 `step` 記成已完成（`completedSteps` 維持步驟的順序，重做之後內容不變），並從失敗的步驟裡拿掉；
+    /// 這是這一次要處理的最後一步時，狀態同時改為 `complete`。
+    private static func complete(_ step: FinalizationStep, in meta: inout SessionMeta, isLast: Bool) {
+        var names = meta.completedSteps
+        if !names.contains(step.rawValue) { names.append(step.rawValue) }
+        let known = FinalizationStep.allCases.map(\.rawValue)
+        meta.completedSteps = known.filter(names.contains) + names.filter { !known.contains($0) }
+        meta.failedSteps.removeAll { $0 == step.rawValue }
+        if isLast { meta.state = .complete }
+    }
+
+    // MARK: 背景執行
+
+    private static let queue = DispatchQueue(
+        label: "ThunderFlow.SessionFinalizer", qos: .utility, attributes: .concurrent)
+
+    private static func inBackground<Value: Sendable>(
+        _ work: @escaping @Sendable () throws -> Value
+    ) async throws -> Value {
+        try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                continuation.resume(with: Result { try autoreleasepool { try work() } })
+            }
+        }
     }
 }

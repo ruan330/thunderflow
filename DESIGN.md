@@ -433,7 +433,7 @@ RingBuffer：
 - **統一走 HAL IOProc**：麥克風與系統音訊都用 HAL IOProc 擷取，兩種來源共用一套程式碼。不用 AVAudioEngine，因為它在 macOS 上預設跟著系統裝置走，要指定裝置或處理插拔都很麻煩。
 - **系統音訊**：使用 Core Audio Process Tap（`CATapDescription`，擷取全部 App 但排除自己的 process），搭配一個私有的 aggregate device。不使用 ScreenCaptureKit，因為它需要「螢幕錄製」權限，對使用者來說太重。
   - **aggregate device 不設 `TapAutoStart`**（組成在 `SystemAudioDevice.composition`，有測試）。設了的話，裝置要等到有 App 出聲才啟動：按開始時沒有播放，就一直收不到樣本，也不回報錯誤；播放暫停的時段同樣收不到，錄音比實際經過的時間短。不設的話，沒有播放時收到的是靜音，錄音長度等於實際經過的時間。
-  - 實機確認（2026-11-21，M1 Max、macOS 27）：設了的時候，沒有播放的場次長度是 0 秒，一場經過 137 秒只錄到 59 秒；不設之後，沒有播放、以及中途有程式開始與停止出聲時，12 秒都收到 12 秒（比例 1.000，樣本位置沒有中斷）。檢查方法是 App 的 `-diagnoseCapture`（CLAUDE.md）。
+  - 實機確認（2026-11-21，M1 Max、macOS 27）：設了的時候，沒有播放的場次長度是 0 秒，一場經過 137 秒只錄到 59 秒；不設之後，沒有播放、以及中途有程式開始與停止出聲時，12 秒都收到 12 秒（比例 1.000，樣本位置沒有中斷）。檢查方法是 App 的 `-diagnoseCapture`（CLAUDE.md）。修正後實際錄了兩場（先按開始再播放、中途暫停約 23 秒）：錄音長度等於實際經過的時間，暫停的那段在時間軸上保留成靜音。
 - **裝置清單**：動態偵測，不寫死裝置名稱。iPhone 麥克風（接續互通相機）在系統中就是一個普通的輸入裝置。
 - **裝置消失時**（例如拔掉 USB 麥克風，或是 iPhone 被拿起來解鎖）：自動改用系統預設的輸入裝置，在日誌記下中斷，並顯示提示。
 - **權限**：Info.plist 中設定 `NSMicrophoneUsageDescription` 與 `NSAudioCaptureUsageDescription`。

@@ -108,7 +108,10 @@ public final class RecordingSession: @unchecked Sendable {
             startedAt: Date(timeIntervalSince1970: config.startedAt.timeIntervalSince1970.rounded(.down)),
             state: .recording,
             source: config.source,
-            engine: config.engineName)
+            engine: config.engineName,
+            event: config.event,
+            speaker: config.speaker,
+            keywords: config.keywords)
         try directory.saveMeta(meta)
         initialMeta = meta
         journal = try JournalWriter(url: directory.journalURL)

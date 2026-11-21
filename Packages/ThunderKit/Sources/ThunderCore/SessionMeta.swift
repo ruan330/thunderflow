@@ -16,18 +16,26 @@ public struct IntegrityReport: Sendable, Equatable, Codable {
     public var captureDiscontinuities: Int
     /// 沒有被翻譯到的音訊長度（秒）。錄音本身不受影響。
     public var untranslatedSeconds: Double
+    /// 有英文、但沒有中文定稿的段數（翻譯失敗，或還沒翻完就結束）。精修中文時會補上。
+    public var untranslatedSegments: Int
 
-    public init(ringDroppedSamples: Int = 0, captureDiscontinuities: Int = 0, untranslatedSeconds: Double = 0) {
+    public init(
+        ringDroppedSamples: Int = 0,
+        captureDiscontinuities: Int = 0,
+        untranslatedSeconds: Double = 0,
+        untranslatedSegments: Int = 0
+    ) {
         self.ringDroppedSamples = ringDroppedSamples
         self.captureDiscontinuities = captureDiscontinuities
         self.untranslatedSeconds = untranslatedSeconds
+        self.untranslatedSegments = untranslatedSegments
     }
 
     /// 錄音有沒有完整保存下來。
     public var isRecordingComplete: Bool { ringDroppedSamples == 0 && captureDiscontinuities == 0 }
 
     private enum CodingKeys: String, CodingKey {
-        case ringDroppedSamples, captureDiscontinuities, untranslatedSeconds
+        case ringDroppedSamples, captureDiscontinuities, untranslatedSeconds, untranslatedSegments
     }
 
     /// 缺少的欄位用預設值（0），不認識的欄位忽略。
@@ -36,7 +44,8 @@ public struct IntegrityReport: Sendable, Equatable, Codable {
         self.init(
             ringDroppedSamples: try container.decodeIfPresent(Int.self, forKey: .ringDroppedSamples) ?? 0,
             captureDiscontinuities: try container.decodeIfPresent(Int.self, forKey: .captureDiscontinuities) ?? 0,
-            untranslatedSeconds: try container.decodeIfPresent(Double.self, forKey: .untranslatedSeconds) ?? 0)
+            untranslatedSeconds: try container.decodeIfPresent(Double.self, forKey: .untranslatedSeconds) ?? 0,
+            untranslatedSegments: try container.decodeIfPresent(Int.self, forKey: .untranslatedSegments) ?? 0)
     }
 }
 
@@ -68,6 +77,18 @@ public struct SessionMeta: Sendable, Equatable, Codable {
     /// 引擎回報的累計計費音訊秒數。
     public var billedAudioSeconds: Double
     public var integrity: IntegrityReport
+    /// 活動名稱（選填），例如「AWS re:Invent 2026」。
+    public var event: String
+    /// 講者（選填）。
+    public var speaker: String
+    /// 這一場提供給轉錄模型與翻譯模型的關鍵詞（人名、產品名稱、術語）。
+    public var keywords: [String]
+    /// 結束處理已經完成的步驟（`FinalizationStep` 的名稱）。中斷後重啟時，從還沒完成的步驟接著做。
+    public var completedSteps: [String]
+    /// 結束處理失敗、可以重試的步驟（例如沒有網路時的精修與摘要）。場次仍然算完成。
+    public var failedSteps: [String]
+    /// 摘要的一句話總結，給清單頁顯示。還沒有摘要時是空字串。
+    public var oneLiner: String
 
     public init(
         id: UUID = UUID(),
@@ -79,7 +100,13 @@ public struct SessionMeta: Sendable, Equatable, Codable {
         engine: String = "",
         durationSeconds: Double = 0,
         billedAudioSeconds: Double = 0,
-        integrity: IntegrityReport = IntegrityReport()
+        integrity: IntegrityReport = IntegrityReport(),
+        event: String = "",
+        speaker: String = "",
+        keywords: [String] = [],
+        completedSteps: [String] = [],
+        failedSteps: [String] = [],
+        oneLiner: String = ""
     ) {
         self.schemaVersion = Self.currentSchemaVersion
         self.id = id
@@ -92,11 +119,18 @@ public struct SessionMeta: Sendable, Equatable, Codable {
         self.durationSeconds = durationSeconds
         self.billedAudioSeconds = billedAudioSeconds
         self.integrity = integrity
+        self.event = event
+        self.speaker = speaker
+        self.keywords = keywords
+        self.completedSteps = completedSteps
+        self.failedSteps = failedSteps
+        self.oneLiner = oneLiner
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, id, title, startedAt, state, recovered, source, engine
         case durationSeconds, billedAudioSeconds, integrity
+        case event, speaker, keywords, completedSteps, failedSteps, oneLiner
     }
 
     public init(from decoder: any Decoder) throws {
@@ -117,6 +151,12 @@ public struct SessionMeta: Sendable, Equatable, Codable {
             engine: try container.decodeIfPresent(String.self, forKey: .engine) ?? "",
             durationSeconds: try container.decodeIfPresent(Double.self, forKey: .durationSeconds) ?? 0,
             billedAudioSeconds: try container.decodeIfPresent(Double.self, forKey: .billedAudioSeconds) ?? 0,
-            integrity: try container.decodeIfPresent(IntegrityReport.self, forKey: .integrity) ?? IntegrityReport())
+            integrity: try container.decodeIfPresent(IntegrityReport.self, forKey: .integrity) ?? IntegrityReport(),
+            event: try container.decodeIfPresent(String.self, forKey: .event) ?? "",
+            speaker: try container.decodeIfPresent(String.self, forKey: .speaker) ?? "",
+            keywords: try container.decodeIfPresent([String].self, forKey: .keywords) ?? [],
+            completedSteps: try container.decodeIfPresent([String].self, forKey: .completedSteps) ?? [],
+            failedSteps: try container.decodeIfPresent([String].self, forKey: .failedSteps) ?? [],
+            oneLiner: try container.decodeIfPresent(String.self, forKey: .oneLiner) ?? "")
     }
 }

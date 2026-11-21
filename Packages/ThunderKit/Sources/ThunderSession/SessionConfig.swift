@@ -6,6 +6,11 @@ public struct SessionConfig: Sendable {
     public var id: UUID
     public var title: String
     public var startedAt: Date
+    /// 活動名稱與講者（選填）。和關鍵詞一起記在 `session.json`，結束後的精修與摘要會用到。
+    public var event: String
+    public var speaker: String
+    /// 這一場的關鍵詞（人名、產品名稱、術語）。
+    public var keywords: [String]
     /// 音訊來源的說明，例如「系統音訊」。
     public var source: String
     /// 來源取樣率（單聲道）。
@@ -29,6 +34,9 @@ public struct SessionConfig: Sendable {
         self.id = UUID()
         self.title = ""
         self.startedAt = Date()
+        self.event = ""
+        self.speaker = ""
+        self.keywords = []
         self.source = ""
         self.sampleRate = sampleRate
         self.segmentDuration = 600

@@ -1,0 +1,1 @@
+{"event":{"error":{"code":"invalid_api_key","event_id":null,"message":"Incorrect API key provided: sk-REDACTED. You can find your API key at https://platform.openai.com/account/api-keys.","param":null,"type":"invalid_request_error"},"event_id":"event_EmR7Kbt6A6p9xsbvPsYlT","type":"error"},"sent_ms":0}

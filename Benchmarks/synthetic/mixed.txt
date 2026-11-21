@@ -1,0 +1,7 @@
+# 來源不是純英文的情況：中文句子、英文句子、中英夾雜。內容為測試用途虛構。
+大家好，歡迎參加今天的技術分享。
+Today we will talk about serverless inference on Amazon Bedrock.
+我們先看一下整體的架構，再進入細節。
+我們的 inference endpoint 部署在三個 Availability Zone，latency 大概是兩百毫秒。
+Any questions so far?
+好，那我們繼續。

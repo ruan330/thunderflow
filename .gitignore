@@ -8,6 +8,9 @@ xcuserdata/
 # macOS
 .DS_Store
 
+# Python
+__pycache__/
+
 # Secrets — 憑證只放 Keychain，永遠不進 repo
 .env
 .env.*
@@ -18,5 +21,15 @@ xcuserdata/
 *.caf
 *.wav
 *.m4a
+*.mp3
+*.mp4
+*.aac
+*.flac
+*.ogg
+*.aiff
 Benchmarks/data/
 Benchmarks/private/
+
+# Claude Code 的本機工作目錄與個人設定
+.claude/worktrees/
+.claude/settings.local.json

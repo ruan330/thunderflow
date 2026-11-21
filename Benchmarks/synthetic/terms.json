@@ -1,0 +1,55 @@
+{
+  "description": "每份稿子要檢查的術語。keep＝譯文裡應該保留的英文；zh＝可以接受的台灣繁體中文譯法（出現任何一個就算對）；numbers＝譯文裡應該出現的數字（任一寫法）。",
+  "keynote": {
+    "keep": ["Amazon Bedrock", "AgentCore", "Graviton5", "Graviton4", "microVM", "S3 Vectors", "CloudWatch"],
+    "zh": {
+      "inference": ["推論"],
+      "foundation models": ["基礎模型"],
+      "context window": ["上下文視窗", "上下文窗口", "脈絡視窗", "內容視窗"],
+      "Availability Zones": ["可用區域", "可用區"],
+      "throughput": ["吞吐量", "輸送量"],
+      "resilience": ["韌性", "復原能力", "彈性"],
+      "Retrieval-Augmented Generation": ["檢索增強生成", "RAG"],
+      "Serverless": ["無伺服器"],
+      "Latency": ["延遲"],
+      "guardrails": ["防護機制", "護欄", "防護措施"],
+      "observability": ["可觀測性", "可觀察性"],
+      "deployment": ["部署"]
+    },
+    "numbers": [["八小時", "8 小時", "8小時"], ["十五億", "15 億", "15億", "1.5 billion"], ["30%", "百分之三十", "30％", "三成"], ["一百萬", "100 萬", "100萬"], ["90%", "百分之九十", "90％", "九成"], ["200 毫秒", "200毫秒", "兩百毫秒", "二百毫秒"], ["六週", "6 週", "6週", "六個星期", "六周"], ["四天", "4 天", "4天"]]
+  },
+  "lecture": {
+    "keep": [],
+    "zh": {
+      "machine learning": ["機器學習"],
+      "linear regression": ["線性迴歸", "線性回歸"],
+      "gradient descent": ["梯度下降"],
+      "loss function": ["損失函數"],
+      "learning rate": ["學習率"],
+      "overfitting": ["過擬合", "過度擬合", "過度配適"],
+      "validation": ["驗證"],
+      "regularization": ["正則化", "正規化"],
+      "dropout": ["dropout", "Dropout", "丟棄"],
+      "hyperparameters": ["超參數"],
+      "converge": ["收斂"]
+    },
+    "numbers": [["0.001"], ["70%", "百分之七十", "70％"], ["15%", "百分之十五", "15％"], ["第五章", "第 5 章", "第5章"], ["11:59", "十一點五十九", "11 點 59"], ["十分鐘", "10 分鐘", "10分鐘"]]
+  },
+  "meeting": {
+    "keep": [],
+    "zh": {
+      "migration": ["遷移", "移轉", "搬遷"],
+      "cluster": ["叢集"],
+      "latency": ["延遲"],
+      "index": ["索引"],
+      "pull request": ["pull request", "Pull Request", "拉取請求", "PR"],
+      "budget": ["預算"],
+      "reserved capacity": ["預留容量", "保留容量"],
+      "security audit": ["安全稽核", "資安稽核", "安全審計", "安全性稽核"],
+      "access keys": ["存取金鑰", "access key"],
+      "multi-factor authentication": ["多重要素驗證", "多因素驗證", "多重驗證", "多因子驗證", "MFA"],
+      "action items": ["待辦事項", "行動項目", "行動事項"]
+    },
+    "numbers": [["四十分鐘", "40 分鐘", "40分鐘"], ["兩小時", "兩個小時", "2 小時", "2小時"], ["80 毫秒", "80毫秒", "八十毫秒"], ["120 毫秒", "120毫秒", "一百二十毫秒"], ["23 萬", "23萬", "二十三萬", "230,000"], ["12%", "百分之十二", "12％"], ["30%", "百分之三十", "30％", "三成"], ["3 月 15", "3月15", "三月十五"], ["4 月 1", "4月1", "四月一"]]
+  }
+}

@@ -1,0 +1,11 @@
+# keynote 這份稿子裡的產品名稱與術語（給 gpt-live-transcribe 的 keywords，一行一個）
+Amazon Bedrock
+AgentCore
+AgentCore Runtime
+microVM
+Graviton5
+Graviton4
+S3 Vectors
+Availability Zones
+CloudWatch
+Retrieval-Augmented Generation

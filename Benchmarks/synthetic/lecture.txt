@@ -1,0 +1,20 @@
+# 課堂講課風格：概念解釋、較長的句子、問句。內容為測試用途虛構。
+Alright, let's get started with today's lecture on machine learning.
+Last week we talked about linear regression, so today we will move on to gradient descent.
+The idea is simple: we want to find the parameters that minimize the loss function.
+Imagine you are standing on a hill in thick fog, and you want to walk down to the lowest point.
+At each step, you look at the slope under your feet and take a small step downhill.
+The size of that step is called the learning rate.
+If the learning rate is too large, you will overshoot the minimum and the training will diverge.
+If it is too small, training will take forever to converge.
+In practice, we usually start with a learning rate of zero point zero zero one and adjust from there.
+Now, who can tell me what overfitting means?
+Overfitting happens when the model memorizes the training data instead of learning general patterns.
+A common sign is that the training loss keeps going down while the validation loss starts going up.
+To reduce overfitting, we can use regularization, dropout, or simply collect more data.
+We also split our dataset into three parts: training, validation, and test.
+A typical split is seventy percent for training, fifteen percent for validation, and fifteen percent for test.
+Remember, you should never tune your hyperparameters on the test set.
+For next week, please read chapter five and finish the second programming assignment.
+The assignment is due on Friday at eleven fifty nine p.m.
+Any questions before we take a ten minute break?

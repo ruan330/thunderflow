@@ -1,0 +1,210 @@
+{"event":{"event_id":"event_EmRsQXX72BwVRD4Gtj5sB","session":{"audio":{"input":{"noise_reduction":null,"transcription":null},"output":{"language":"es"}},"expires_at":1795219210,"id":"sess_REDACTED","include":null,"model":"gpt-realtime-translate","type":"translation"},"type":"session.created"},"sent_ms":0}
+{"event":{"error":{"code":"invalid_value","event_id":null,"message":"Invalid value: 'zh-TW'. Supported values are: 'af', 'ar', 'az', 'be', 'bg', 'bs', 'ca', 'cs', 'cy', 'da', 'de', 'el', 'en', 'es', 'et', 'fa', 'fi', 'fr', 'gl', 'he', 'hi', 'hr', 'hu', 'hy', 'id', 'is', 'it', 'iw', 'ja', 'kk', 'kn', 'ko', 'lt', 'lv', 'mi', 'mk', 'mr', 'ms', 'ne', 'nl', 'no', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'sw', 'ta', 'th', 'tl', 'tr', 'uk', 'ur', 'vi', and 'zh'.","param":"session.audio.output.language","type":"invalid_request_error"},"event_id":"event_EmRsRNEWL0KKVauGLYhXE","type":"error"},"sent_ms":0}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":200,"event_id":"event_EmRsRY730IUKc15d795dK","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":331,"sent_ms":400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":400,"event_id":"event_EmRsSbF4eaqe6IkuzMPlo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":735,"sent_ms":800}
+{"event":{"delta":"Buenos","elapsed_ms":1000,"event_id":"event_EmRsSvi6H5hZsjfomHZZx","type":"session.output_transcript.delta"},"rx_ms":1001,"sent_ms":1000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":600,"event_id":"event_EmRsSykAf94M1Tci2lEET","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":1153,"sent_ms":1200}
+{"event":{"delta":" días","elapsed_ms":1400,"event_id":"event_EmRsSfJKkmWCaix3v7JsY","type":"session.output_transcript.delta"},"rx_ms":1318,"sent_ms":1400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":800,"event_id":"event_EmRsSRtdpYdwjKof1ocyr","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":1554,"sent_ms":1600}
+{"event":{"delta":" a","elapsed_ms":1800,"event_id":"event_EmRsTAkSz9iOoud9Jt4O4","type":"session.output_transcript.delta"},"rx_ms":1723,"sent_ms":1800}
+{"event":{"delta":" todos","elapsed_ms":2000,"event_id":"event_EmRsTIbk92mIJFWzGFmxo","type":"session.output_transcript.delta"},"rx_ms":1927,"sent_ms":2000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1000,"event_id":"event_EmRsTWVIxEPT19N15E0SO","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":2054,"sent_ms":2200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1200,"event_id":"event_EmRsTglWUw7O0WvoUXlpl","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":2368,"sent_ms":2400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1400,"event_id":"event_EmRsUJZLaHxUNZNRCtg4s","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":2732,"sent_ms":2800}
+{"event":{"delta":"y","elapsed_ms":3200,"event_id":"event_EmRsUL7gx29lO3yklSMrj","type":"session.output_transcript.delta"},"rx_ms":3122,"sent_ms":3200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1600,"event_id":"event_EmRsUcnO90UyTYgEsgk1w","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":3167,"sent_ms":3200}
+{"event":{"delta":" bien","elapsed_ms":3400,"event_id":"event_EmRsUt3GgxY2Tdndy2Yyo","type":"session.output_transcript.delta"},"rx_ms":3323,"sent_ms":3400}
+{"event":{"delta":"ven","elapsed_ms":3600,"event_id":"event_EmRsU2ZgRYPNSNMSRgiAe","type":"session.output_transcript.delta"},"rx_ms":3517,"sent_ms":3600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1800,"event_id":"event_EmRsUXN66J1fkRQodZfOw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":3625,"sent_ms":3800}
+{"event":{"delta":"idos","elapsed_ms":3800,"event_id":"event_EmRsVLfH3xqjdRFhKCcdd","type":"session.output_transcript.delta"},"rx_ms":3730,"sent_ms":3800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2000,"event_id":"event_EmRsVTyRYMQofOzgCwUTD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":3961,"sent_ms":4000}
+{"event":{"delta":" a","elapsed_ms":4200,"event_id":"event_EmRsVTMZyD5Z90ShDm8mz","type":"session.output_transcript.delta"},"rx_ms":4148,"sent_ms":4200}
+{"event":{"delta":" la","elapsed_ms":4200,"event_id":"event_EmRsVzCMaTk98cfnZKOyD","type":"session.output_transcript.delta"},"rx_ms":4148,"sent_ms":4200}
+{"event":{"delta":" conferencia","elapsed_ms":4400,"event_id":"event_EmRsVzrytl8cdBqLLanDF","type":"session.output_transcript.delta"},"rx_ms":4323,"sent_ms":4400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2200,"event_id":"event_EmRsVIiWsRbEI7WnZXPYw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":4367,"sent_ms":4400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2400,"event_id":"event_EmRsWK7yCNqt6sEiucuS3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":4831,"sent_ms":5000}
+{"event":{"delta":".","elapsed_ms":5200,"event_id":"event_EmRsWquoPwiDB2sCrpPXa","type":"session.output_transcript.delta"},"rx_ms":5198,"sent_ms":5200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2600,"event_id":"event_EmRsWjKFHuU7udVX4PhhF","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":5200,"sent_ms":5200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2800,"event_id":"event_EmRsWALmzRMMU5fMOYWB3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":5544,"sent_ms":5600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3000,"event_id":"event_EmRsXXjOMmp3V9GGosUGk","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":6623,"sent_ms":6800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3200,"event_id":"event_EmRsYa7CvXoScI2sPzbbm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":7167,"sent_ms":7200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3400,"event_id":"event_EmRsYPJWyMTYQjCzFzoKR","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":7295,"sent_ms":7400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3600,"event_id":"event_EmRsYND4Gjp1ZPYys2I1l","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":7296,"sent_ms":7400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3800,"event_id":"event_EmRsYeyhdsaX233boQ8KF","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":7546,"sent_ms":7600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4000,"event_id":"event_EmRsZBpwZSgP44jVuKAbs","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":7938,"sent_ms":8000}
+{"event":{"delta":" Hoy","elapsed_ms":8400,"event_id":"event_EmRsZGh78WPQaLZ40yHmw","type":"session.output_transcript.delta"},"rx_ms":8372,"sent_ms":8400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4200,"event_id":"event_EmRsZ7vUGJeTAohNxpxhn","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":8381,"sent_ms":8400}
+{"event":{"delta":" quiero","elapsed_ms":8800,"event_id":"event_EmRsaA0vcC7k8f9LYtMZN","type":"session.output_transcript.delta"},"rx_ms":8737,"sent_ms":8800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4400,"event_id":"event_EmRsaJ396PBUOkmCKXWkm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":8772,"sent_ms":8800}
+{"event":{"delta":" hablar","elapsed_ms":9000,"event_id":"event_EmRsas80t8ibn2vikLBhG","type":"session.output_transcript.delta"},"rx_ms":8983,"sent_ms":9000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4600,"event_id":"event_EmRsaXqxJ1G8t2zxpNspT","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":9166,"sent_ms":9200}
+{"event":{"delta":" de","elapsed_ms":9400,"event_id":"event_EmRsa9NXcqZcvQZoFziI3","type":"session.output_transcript.delta"},"rx_ms":9391,"sent_ms":9400}
+{"event":{"delta":" cómo","elapsed_ms":9400,"event_id":"event_EmRsaLhJrtYEcLFPtjqeP","type":"session.output_transcript.delta"},"rx_ms":9392,"sent_ms":9400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4800,"event_id":"event_EmRsaiOfdCPxmHBLXGRcR","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":9574,"sent_ms":9600}
+{"event":{"delta":" facilit","elapsed_ms":9800,"event_id":"event_EmRsbdkDAul8V6WAcRvlV","type":"session.output_transcript.delta"},"rx_ms":9743,"sent_ms":9800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5000,"event_id":"event_EmRsb1TH99xt63MebBmXP","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":9977,"sent_ms":10000}
+{"event":{"delta":"amos","elapsed_ms":10200,"event_id":"event_EmRsb3yX7jNrDT2WCiJUA","type":"session.output_transcript.delta"},"rx_ms":10128,"sent_ms":10200}
+{"event":{"delta":" la","elapsed_ms":10400,"event_id":"event_EmRsbPMmuYJiva9ETyuHQ","type":"session.output_transcript.delta"},"rx_ms":10328,"sent_ms":10400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5200,"event_id":"event_EmRsbPni8ZklBKoYUQwrI","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":10441,"sent_ms":10600}
+{"event":{"delta":" creación","elapsed_ms":10600,"event_id":"event_EmRsbJ0RQcm4kPalF55VO","type":"session.output_transcript.delta"},"rx_ms":10562,"sent_ms":10600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5400,"event_id":"event_EmRscXtHwDeUOsyV7eO5u","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":10834,"sent_ms":11000}
+{"event":{"delta":" de","elapsed_ms":11000,"event_id":"event_EmRsc6GGarNQJHjMBDMYb","type":"session.output_transcript.delta"},"rx_ms":10964,"sent_ms":11000}
+{"event":{"delta":" agentes","elapsed_ms":11000,"event_id":"event_EmRscpx3TASIx6Jot8RDv","type":"session.output_transcript.delta"},"rx_ms":10964,"sent_ms":11000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5600,"event_id":"event_EmRscfraESFETKk5UD68P","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":11159,"sent_ms":11200}
+{"event":{"delta":" list","elapsed_ms":11400,"event_id":"event_EmRscnnNNf3m2KVbZlFaX","type":"session.output_transcript.delta"},"rx_ms":11331,"sent_ms":11400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5800,"event_id":"event_EmRsdQI6OcLjXeJ43olso","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":11701,"sent_ms":11800}
+{"event":{"delta":"os","elapsed_ms":11800,"event_id":"event_EmRsdXSLJRvi443Rwp5pn","type":"session.output_transcript.delta"},"rx_ms":11740,"sent_ms":11800}
+{"event":{"delta":" para","elapsed_ms":11800,"event_id":"event_EmRsdWWdc4nVIj5gYbf0U","type":"session.output_transcript.delta"},"rx_ms":11741,"sent_ms":11800}
+{"event":{"delta":" producción","elapsed_ms":12000,"event_id":"event_EmRsdOjZWxGOJ4vRPeAmS","type":"session.output_transcript.delta"},"rx_ms":12024,"sent_ms":12200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6000,"event_id":"event_EmRsdSKoqU3E3npH2qjUg","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":12043,"sent_ms":12200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6200,"event_id":"event_EmRsdPi4BthrJEccFRHLx","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":12367,"sent_ms":12400}
+{"event":{"delta":".","elapsed_ms":12600,"event_id":"event_EmRsdhl5YwQCSe8q8FYt4","type":"session.output_transcript.delta"},"rx_ms":12539,"sent_ms":12600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6400,"event_id":"event_EmRse6Ybi3C7C9Q65AnEr","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":12757,"sent_ms":12800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6600,"event_id":"event_EmRseQfdoCwprWcNlNDAd","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":13232,"sent_ms":13400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6800,"event_id":"event_EmRsfsFbf9L5LcRfq8OBx","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":13636,"sent_ms":13800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7000,"event_id":"event_EmRsfnlMoJnNndkDnI5Hg","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":13928,"sent_ms":14000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7200,"event_id":"event_EmRsfJf0sjlhKyJrpIJVL","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":14334,"sent_ms":14400}
+{"event":{"delta":" Amazon","elapsed_ms":14600,"event_id":"event_EmRsf1uKDnvkzPnPUUVpc","type":"session.output_transcript.delta"},"rx_ms":14528,"sent_ms":14600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7400,"event_id":"event_EmRsg7yunnYrjOBmFOobZ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":14784,"sent_ms":14800}
+{"event":{"delta":" Bed","elapsed_ms":15200,"event_id":"event_EmRsgJIFtwRMoLVg3prWD","type":"session.output_transcript.delta"},"rx_ms":15161,"sent_ms":15200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7600,"event_id":"event_EmRsgTGH3h7sEBcFs8c0w","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":15179,"sent_ms":15200}
+{"event":{"delta":"rock","elapsed_ms":15400,"event_id":"event_EmRsgnQcnvi1BgKUZ6qzl","type":"session.output_transcript.delta"},"rx_ms":15335,"sent_ms":15400}
+{"event":{"delta":" Agent","elapsed_ms":15600,"event_id":"event_EmRsgp6Pi8PmyD7xFjccs","type":"session.output_transcript.delta"},"rx_ms":15530,"sent_ms":15600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7800,"event_id":"event_EmRsg4tud69R8BmY90utk","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":15575,"sent_ms":15600}
+{"event":{"delta":" Core","elapsed_ms":16000,"event_id":"event_EmRshRTxQu3NZJjlwDVMl","type":"session.output_transcript.delta"},"rx_ms":15946,"sent_ms":16000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8000,"event_id":"event_EmRshRRIYFsnF5vek5G2i","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":15992,"sent_ms":16000}
+{"event":{"delta":" te","elapsed_ms":16200,"event_id":"event_EmRshwg00Dul2s7VoBuMw","type":"session.output_transcript.delta"},"rx_ms":16210,"sent_ms":16200}
+{"event":{"delta":" ofrece","elapsed_ms":16400,"event_id":"event_EmRshZiv0emYc4W3YprlA","type":"session.output_transcript.delta"},"rx_ms":16340,"sent_ms":16400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8200,"event_id":"event_EmRsha0fQRoA8J5huSWzA","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":16381,"sent_ms":16400}
+{"event":{"delta":" tres","elapsed_ms":16800,"event_id":"event_EmRsiQsgAYn6tIrhzza4L","type":"session.output_transcript.delta"},"rx_ms":16734,"sent_ms":16800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8400,"event_id":"event_EmRsiNUz5KzVq69IdvKXI","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":16775,"sent_ms":16800}
+{"event":{"delta":" componentes","elapsed_ms":17000,"event_id":"event_EmRsiMxgI5JDeX9TvVNyB","type":"session.output_transcript.delta"},"rx_ms":16942,"sent_ms":17000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8600,"event_id":"event_EmRsiR53epAZBGJaX4VgU","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":17257,"sent_ms":17400}
+{"event":{"delta":" fundamentales","elapsed_ms":17600,"event_id":"event_EmRsiol1GWWYqphlhYXUm","type":"session.output_transcript.delta"},"rx_ms":17537,"sent_ms":17600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8800,"event_id":"event_EmRsiqaVexhEeZoPBQAjj","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":17583,"sent_ms":17600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9000,"event_id":"event_EmRsjyGihB7UCUsNDB0oj","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":17966,"sent_ms":18000}
+{"event":{"delta":":","elapsed_ms":18200,"event_id":"event_EmRsjFSM6b6DooF4Oozos","type":"session.output_transcript.delta"},"rx_ms":18139,"sent_ms":18200}
+{"event":{"delta":" un","elapsed_ms":18400,"event_id":"event_EmRsjxXs2bmKkF2qT2w3q","type":"session.output_transcript.delta"},"rx_ms":18334,"sent_ms":18400}
+{"event":{"delta":" entorno","elapsed_ms":18400,"event_id":"event_EmRsjpfhwbMjMEg6D8Due","type":"session.output_transcript.delta"},"rx_ms":18338,"sent_ms":18400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9200,"event_id":"event_EmRsjeV4HnMECaAb6t4ag","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":18385,"sent_ms":18400}
+{"event":{"delta":" de","elapsed_ms":18800,"event_id":"event_EmRskwLUXArpURc85XgJ9","type":"session.output_transcript.delta"},"rx_ms":18729,"sent_ms":18800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9400,"event_id":"event_EmRskMvLqHVibioknAPO2","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":18838,"sent_ms":19000}
+{"event":{"delta":" ejecución","elapsed_ms":19000,"event_id":"event_EmRsk9cVHBkw5g72TWV9C","type":"session.output_transcript.delta"},"rx_ms":18952,"sent_ms":19000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9600,"event_id":"event_EmRskCNnlq7Gd9ksYs5qj","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":19171,"sent_ms":19200}
+{"event":{"delta":",","elapsed_ms":19400,"event_id":"event_EmRskJjQ4uCWU6VQARjAV","type":"session.output_transcript.delta"},"rx_ms":19354,"sent_ms":19400}
+{"event":{"delta":" una","elapsed_ms":19600,"event_id":"event_EmRskjBv9mw4Yx6rVKUbM","type":"session.output_transcript.delta"},"rx_ms":19543,"sent_ms":19600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9800,"event_id":"event_EmRslqG12cfZ7sQB3N2Oc","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":19879,"sent_ms":20000}
+{"event":{"delta":" puerta","elapsed_ms":19800,"event_id":"event_EmRslOOkIs75bvgDT5f1k","type":"session.output_transcript.delta"},"rx_ms":19881,"sent_ms":20000}
+{"event":{"delta":" de","elapsed_ms":20000,"event_id":"event_EmRslFSEE0lgcEiEIaFP4","type":"session.output_transcript.delta"},"rx_ms":20021,"sent_ms":20200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10000,"event_id":"event_EmRslfftyFtRTJNu9gJFJ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":20066,"sent_ms":20200}
+{"event":{"delta":" enlace","elapsed_ms":20200,"event_id":"event_EmRslJyANJg9tN02EwvWk","type":"session.output_transcript.delta"},"rx_ms":20123,"sent_ms":20200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10200,"event_id":"event_EmRslshHEiz8LfLGFPuaE","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":20404,"sent_ms":20400}
+{"event":{"delta":" y","elapsed_ms":20600,"event_id":"event_EmRsliAZXdeTjAP1WaUYS","type":"session.output_transcript.delta"},"rx_ms":20537,"sent_ms":20600}
+{"event":{"delta":" memoria","elapsed_ms":20800,"event_id":"event_EmRsm1Lti0t9HgvmFSLfd","type":"session.output_transcript.delta"},"rx_ms":20715,"sent_ms":20800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10400,"event_id":"event_EmRsmMroa0TsgCvhNxDVo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":20759,"sent_ms":20800}
+{"event":{"delta":".","elapsed_ms":21200,"event_id":"event_EmRsmec83MVtqcQZM9nTW","type":"session.output_transcript.delta"},"rx_ms":21130,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10600,"event_id":"event_EmRsm44yClix3UCpX37Vn","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21177,"sent_ms":21000}
+{"event":{"delta":" Con","elapsed_ms":21600,"event_id":"event_EmRsmD8qQCyugs859FlZW","type":"session.output_transcript.delta"},"rx_ms":21245,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10800,"event_id":"event_EmRsm7p63MerNp0WlskYO","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21288,"sent_ms":21000}
+{"event":{"delta":" el","elapsed_ms":21800,"event_id":"event_EmRsmq2ABi0ri3R2KiIGN","type":"session.output_transcript.delta"},"rx_ms":21297,"sent_ms":21000}
+{"event":{"delta":" entorno","elapsed_ms":22000,"event_id":"event_EmRsmMdeerIggPNjbJcTV","type":"session.output_transcript.delta"},"rx_ms":21347,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11000,"event_id":"event_EmRsm76aByx1VpZ78iDGz","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21451,"sent_ms":21000}
+{"event":{"delta":" de","elapsed_ms":22400,"event_id":"event_EmRsmIeaExzNLyI5svLJB","type":"session.output_transcript.delta"},"rx_ms":21452,"sent_ms":21000}
+{"event":{"delta":" ejecución","elapsed_ms":22400,"event_id":"event_EmRsmOnG7UyrZ6z4A83Yu","type":"session.output_transcript.delta"},"rx_ms":21452,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11200,"event_id":"event_EmRsm9dgNfGp31AbkLmDw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21506,"sent_ms":21000}
+{"event":{"delta":" de","elapsed_ms":22800,"event_id":"event_EmRsma5gy5JNW0MPHIDps","type":"session.output_transcript.delta"},"rx_ms":21535,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11400,"event_id":"event_EmRsmbDqHzr6uwilANndt","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21586,"sent_ms":21000}
+{"event":{"delta":" Agent","elapsed_ms":23000,"event_id":"event_EmRsmrb8q5JOpgu307zxi","type":"session.output_transcript.delta"},"rx_ms":21613,"sent_ms":21000}
+{"event":{"delta":" Core","elapsed_ms":23200,"event_id":"event_EmRsnbfKDFMjRZm9llytm","type":"session.output_transcript.delta"},"rx_ms":21642,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11600,"event_id":"event_EmRsngYqPHw6vRAyQ5SBD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21689,"sent_ms":21000}
+{"event":{"delta":",","elapsed_ms":23400,"event_id":"event_EmRsnhVomBwrTgLWyZLGp","type":"session.output_transcript.delta"},"rx_ms":21690,"sent_ms":21000}
+{"event":{"delta":" cada","elapsed_ms":23600,"event_id":"event_EmRsnvQkMjFEUooPotxlB","type":"session.output_transcript.delta"},"rx_ms":21736,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11800,"event_id":"event_EmRsnXYiupfPUNbsM6dRh","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21784,"sent_ms":21000}
+{"event":{"delta":" sesión","elapsed_ms":23800,"event_id":"event_EmRsne4Dw4JVhGPvuTg0i","type":"session.output_transcript.delta"},"rx_ms":21785,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12000,"event_id":"event_EmRsneJtqLvuClF0ORn8X","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21883,"sent_ms":21000}
+{"event":{"delta":" se","elapsed_ms":24200,"event_id":"event_EmRsnZ9rQCtuABIq39ALF","type":"session.output_transcript.delta"},"rx_ms":21981,"sent_ms":21000}
+{"event":{"delta":" ejecut","elapsed_ms":24200,"event_id":"event_EmRsnZkzRUPRKrp1RNNIJ","type":"session.output_transcript.delta"},"rx_ms":21981,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12200,"event_id":"event_EmRsn0VAmgzvGdgVObDDv","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22084,"sent_ms":21000}
+{"event":{"delta":"a","elapsed_ms":24600,"event_id":"event_EmRsnddNsbJwRBCXT8SEB","type":"session.output_transcript.delta"},"rx_ms":22088,"sent_ms":21000}
+{"event":{"delta":" en","elapsed_ms":24600,"event_id":"event_EmRsnEDM8mwwNr8sxdLUD","type":"session.output_transcript.delta"},"rx_ms":22094,"sent_ms":21000}
+{"event":{"delta":" su","elapsed_ms":24800,"event_id":"event_EmRsnsNHWMAoB0N3peXxN","type":"session.output_transcript.delta"},"rx_ms":22145,"sent_ms":21000}
+{"event":{"delta":" propia","elapsed_ms":24800,"event_id":"event_EmRsnOP09FYZ12hWIRY7z","type":"session.output_transcript.delta"},"rx_ms":22147,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12400,"event_id":"event_EmRsnd8r2Ne33EwnZw6sB","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22193,"sent_ms":21000}
+{"event":{"delta":" micro","elapsed_ms":25200,"event_id":"event_EmRsnPE3RNoLnzxX2dCw5","type":"session.output_transcript.delta"},"rx_ms":22253,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12600,"event_id":"event_EmRsnEHCxUFl4ntYosj3b","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22300,"sent_ms":21000}
+{"event":{"delta":"-","elapsed_ms":25400,"event_id":"event_EmRsns79jSpvXKB2uGs01","type":"session.output_transcript.delta"},"rx_ms":22315,"sent_ms":21000}
+{"event":{"delta":"VM","elapsed_ms":25600,"event_id":"event_EmRsnJSBonz3YtTiZbQcp","type":"session.output_transcript.delta"},"rx_ms":22361,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12800,"event_id":"event_EmRsnPzwPsBQEmEBRUElM","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22499,"sent_ms":21000}
+{"event":{"delta":" aisl","elapsed_ms":25800,"event_id":"event_EmRsnZgEy2V4uoKtxHGi5","type":"session.output_transcript.delta"},"rx_ms":22500,"sent_ms":21000}
+{"event":{"delta":"ada","elapsed_ms":26000,"event_id":"event_EmRsnhE1Ahg9M8u5wM17J","type":"session.output_transcript.delta"},"rx_ms":22500,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13000,"event_id":"event_EmRsnPYlyuI6yemq2ksvc","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22505,"sent_ms":21000}
+{"event":{"delta":" hasta","elapsed_ms":26400,"event_id":"event_EmRsn96P5mLFIGg3oOnu3","type":"session.output_transcript.delta"},"rx_ms":22547,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13200,"event_id":"event_EmRsnoFyCKh4Ofxnv3jvp","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22592,"sent_ms":21000}
+{"event":{"delta":" por","elapsed_ms":26600,"event_id":"event_EmRsoFHv55BWvRv4W139I","type":"session.output_transcript.delta"},"rx_ms":22633,"sent_ms":21000}
+{"event":{"delta":" ocho","elapsed_ms":26800,"event_id":"event_EmRsoecC2nslF05wSNXdI","type":"session.output_transcript.delta"},"rx_ms":22661,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13400,"event_id":"event_EmRsoBcoagXi3H10XaeNo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22704,"sent_ms":21000}
+{"event":{"delta":" horas","elapsed_ms":27000,"event_id":"event_EmRsoSWrKEwZ8BFnBe0LY","type":"session.output_transcript.delta"},"rx_ms":22708,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13600,"event_id":"event_EmRso2Sw3ng07ZU2CZqty","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22791,"sent_ms":21000}
+{"event":{"delta":".","elapsed_ms":27400,"event_id":"event_EmRsow8tlTTSSI0ntSLg3","type":"session.output_transcript.delta"},"rx_ms":22792,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13800,"event_id":"event_EmRsob9jBCU4O0IRW6MQT","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22881,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14000,"event_id":"event_EmRsopgrkweYbcKH0Bpsy","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22916,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14200,"event_id":"event_EmRsoJz1H6SbS0Ky0OWRF","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23023,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14400,"event_id":"event_EmRso71gUSxickz77u9Kx","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23024,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14600,"event_id":"event_EmRsohYJLG9IKaksyju9g","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23073,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14800,"event_id":"event_EmRsoK5QCZAg8AusQhWRm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23117,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15000,"event_id":"event_EmRsoB2tuhTxkjWZesJDc","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23152,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15200,"event_id":"event_EmRsoATYGSziZXKxx5uLh","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23191,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15400,"event_id":"event_EmRsoTgYYFDcKWZ4iuH6e","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23248,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15600,"event_id":"event_EmRsoYwqGOabVrQiePhTl","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23295,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15800,"event_id":"event_EmRsozsCAE99GAgk5RBIZ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23339,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16000,"event_id":"event_EmRsobXaTJZ3QXJU8Ww6E","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23373,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16200,"event_id":"event_EmRsoCPbtp7tMrNPCsiiZ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23456,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16400,"event_id":"event_EmRsoneS33XIvdm96DEPI","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23553,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16600,"event_id":"event_EmRsoP9fauSQ7W4nSNv1l","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23554,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16800,"event_id":"event_EmRsoDP81jQg7Iti6fKEB","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23558,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17000,"event_id":"event_EmRso83HKelzVn3C063n8","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23606,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17200,"event_id":"event_EmRspnVlU4R7Xb3d45FlH","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23662,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17400,"event_id":"event_EmRsppWZcYjOjd81jJYLG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23702,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17600,"event_id":"event_EmRspROEsYkO23zk2vItE","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23743,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17800,"event_id":"event_EmRspdCE3sU7Ayvfy3bKO","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23783,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18000,"event_id":"event_EmRspFTkv0WGm5pQ5ffmw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23825,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18200,"event_id":"event_EmRsphjTWD4FR6sW1U7nx","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23881,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18400,"event_id":"event_EmRspfRoxGxdpeaUt8zmM","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23920,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18600,"event_id":"event_EmRspfer3mwcvr5y5Tq5O","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23964,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18800,"event_id":"event_EmRspdONWGb84Cfc8bmq8","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24072,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19000,"event_id":"event_EmRsplYG4ICdVsdSRTh9C","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24082,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19200,"event_id":"event_EmRspYhziC7WRfrKCheX5","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24125,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19400,"event_id":"event_EmRspE21PLDlXAKGlGvMm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24167,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19600,"event_id":"event_EmRspempKBzXeDw4Sgh2z","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24210,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19800,"event_id":"event_EmRspq1MDD11x186Iuezm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24269,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20000,"event_id":"event_EmRspFiojC94Hhi4fk26y","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24302,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20200,"event_id":"event_EmRspiL6ijLZpPBCWDWdT","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24346,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20400,"event_id":"event_EmRspAb6rdaUnaRhdlbdD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24382,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20600,"event_id":"event_EmRsp0qWT9ypU8lDwOoUC","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24458,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20800,"event_id":"event_EmRspPqf2NGZiE0oxoM6i","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24492,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21000,"event_id":"event_EmRsp5ZKAFVLqx59fAt12","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24602,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21200,"event_id":"event_EmRspbLcFfF7SFFySheSs","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24603,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21400,"event_id":"event_EmRsppgLFIlc3rBRfdALS","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24616,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21600,"event_id":"event_EmRsqTPk63Kl01x63TRKL","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24673,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21800,"event_id":"event_EmRsqfsa1p5oJ5pVl3OkY","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24728,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22000,"event_id":"event_EmRsquAl7Y72iEetORa0a","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24761,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22200,"event_id":"event_EmRsq6gonre9xisowpFhM","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24795,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22400,"event_id":"event_EmRsqBYPF8urMkv33cdsK","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24831,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22600,"event_id":"event_EmRsqjghD2mgziKRScK5j","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24914,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22800,"event_id":"event_EmRsqt5rvpJPVD29PynAl","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24946,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23000,"event_id":"event_EmRsqB00QXwJLvGpNDaAK","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24997,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23200,"event_id":"event_EmRsq8aJXv8DsiPrrlzm7","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25125,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23400,"event_id":"event_EmRsqak1oRUwK6FjSSVLD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25125,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23600,"event_id":"event_EmRsq5Jz8qbGxsl6Zh9NQ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25139,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23800,"event_id":"event_EmRsq5u8NBKpT6t6IxrmC","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25197,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24000,"event_id":"event_EmRsqBpFFKDcrRBOGSLzX","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25228,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24200,"event_id":"event_EmRsq5qEC0uRWUI8l7DKl","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25306,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24400,"event_id":"event_EmRsq8Q7mttd2oawoAM1n","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25338,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24600,"event_id":"event_EmRsqktBF4FzBy3MiaJBj","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25377,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24800,"event_id":"event_EmRsql8pX8kfCi6XKG1EV","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25417,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25000,"event_id":"event_EmRsqtzcsb0YemFpYyheu","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25484,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25200,"event_id":"event_EmRsqL0EpzGjYzwMYkzVb","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25522,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25400,"event_id":"event_EmRsqANL260Kq6veFBTOM","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25645,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25600,"event_id":"event_EmRsqJRiGpZ1oJuwTVDXM","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25646,"sent_ms":21000}
+{"event":{"audio_bytes":9600,"channels":1,"elapsed_ms":25800,"event_id":"event_EmRsqWGQlDehoesk2ihJ2","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25646,"sent_ms":21000}
+{"event":{"event_id":"event_EmRsrm8IfM2kq2L64tMRK","type":"session.closed"},"rx_ms":25844,"sent_ms":21000}

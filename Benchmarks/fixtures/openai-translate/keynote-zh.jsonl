@@ -1,0 +1,918 @@
+{"event":{"event_id":"event_EmRny2xkPm2MMHb3Yx5AR","session":{"audio":{"input":{"noise_reduction":null,"transcription":null},"output":{"language":"es"}},"expires_at":1795218934,"id":"sess_REDACTED","include":null,"model":"gpt-realtime-translate","type":"translation"},"type":"session.created"},"sent_ms":0}
+{"event":{"event_id":"event_EmRnyZjfB8A9MnC8B3KXM","session":{"audio":{"input":{"noise_reduction":null,"transcription":{"model":"gpt-realtime-whisper"}},"output":{"language":"zh"}},"expires_at":1795218934,"id":"sess_REDACTED","include":null,"model":"gpt-realtime-translate","type":"translation"},"type":"session.updated"},"sent_ms":0}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":200,"event_id":"event_EmRnzAeyOPgbdAqxJK121","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":400,"sent_ms":400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":400,"event_id":"event_EmRnzmdevQ2QluDbNbmmY","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":789,"sent_ms":800}
+{"event":{"delta":"早","elapsed_ms":1000,"event_id":"event_EmRnz839lyXwqrGcSmFK0","type":"session.output_transcript.delta"},"rx_ms":957,"sent_ms":1000}
+{"event":{"delta":"上","elapsed_ms":1200,"event_id":"event_EmRnzcPAVywoJVkyz72Bi","type":"session.output_transcript.delta"},"rx_ms":1158,"sent_ms":1200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":600,"event_id":"event_EmRo0wXtxpV9YX5P4Sdvi","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":1266,"sent_ms":1400}
+{"event":{"delta":" Good","elapsed_ms":1200,"event_id":"event_EmRo04feEl8GnJIpiQnC4","type":"session.input_transcript.delta"},"rx_ms":1429,"sent_ms":1600}
+{"event":{"delta":"好","elapsed_ms":1400,"event_id":"event_EmRo0azcqcdpxwDJh246x","type":"session.output_transcript.delta"},"rx_ms":1430,"sent_ms":1600}
+{"event":{"delta":",","elapsed_ms":1600,"event_id":"event_EmRo0azORrFYI1Ml0LIgp","type":"session.output_transcript.delta"},"rx_ms":1580,"sent_ms":1600}
+{"event":{"delta":" morning","elapsed_ms":1400,"event_id":"event_EmRo0P4OPaa7zyBlvLEs9","type":"session.input_transcript.delta"},"rx_ms":1581,"sent_ms":1600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":800,"event_id":"event_EmRo0AMpOThFf2K8Hbfz7","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":1635,"sent_ms":1800}
+{"event":{"delta":"各","elapsed_ms":1800,"event_id":"event_EmRo0cI0IN49IHNKQIheu","type":"session.output_transcript.delta"},"rx_ms":1790,"sent_ms":1800}
+{"event":{"delta":"位","elapsed_ms":1800,"event_id":"event_EmRo0238aOpJk398pEUui","type":"session.output_transcript.delta"},"rx_ms":1790,"sent_ms":1800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1000,"event_id":"event_EmRo0BDvlz3rqFnuMRV90","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":2019,"sent_ms":2200}
+{"event":{"delta":"。","elapsed_ms":2200,"event_id":"event_EmRo0JgCcYIsddAXS1tFC","type":"session.output_transcript.delta"},"rx_ms":2149,"sent_ms":2200}
+{"event":{"delta":" everyone","elapsed_ms":2000,"event_id":"event_EmRo0Cxif0lcxEXAOaeEa","type":"session.input_transcript.delta"},"rx_ms":2171,"sent_ms":2200}
+{"event":{"delta":",","elapsed_ms":2200,"event_id":"event_EmRo1DctM4XUuwR99gieT","type":"session.input_transcript.delta"},"rx_ms":2374,"sent_ms":2400}
+{"event":{"delta":" and","elapsed_ms":2200,"event_id":"event_EmRo182K5soG2AxYDGRlg","type":"session.input_transcript.delta"},"rx_ms":2380,"sent_ms":2400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1200,"event_id":"event_EmRo1ktJQ9qGAEj8fNe21","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":2412,"sent_ms":2600}
+{"event":{"delta":" welcome","elapsed_ms":2600,"event_id":"event_EmRo1VWh2UkFY3fEzJf8r","type":"session.input_transcript.delta"},"rx_ms":2842,"sent_ms":3000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1400,"event_id":"event_EmRo1b5FGVZ8BiugJ7wpH","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":2843,"sent_ms":3000}
+{"event":{"delta":" to","elapsed_ms":2800,"event_id":"event_EmRo1FGkSRi6tlHGCSDfx","type":"session.input_transcript.delta"},"rx_ms":3005,"sent_ms":3000}
+{"event":{"delta":" the","elapsed_ms":3000,"event_id":"event_EmRo11oEMJbUIgGByspuM","type":"session.input_transcript.delta"},"rx_ms":3179,"sent_ms":3200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1600,"event_id":"event_EmRo2RSGMMxa8Hj0J8ZBG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":3228,"sent_ms":3400}
+{"event":{"delta":"欢迎","elapsed_ms":3400,"event_id":"event_EmRo2iUQZjlNyhaH0NHCw","type":"session.output_transcript.delta"},"rx_ms":3394,"sent_ms":3400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":1800,"event_id":"event_EmRo2FkBDJVoBWIwmtRNK","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":3611,"sent_ms":3800}
+{"event":{"delta":"来到","elapsed_ms":3800,"event_id":"event_EmRo2FbNALHeUub6bLusN","type":"session.output_transcript.delta"},"rx_ms":3759,"sent_ms":3800}
+{"event":{"delta":" conference","elapsed_ms":3600,"event_id":"event_EmRo2ZTjZw3ehSSvKnDdG","type":"session.input_transcript.delta"},"rx_ms":3776,"sent_ms":3800}
+{"event":{"delta":".","elapsed_ms":3600,"event_id":"event_EmRo2ZiOOtJ6X0mJnuzL0","type":"session.input_transcript.delta"},"rx_ms":3783,"sent_ms":3800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2000,"event_id":"event_EmRo21zssqrD8bY883P9j","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":4135,"sent_ms":4200}
+{"event":{"delta":"会议","elapsed_ms":4200,"event_id":"event_EmRo2zo23wBNuMgg8CA0l","type":"session.output_transcript.delta"},"rx_ms":4151,"sent_ms":4200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2200,"event_id":"event_EmRo3afDTnyWZeIsEs5cf","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":4412,"sent_ms":4600}
+{"event":{"delta":" Today","elapsed_ms":4400,"event_id":"event_EmRo3EeDOe9SivQiXB9yi","type":"session.input_transcript.delta"},"rx_ms":4582,"sent_ms":4600}
+{"event":{"delta":"。","elapsed_ms":4600,"event_id":"event_EmRo3NP3tQCiqBdJPFBZ9","type":"session.output_transcript.delta"},"rx_ms":4600,"sent_ms":4600}
+{"event":{"delta":" I","elapsed_ms":4600,"event_id":"event_EmRo3BXiGatymSaNtijb1","type":"session.input_transcript.delta"},"rx_ms":4787,"sent_ms":4800}
+{"event":{"delta":"今天","elapsed_ms":4800,"event_id":"event_EmRo3sNm9zSxUGS7Ri0UC","type":"session.output_transcript.delta"},"rx_ms":4795,"sent_ms":4800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2400,"event_id":"event_EmRo3BoCgnQxNxaIYFMHh","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":4948,"sent_ms":5000}
+{"event":{"delta":" want","elapsed_ms":4800,"event_id":"event_EmRo3xtZ6h4A1wY64xbxW","type":"session.input_transcript.delta"},"rx_ms":4997,"sent_ms":5000}
+{"event":{"delta":" to","elapsed_ms":5000,"event_id":"event_EmRo37eFcGBK8HNpdz095","type":"session.input_transcript.delta"},"rx_ms":5189,"sent_ms":5200}
+{"event":{"delta":"我","elapsed_ms":5200,"event_id":"event_EmRo3po8ldZhPB8T0YlwN","type":"session.output_transcript.delta"},"rx_ms":5206,"sent_ms":5200}
+{"event":{"delta":"想","elapsed_ms":5200,"event_id":"event_EmRo3rBtkWkkLWV0LKTtT","type":"session.output_transcript.delta"},"rx_ms":5206,"sent_ms":5200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2600,"event_id":"event_EmRo4NfC48UUoFjfyn49D","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":5262,"sent_ms":5400}
+{"event":{"delta":" talk","elapsed_ms":5200,"event_id":"event_EmRo4MhW1cmzxnsmro6yB","type":"session.input_transcript.delta"},"rx_ms":5474,"sent_ms":5600}
+{"event":{"delta":"谈","elapsed_ms":5400,"event_id":"event_EmRo41dHRnaJAybMY6umH","type":"session.output_transcript.delta"},"rx_ms":5475,"sent_ms":5600}
+{"event":{"delta":" about","elapsed_ms":5400,"event_id":"event_EmRo4PNbJHDCsw6H3jVgj","type":"session.input_transcript.delta"},"rx_ms":5632,"sent_ms":5800}
+{"event":{"delta":"谈","elapsed_ms":5600,"event_id":"event_EmRo4VTuyTb3D4pGUOoqi","type":"session.output_transcript.delta"},"rx_ms":5639,"sent_ms":5800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":2800,"event_id":"event_EmRo451bc2Tcp3pRDGkXB","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":5711,"sent_ms":5800}
+{"event":{"delta":" how","elapsed_ms":5600,"event_id":"event_EmRo48SkwqJ4yYGlpFBjv","type":"session.input_transcript.delta"},"rx_ms":5785,"sent_ms":5800}
+{"event":{"delta":" we","elapsed_ms":5800,"event_id":"event_EmRo4d6kFUDopZb5W4Omm","type":"session.input_transcript.delta"},"rx_ms":5987,"sent_ms":6000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3000,"event_id":"event_EmRo4XRrIrqvjvjiyiuKu","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":6009,"sent_ms":6200}
+{"event":{"delta":" are","elapsed_ms":6000,"event_id":"event_EmRo4AwyyoDc1zpW3Imit","type":"session.input_transcript.delta"},"rx_ms":6173,"sent_ms":6200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3200,"event_id":"event_EmRo5LEkV2ZCfJZ3uvzQ6","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":6413,"sent_ms":6600}
+{"event":{"delta":" making","elapsed_ms":6400,"event_id":"event_EmRo5EQzeD2DjFCTz42gp","type":"session.input_transcript.delta"},"rx_ms":6573,"sent_ms":6600}
+{"event":{"delta":"我们","elapsed_ms":6600,"event_id":"event_EmRo5fmCagHxiy99fU4n1","type":"session.output_transcript.delta"},"rx_ms":6590,"sent_ms":6600}
+{"event":{"delta":" it","elapsed_ms":6600,"event_id":"event_EmRo5LiXOj0KzsKO3PcuN","type":"session.input_transcript.delta"},"rx_ms":6778,"sent_ms":6800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3400,"event_id":"event_EmRo5vSIaptjOz0hUIeoX","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":6817,"sent_ms":7000}
+{"event":{"delta":" easier","elapsed_ms":6800,"event_id":"event_EmRo5FcYW8kwnMEhsAgX0","type":"session.input_transcript.delta"},"rx_ms":7033,"sent_ms":7200}
+{"event":{"delta":"如何","elapsed_ms":7000,"event_id":"event_EmRo5ZxAfQAhzttENfqAG","type":"session.output_transcript.delta"},"rx_ms":7034,"sent_ms":7200}
+{"event":{"delta":" to","elapsed_ms":7000,"event_id":"event_EmRo5f5BwNQuk9pEbXYoI","type":"session.input_transcript.delta"},"rx_ms":7198,"sent_ms":7200}
+{"event":{"delta":"让","elapsed_ms":7200,"event_id":"event_EmRo6Vi8RnHMWnEWLrR5N","type":"session.output_transcript.delta"},"rx_ms":7202,"sent_ms":7200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3600,"event_id":"event_EmRo6M1wP7FLLSVX0PHdh","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":7266,"sent_ms":7400}
+{"event":{"delta":"建立","elapsed_ms":7400,"event_id":"event_EmRo6Qygta1CcxTpN1zbb","type":"session.output_transcript.delta"},"rx_ms":7400,"sent_ms":7400}
+{"event":{"delta":" build","elapsed_ms":7400,"event_id":"event_EmRo6xKbxl2iLtZ8NqbSy","type":"session.input_transcript.delta"},"rx_ms":7577,"sent_ms":7600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":3800,"event_id":"event_EmRo6fOoAPWhy5phc6EeA","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":7645,"sent_ms":7800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4000,"event_id":"event_EmRo6k28Wtsalv80f2TXs","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":8082,"sent_ms":8200}
+{"event":{"delta":" production","elapsed_ms":8200,"event_id":"event_EmRo76KOCLTddchengrOy","type":"session.input_transcript.delta"},"rx_ms":8375,"sent_ms":8400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4200,"event_id":"event_EmRo7TFtJ4oH84TGSrRt3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":8428,"sent_ms":8600}
+{"event":{"delta":"-ready","elapsed_ms":8600,"event_id":"event_EmRo7fb5kYsCmmdzQ3mek","type":"session.input_transcript.delta"},"rx_ms":8767,"sent_ms":8800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4400,"event_id":"event_EmRo7KPQeqzV7qeXeqw3m","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":8805,"sent_ms":8800}
+{"event":{"delta":" agents","elapsed_ms":8800,"event_id":"event_EmRo7DZU9gbhOLnnydgWf","type":"session.input_transcript.delta"},"rx_ms":8981,"sent_ms":9000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4600,"event_id":"event_EmRo7VZFBbLrKGGcboZ5Z","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":9183,"sent_ms":9200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":4800,"event_id":"event_EmRo8ycl1dhJO7lzUsIpB","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":9654,"sent_ms":9800}
+{"event":{"delta":"Amazon","elapsed_ms":10000,"event_id":"event_EmRo8TX1O7pa0WAzkCY5N","type":"session.output_transcript.delta"},"rx_ms":9988,"sent_ms":10000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5000,"event_id":"event_EmRo8RivBz6esmnAyHCZv","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":10039,"sent_ms":10200}
+{"event":{"delta":".","elapsed_ms":10000,"event_id":"event_EmRo80VJr785KSEJCeSrN","type":"session.input_transcript.delta"},"rx_ms":10184,"sent_ms":10200}
+{"event":{"delta":" Amazon","elapsed_ms":10000,"event_id":"event_EmRo8RRv9jXvG5QMqZjwx","type":"session.input_transcript.delta"},"rx_ms":10192,"sent_ms":10200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5200,"event_id":"event_EmRo99sZt3PQyiIRpR0nd","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":10418,"sent_ms":10600}
+{"event":{"delta":" Bed","elapsed_ms":10400,"event_id":"event_EmRo9siU6AYLEkVYpQqv8","type":"session.input_transcript.delta"},"rx_ms":10581,"sent_ms":10600}
+{"event":{"delta":"rock","elapsed_ms":10400,"event_id":"event_EmRo936pfF3qE2JsheWCT","type":"session.input_transcript.delta"},"rx_ms":10588,"sent_ms":10600}
+{"event":{"delta":" Bed","elapsed_ms":10600,"event_id":"event_EmRo9Ar3ADHo0DehtTZC2","type":"session.output_transcript.delta"},"rx_ms":10606,"sent_ms":10600}
+{"event":{"delta":"rock","elapsed_ms":10800,"event_id":"event_EmRo97ZzAXr4tOJnuEKFe","type":"session.output_transcript.delta"},"rx_ms":10860,"sent_ms":11000}
+{"event":{"delta":" Agent","elapsed_ms":10600,"event_id":"event_EmRo9OAeLVLSqSOkzQkmD","type":"session.input_transcript.delta"},"rx_ms":10868,"sent_ms":11000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5400,"event_id":"event_EmRo9l6z64mcBdBVYKup0","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":10920,"sent_ms":11000}
+{"event":{"delta":"Core","elapsed_ms":10800,"event_id":"event_EmRo9YWcVDXXUyAZIHPsX","type":"session.input_transcript.delta"},"rx_ms":10981,"sent_ms":11000}
+{"event":{"delta":" Agent","elapsed_ms":11000,"event_id":"event_EmRo9Vpx77Iam2CWAezC6","type":"session.output_transcript.delta"},"rx_ms":11006,"sent_ms":11200}
+{"event":{"delta":" gives","elapsed_ms":11000,"event_id":"event_EmRo994X7EGBOJtKU3bHl","type":"session.input_transcript.delta"},"rx_ms":11227,"sent_ms":11400}
+{"event":{"delta":" Core","elapsed_ms":11200,"event_id":"event_EmRo9ocvrQXI3lMxF22Wt","type":"session.output_transcript.delta"},"rx_ms":11227,"sent_ms":11400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5600,"event_id":"event_EmRoA5KLDQqgOF9MhENvG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":11249,"sent_ms":11400}
+{"event":{"delta":" you","elapsed_ms":11200,"event_id":"event_EmRoASxEdgMkHwSCOTiCI","type":"session.input_transcript.delta"},"rx_ms":11392,"sent_ms":11400}
+{"event":{"delta":"——","elapsed_ms":11600,"event_id":"event_EmRoA0WLQW59CIUke5Jxq","type":"session.output_transcript.delta"},"rx_ms":11554,"sent_ms":11600}
+{"event":{"delta":" three","elapsed_ms":11400,"event_id":"event_EmRoAIGT6yPwOUPZFX4ma","type":"session.input_transcript.delta"},"rx_ms":11577,"sent_ms":11600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":5800,"event_id":"event_EmRoAAzWkzUSRQTsqm700","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":11610,"sent_ms":11600}
+{"event":{"delta":" core","elapsed_ms":11600,"event_id":"event_EmRoAVDzwxMPtqKBqZGz2","type":"session.input_transcript.delta"},"rx_ms":11783,"sent_ms":11800}
+{"event":{"delta":"可","elapsed_ms":11800,"event_id":"event_EmRoAYRFs0niFB8YTxFDx","type":"session.output_transcript.delta"},"rx_ms":11807,"sent_ms":12000}
+{"event":{"delta":"投入","elapsed_ms":12000,"event_id":"event_EmRoAeo0z8J6K0Nnljxb0","type":"session.output_transcript.delta"},"rx_ms":11987,"sent_ms":12000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6000,"event_id":"event_EmRoASop5EDoKg0GdYffg","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":12044,"sent_ms":12200}
+{"event":{"delta":"生产","elapsed_ms":12400,"event_id":"event_EmRoBnlDjekQEKghkVmbO","type":"session.output_transcript.delta"},"rx_ms":12470,"sent_ms":12600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6200,"event_id":"event_EmRoBiV8iWK0MDgvJlOgz","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":12531,"sent_ms":12600}
+{"event":{"delta":"代理","elapsed_ms":12600,"event_id":"event_EmRoBfT3FM7enomse4b5J","type":"session.output_transcript.delta"},"rx_ms":12559,"sent_ms":12600}
+{"event":{"delta":" components","elapsed_ms":12400,"event_id":"event_EmRoBQKPYVfyGZsIRbViS","type":"session.input_transcript.delta"},"rx_ms":12580,"sent_ms":12600}
+{"event":{"delta":":","elapsed_ms":12600,"event_id":"event_EmRoBAg7gQKsMF1iETehZ","type":"session.input_transcript.delta"},"rx_ms":12800,"sent_ms":12800}
+{"event":{"delta":" a","elapsed_ms":12600,"event_id":"event_EmRoBn45gebCvECfQqg7Q","type":"session.input_transcript.delta"},"rx_ms":12800,"sent_ms":12800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6400,"event_id":"event_EmRoBowAgXCOE5osuQXYB","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":12827,"sent_ms":13000}
+{"event":{"delta":"变","elapsed_ms":13000,"event_id":"event_EmRoBKpRbO9KpRt47RZfo","type":"session.output_transcript.delta"},"rx_ms":12976,"sent_ms":13000}
+{"event":{"delta":"得","elapsed_ms":13200,"event_id":"event_EmRoCWDXBcKDgHd9TLj4f","type":"session.output_transcript.delta"},"rx_ms":13203,"sent_ms":13200}
+{"event":{"delta":"更","elapsed_ms":13200,"event_id":"event_EmRoCFm1hdryxVMSK7V8D","type":"session.output_transcript.delta"},"rx_ms":13206,"sent_ms":13200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6600,"event_id":"event_EmRoC9mwEo5Niu5TH3jK3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":13325,"sent_ms":13400}
+{"event":{"delta":" runtime","elapsed_ms":13200,"event_id":"event_EmRoCQlSASNghWNvt8Q6n","type":"session.input_transcript.delta"},"rx_ms":13382,"sent_ms":13400}
+{"event":{"delta":"容易","elapsed_ms":13400,"event_id":"event_EmRoCHaGgRjJcEnA2E8dK","type":"session.output_transcript.delta"},"rx_ms":13403,"sent_ms":13600}
+{"event":{"delta":",","elapsed_ms":13400,"event_id":"event_EmRoCFmV33KwlfslbqC14","type":"session.input_transcript.delta"},"rx_ms":13570,"sent_ms":13600}
+{"event":{"delta":" a","elapsed_ms":13400,"event_id":"event_EmRoCnU4OlTmtaIcFgtds","type":"session.input_transcript.delta"},"rx_ms":13579,"sent_ms":13600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":6800,"event_id":"event_EmRoCd56WjV3h8UpPuvpz","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":13643,"sent_ms":13800}
+{"event":{"delta":"。","elapsed_ms":13800,"event_id":"event_EmRoCMKPjczKpDO6Y5Z19","type":"session.output_transcript.delta"},"rx_ms":13847,"sent_ms":14000}
+{"event":{"delta":"它","elapsed_ms":14000,"event_id":"event_EmRoCmuUjZ4a4xk7gX2F6","type":"session.output_transcript.delta"},"rx_ms":14001,"sent_ms":14200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7000,"event_id":"event_EmRoCnKT2Rbf9WvDnOxyL","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":14055,"sent_ms":14200}
+{"event":{"delta":" gateway","elapsed_ms":14000,"event_id":"event_EmRoCC2StuBOwsounzbZv","type":"session.input_transcript.delta"},"rx_ms":14165,"sent_ms":14200}
+{"event":{"delta":"提供","elapsed_ms":14200,"event_id":"event_EmRoC9VROL5ziDc1MnGQg","type":"session.output_transcript.delta"},"rx_ms":14184,"sent_ms":14200}
+{"event":{"delta":"三个","elapsed_ms":14400,"event_id":"event_EmRoDwsCePcPNzkyf273c","type":"session.output_transcript.delta"},"rx_ms":14393,"sent_ms":14400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7200,"event_id":"event_EmRoDR8cVi0ClZ9o6G2DT","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":14451,"sent_ms":14600}
+{"event":{"delta":",","elapsed_ms":14400,"event_id":"event_EmRoDvfeZjNKLKBElwp52","type":"session.input_transcript.delta"},"rx_ms":14573,"sent_ms":14600}
+{"event":{"delta":" and","elapsed_ms":14400,"event_id":"event_EmRoDaElUgAeP5gfZKDXH","type":"session.input_transcript.delta"},"rx_ms":14580,"sent_ms":14600}
+{"event":{"delta":"核心","elapsed_ms":14800,"event_id":"event_EmRoDOMHv3WXK4WaDXneS","type":"session.output_transcript.delta"},"rx_ms":14772,"sent_ms":14800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7400,"event_id":"event_EmRoDENS9olC1Y1yVUcp4","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":14896,"sent_ms":15000}
+{"event":{"delta":" memory","elapsed_ms":14800,"event_id":"event_EmRoDdRMZWl5TZWqV0qgy","type":"session.input_transcript.delta"},"rx_ms":15061,"sent_ms":15200}
+{"event":{"delta":".","elapsed_ms":14800,"event_id":"event_EmRoD0syUTQCzpUveEMqF","type":"session.input_transcript.delta"},"rx_ms":15072,"sent_ms":15200}
+{"event":{"delta":"组件","elapsed_ms":15200,"event_id":"event_EmRoEv0m3Mce5SuCYiyYz","type":"session.output_transcript.delta"},"rx_ms":15204,"sent_ms":15200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7600,"event_id":"event_EmRoEecjXTb61aqKl6MCN","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":15263,"sent_ms":15400}
+{"event":{"delta":" With","elapsed_ms":15400,"event_id":"event_EmRoEjUGRobMLPlpFFVAe","type":"session.input_transcript.delta"},"rx_ms":15590,"sent_ms":15600}
+{"event":{"delta":":","elapsed_ms":15600,"event_id":"event_EmRoEAxzqS253X1grN8bx","type":"session.output_transcript.delta"},"rx_ms":15610,"sent_ms":15600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":7800,"event_id":"event_EmRoESdjm2mhfeB6o3U4m","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":15668,"sent_ms":15800}
+{"event":{"delta":"运行","elapsed_ms":15800,"event_id":"event_EmRoEWpNIMnz0hgnfld8F","type":"session.output_transcript.delta"},"rx_ms":15780,"sent_ms":15800}
+{"event":{"delta":" Agent","elapsed_ms":15800,"event_id":"event_EmRoEKKvj5oZdgqYVaoVI","type":"session.input_transcript.delta"},"rx_ms":15972,"sent_ms":16000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8000,"event_id":"event_EmRoEdFpxtWJDfDfGizcX","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":16021,"sent_ms":16200}
+{"event":{"delta":"Core","elapsed_ms":16000,"event_id":"event_EmRoEc376nhxeTqLOjbnk","type":"session.input_transcript.delta"},"rx_ms":16165,"sent_ms":16200}
+{"event":{"delta":"时","elapsed_ms":16200,"event_id":"event_EmRoEQAGwNfXZHHZlFMiP","type":"session.output_transcript.delta"},"rx_ms":16169,"sent_ms":16200}
+{"event":{"delta":"、","elapsed_ms":16400,"event_id":"event_EmRoFR8aEXz61gGsX1MqA","type":"session.output_transcript.delta"},"rx_ms":16470,"sent_ms":16600}
+{"event":{"delta":"网","elapsed_ms":16400,"event_id":"event_EmRoF0i8LU27Ov0lFY0Dc","type":"session.output_transcript.delta"},"rx_ms":16471,"sent_ms":16600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8200,"event_id":"event_EmRoF6OrWQpAqTqpoD1e0","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":16471,"sent_ms":16600}
+{"event":{"delta":"关","elapsed_ms":16600,"event_id":"event_EmRoFd1LFrccG92V5j2Ww","type":"session.output_transcript.delta"},"rx_ms":16654,"sent_ms":16800}
+{"event":{"delta":" Runtime","elapsed_ms":16600,"event_id":"event_EmRoFnvA5c42RKzngPW5z","type":"session.input_transcript.delta"},"rx_ms":16765,"sent_ms":16800}
+{"event":{"delta":"和","elapsed_ms":16800,"event_id":"event_EmRoFG5EbNhuH2ILPxLU3","type":"session.output_transcript.delta"},"rx_ms":16792,"sent_ms":16800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8400,"event_id":"event_EmRoFngRO4jFZjyTNcctK","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":16856,"sent_ms":17000}
+{"event":{"delta":"内","elapsed_ms":17000,"event_id":"event_EmRoFvxdvDDmb45tOjVCr","type":"session.output_transcript.delta"},"rx_ms":16994,"sent_ms":17000}
+{"event":{"delta":",","elapsed_ms":17000,"event_id":"event_EmRoFpLgKPqkJZeidYyxT","type":"session.input_transcript.delta"},"rx_ms":17178,"sent_ms":17200}
+{"event":{"delta":" each","elapsed_ms":17000,"event_id":"event_EmRoFC7E9p3HOHI4cZX7H","type":"session.input_transcript.delta"},"rx_ms":17191,"sent_ms":17200}
+{"event":{"delta":"存","elapsed_ms":17200,"event_id":"event_EmRoFnufwpm1ZKkFAig4V","type":"session.output_transcript.delta"},"rx_ms":17198,"sent_ms":17200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8600,"event_id":"event_EmRoGlcTtt6d1JzoqsQ7v","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":17254,"sent_ms":17400}
+{"event":{"delta":"。","elapsed_ms":17400,"event_id":"event_EmRoG6EBkGQLLqnFIIHvS","type":"session.output_transcript.delta"},"rx_ms":17404,"sent_ms":17600}
+{"event":{"delta":" session","elapsed_ms":17400,"event_id":"event_EmRoGQpsOJ0QHvtLTEHdu","type":"session.input_transcript.delta"},"rx_ms":17577,"sent_ms":17600}
+{"event":{"delta":"借","elapsed_ms":17600,"event_id":"event_EmRoGObONHZKoYqJZ6r0y","type":"session.output_transcript.delta"},"rx_ms":17597,"sent_ms":17600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":8800,"event_id":"event_EmRoG122SmBZ39bIwueBq","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":17655,"sent_ms":17800}
+{"event":{"delta":"助","elapsed_ms":17800,"event_id":"event_EmRoGWH5mCRkcYgM6bQlZ","type":"session.output_transcript.delta"},"rx_ms":17773,"sent_ms":17800}
+{"event":{"delta":" runs","elapsed_ms":17600,"event_id":"event_EmRoGscqx9LPAVCcNEzGJ","type":"session.input_transcript.delta"},"rx_ms":17779,"sent_ms":17800}
+{"event":{"delta":" in","elapsed_ms":17800,"event_id":"event_EmRoGWVQqkwsaJqSzXb75","type":"session.input_transcript.delta"},"rx_ms":18043,"sent_ms":18200}
+{"event":{"delta":" Agent","elapsed_ms":18000,"event_id":"event_EmRoGvJlnEzL588gcbUOa","type":"session.output_transcript.delta"},"rx_ms":18043,"sent_ms":18200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9000,"event_id":"event_EmRoGwGRWBnz47fqy3Uow","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":18053,"sent_ms":18200}
+{"event":{"delta":" its","elapsed_ms":18000,"event_id":"event_EmRoHCEnQMWZ79bqR9O3h","type":"session.input_transcript.delta"},"rx_ms":18206,"sent_ms":18200}
+{"event":{"delta":" own","elapsed_ms":18200,"event_id":"event_EmRoHBtSLLUAJJrlgfze7","type":"session.input_transcript.delta"},"rx_ms":18381,"sent_ms":18400}
+{"event":{"delta":" Core","elapsed_ms":18400,"event_id":"event_EmRoHWEDScNi4Un7BjQo6","type":"session.output_transcript.delta"},"rx_ms":18408,"sent_ms":18600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9200,"event_id":"event_EmRoHXLpEk8RRCUDM9mwh","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":18463,"sent_ms":18600}
+{"event":{"delta":" ","elapsed_ms":18600,"event_id":"event_EmRoHYsQRaiJW8nggKFCb","type":"session.output_transcript.delta"},"rx_ms":18571,"sent_ms":18600}
+{"event":{"delta":"运行","elapsed_ms":18800,"event_id":"event_EmRoHRs51Hk7RKCKcwsIs","type":"session.output_transcript.delta"},"rx_ms":18799,"sent_ms":18800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9400,"event_id":"event_EmRoH2EmNllZrDSyBBSPD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":18857,"sent_ms":19000}
+{"event":{"delta":"时","elapsed_ms":19000,"event_id":"event_EmRoHKbd81LEiCUGEdA8M","type":"session.output_transcript.delta"},"rx_ms":18971,"sent_ms":19000}
+{"event":{"delta":" isolated","elapsed_ms":18800,"event_id":"event_EmRoHkZ1jUubJZ52GSfbJ","type":"session.input_transcript.delta"},"rx_ms":18984,"sent_ms":19000}
+{"event":{"delta":",","elapsed_ms":19200,"event_id":"event_EmRoInLnaHdc65lcyi7gT","type":"session.output_transcript.delta"},"rx_ms":19284,"sent_ms":19400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9600,"event_id":"event_EmRoI8dMxPm1jQ0i94VQb","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":19345,"sent_ms":19400}
+{"event":{"delta":"每","elapsed_ms":19400,"event_id":"event_EmRoIcKUvCPBDPVNjV2tE","type":"session.output_transcript.delta"},"rx_ms":19380,"sent_ms":19400}
+{"event":{"delta":"个","elapsed_ms":19600,"event_id":"event_EmRoINvINTEtnTcF2KCth","type":"session.output_transcript.delta"},"rx_ms":19616,"sent_ms":19800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":9800,"event_id":"event_EmRoIIx3Q99EuakZHlnW0","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":19646,"sent_ms":19800}
+{"event":{"delta":" micro","elapsed_ms":19600,"event_id":"event_EmRoIcEdNyDOAwUXJY3Pm","type":"session.input_transcript.delta"},"rx_ms":19782,"sent_ms":19800}
+{"event":{"delta":"会","elapsed_ms":19800,"event_id":"event_EmRoI9zzOMWABpevsK29O","type":"session.output_transcript.delta"},"rx_ms":19806,"sent_ms":19800}
+{"event":{"delta":"话","elapsed_ms":19800,"event_id":"event_EmRoIAtEnX7sFrsrveW8t","type":"session.output_transcript.delta"},"rx_ms":19808,"sent_ms":19800}
+{"event":{"delta":"VM","elapsed_ms":19800,"event_id":"event_EmRoIhESF5RAWUe2gQaMc","type":"session.input_transcript.delta"},"rx_ms":19983,"sent_ms":20000}
+{"event":{"delta":"都","elapsed_ms":20000,"event_id":"event_EmRoICoccvfqYEVJUelsS","type":"session.output_transcript.delta"},"rx_ms":20003,"sent_ms":20000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10000,"event_id":"event_EmRoIoVCC9GREi7phbnFs","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":20140,"sent_ms":20200}
+{"event":{"delta":" for","elapsed_ms":20000,"event_id":"event_EmRoIZlgLDiTTo2fNO7W2","type":"session.input_transcript.delta"},"rx_ms":20184,"sent_ms":20200}
+{"event":{"delta":"在","elapsed_ms":20200,"event_id":"event_EmRoJu3esjybLERpzIwun","type":"session.output_transcript.delta"},"rx_ms":20205,"sent_ms":20200}
+{"event":{"delta":" up","elapsed_ms":20200,"event_id":"event_EmRoJkNrcJwISFx5X38KF","type":"session.input_transcript.delta"},"rx_ms":20372,"sent_ms":20400}
+{"event":{"delta":"独","elapsed_ms":20400,"event_id":"event_EmRoJtJBQRhDh63H2zijf","type":"session.output_transcript.delta"},"rx_ms":20389,"sent_ms":20400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10200,"event_id":"event_EmRoJgsmeQTIQzuhKv8Ss","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":20448,"sent_ms":20600}
+{"event":{"delta":"立","elapsed_ms":20600,"event_id":"event_EmRoJI5qgKT62Sao9EIuc","type":"session.output_transcript.delta"},"rx_ms":20559,"sent_ms":20600}
+{"event":{"delta":" to","elapsed_ms":20400,"event_id":"event_EmRoJ5TRyIJ2Yy3p40fP1","type":"session.input_transcript.delta"},"rx_ms":20567,"sent_ms":20600}
+{"event":{"delta":" eight","elapsed_ms":20600,"event_id":"event_EmRoJQqZDsxB5i25yFBFE","type":"session.input_transcript.delta"},"rx_ms":20825,"sent_ms":21000}
+{"event":{"delta":"的","elapsed_ms":20800,"event_id":"event_EmRoJ1jsS5TVvuIpQKiyU","type":"session.output_transcript.delta"},"rx_ms":20834,"sent_ms":21000}
+{"event":{"delta":"微","elapsed_ms":20800,"event_id":"event_EmRoJ5sYcFCrJbALl32ow","type":"session.output_transcript.delta"},"rx_ms":20837,"sent_ms":21000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10400,"event_id":"event_EmRoJ6FHFHVGC5ilkXIZF","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":20897,"sent_ms":21000}
+{"event":{"delta":" hours","elapsed_ms":20800,"event_id":"event_EmRoJTmnaLsnam5lbSfbn","type":"session.input_transcript.delta"},"rx_ms":20980,"sent_ms":21000}
+{"event":{"delta":"虚","elapsed_ms":21000,"event_id":"event_EmRoJp5akZ751NPGqWNgb","type":"session.output_transcript.delta"},"rx_ms":21001,"sent_ms":21200}
+{"event":{"delta":"拟","elapsed_ms":21200,"event_id":"event_EmRoJLdC5K8jWW67pPGk4","type":"session.output_transcript.delta"},"rx_ms":21190,"sent_ms":21200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10600,"event_id":"event_EmRoK1R6Z2x5BXS8VWS8I","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21215,"sent_ms":21400}
+{"event":{"delta":"机","elapsed_ms":21400,"event_id":"event_EmRoKzsraY1J61YqKGkeT","type":"session.output_transcript.delta"},"rx_ms":21354,"sent_ms":21400}
+{"event":{"delta":".","elapsed_ms":21400,"event_id":"event_EmRoKB81FGfx0ENq0d96q","type":"session.input_transcript.delta"},"rx_ms":21586,"sent_ms":21600}
+{"event":{"delta":" Last","elapsed_ms":21400,"event_id":"event_EmRoKQC9l1BtyP2lD1laL","type":"session.input_transcript.delta"},"rx_ms":21592,"sent_ms":21600}
+{"event":{"delta":"中","elapsed_ms":21600,"event_id":"event_EmRoKlOxxKybc5cbvdXIR","type":"session.output_transcript.delta"},"rx_ms":21602,"sent_ms":21600}
+{"event":{"delta":"运行","elapsed_ms":21600,"event_id":"event_EmRoKmiJl1gy7UxXxVqj3","type":"session.output_transcript.delta"},"rx_ms":21606,"sent_ms":21800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":10800,"event_id":"event_EmRoK6zk9BQKTL9BhKUjy","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":21715,"sent_ms":21800}
+{"event":{"delta":" year","elapsed_ms":21800,"event_id":"event_EmRoKzSRDbZ8UUxWsOe6s","type":"session.input_transcript.delta"},"rx_ms":21969,"sent_ms":22000}
+{"event":{"delta":",","elapsed_ms":22000,"event_id":"event_EmRoKH6NhNBu9153ksOAS","type":"session.output_transcript.delta"},"rx_ms":21995,"sent_ms":22000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11000,"event_id":"event_EmRoKeVcEOaLJWs2uWlSa","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22054,"sent_ms":22200}
+{"event":{"delta":"最长","elapsed_ms":22200,"event_id":"event_EmRoKIG6usrr9U1Lk5dMu","type":"session.output_transcript.delta"},"rx_ms":22236,"sent_ms":22400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11200,"event_id":"event_EmRoLTnNzyuUhnC1xR0d0","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22474,"sent_ms":22600}
+{"event":{"delta":",","elapsed_ms":22600,"event_id":"event_EmRoLs8Z84TOrIJZC5Q6y","type":"session.input_transcript.delta"},"rx_ms":22780,"sent_ms":22800}
+{"event":{"delta":"可","elapsed_ms":22800,"event_id":"event_EmRoLVlKf1f2oDDru4o1w","type":"session.output_transcript.delta"},"rx_ms":22783,"sent_ms":22800}
+{"event":{"delta":" customers","elapsed_ms":22600,"event_id":"event_EmRoLbWIsGqmdF5SW91mV","type":"session.input_transcript.delta"},"rx_ms":22787,"sent_ms":22800}
+{"event":{"delta":"达","elapsed_ms":22800,"event_id":"event_EmRoL87i3eCSkw7jbq5h3","type":"session.output_transcript.delta"},"rx_ms":22788,"sent_ms":22800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11400,"event_id":"event_EmRoL0jXyxrZ3pTKueFcU","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":22852,"sent_ms":23000}
+{"event":{"delta":"八","elapsed_ms":23000,"event_id":"event_EmRoL6rv6JYAf4FDGYWvP","type":"session.output_transcript.delta"},"rx_ms":22968,"sent_ms":23000}
+{"event":{"delta":" ran","elapsed_ms":22800,"event_id":"event_EmRoLM7UWHPpAwG3WOGJ0","type":"session.input_transcript.delta"},"rx_ms":22976,"sent_ms":23000}
+{"event":{"delta":"小时","elapsed_ms":23200,"event_id":"event_EmRoLrPaOv6k2zv0tjFl9","type":"session.output_transcript.delta"},"rx_ms":23156,"sent_ms":23200}
+{"event":{"delta":" more","elapsed_ms":23000,"event_id":"event_EmRoLLJZlAE8KBHOxBe11","type":"session.input_transcript.delta"},"rx_ms":23166,"sent_ms":23200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11600,"event_id":"event_EmRoM3xHK4BVRYh4GdFtu","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23286,"sent_ms":23400}
+{"event":{"delta":" than","elapsed_ms":23200,"event_id":"event_EmRoMnIrZJl4wIucEAtBc","type":"session.input_transcript.delta"},"rx_ms":23450,"sent_ms":23600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":11800,"event_id":"event_EmRoM66PHJDQluQ49oQYL","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":23615,"sent_ms":23800}
+{"event":{"delta":"。","elapsed_ms":23800,"event_id":"event_EmRoMAz0vuKf8TQrpdj6I","type":"session.output_transcript.delta"},"rx_ms":23809,"sent_ms":23800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12000,"event_id":"event_EmRoMUoliYc5oIGySOGOw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24006,"sent_ms":24000}
+{"event":{"delta":" ","elapsed_ms":24000,"event_id":"event_EmRoMVlntOVMsk3UeVtNh","type":"session.input_transcript.delta"},"rx_ms":24183,"sent_ms":24200}
+{"event":{"delta":"1","elapsed_ms":24000,"event_id":"event_EmRoMkKBewZ45u9QADmFt","type":"session.input_transcript.delta"},"rx_ms":24190,"sent_ms":24200}
+{"event":{"delta":".","elapsed_ms":24000,"event_id":"event_EmRoMnlOcec5fcyHrgzYK","type":"session.input_transcript.delta"},"rx_ms":24194,"sent_ms":24200}
+{"event":{"delta":"5","elapsed_ms":24000,"event_id":"event_EmRoNFGWO4CFlDGh52k3E","type":"session.input_transcript.delta"},"rx_ms":24201,"sent_ms":24200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12200,"event_id":"event_EmRoNn0ovbztbJzvRMA18","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24394,"sent_ms":24400}
+{"event":{"delta":" billion","elapsed_ms":24400,"event_id":"event_EmRoNDZqAa9DBOTRzhPMF","type":"session.input_transcript.delta"},"rx_ms":24573,"sent_ms":24600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12400,"event_id":"event_EmRoNbZeCVrygkSnt7pm7","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":24858,"sent_ms":25000}
+{"event":{"delta":" inference","elapsed_ms":25000,"event_id":"event_EmRoOYmZyyd2UoR6Gaqqx","type":"session.input_transcript.delta"},"rx_ms":25382,"sent_ms":25400}
+{"event":{"delta":"去年","elapsed_ms":25400,"event_id":"event_EmRoOMZRukFY6tJcrFECU","type":"session.output_transcript.delta"},"rx_ms":25432,"sent_ms":25600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12600,"event_id":"event_EmRoOQyWlzwDPVhLJp5Fz","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25439,"sent_ms":25600}
+{"event":{"delta":" requests","elapsed_ms":25400,"event_id":"event_EmRoOAyVFNcaRwdwyW9nl","type":"session.input_transcript.delta"},"rx_ms":25579,"sent_ms":25600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":12800,"event_id":"event_EmRoOsJaeFvFcS1LF5oIO","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":25648,"sent_ms":25800}
+{"event":{"delta":" on","elapsed_ms":25600,"event_id":"event_EmRoOpKxI4zWH9cKg7Vb2","type":"session.input_transcript.delta"},"rx_ms":25773,"sent_ms":25800}
+{"event":{"delta":",","elapsed_ms":26000,"event_id":"event_EmRoObAErl2CobhfTOE6l","type":"session.output_transcript.delta"},"rx_ms":26006,"sent_ms":26000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13000,"event_id":"event_EmRoOenuWvtcAR4tEhRAJ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":26062,"sent_ms":26200}
+{"event":{"delta":"客户","elapsed_ms":26200,"event_id":"event_EmRoPKFRU0UsuxUkC4TMW","type":"session.output_transcript.delta"},"rx_ms":26204,"sent_ms":26200}
+{"event":{"delta":" Amazon","elapsed_ms":26200,"event_id":"event_EmRoPLLgdGfOt1VNHNoF1","type":"session.input_transcript.delta"},"rx_ms":26431,"sent_ms":26600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13200,"event_id":"event_EmRoPmuRj1Ia0DamMaYz3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":26449,"sent_ms":26600}
+{"event":{"delta":"在","elapsed_ms":26800,"event_id":"event_EmRoPoPXZMNIFv9uLBGto","type":"session.output_transcript.delta"},"rx_ms":26775,"sent_ms":26800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13400,"event_id":"event_EmRoPHV1AEZOyqwYx2tQh","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":26833,"sent_ms":27000}
+{"event":{"delta":" Amazon","elapsed_ms":27000,"event_id":"event_EmRoPuOuKhGO61EkE7BaS","type":"session.output_transcript.delta"},"rx_ms":26959,"sent_ms":27000}
+{"event":{"delta":" Bed","elapsed_ms":26800,"event_id":"event_EmRoPLm0UmOWkFiOedhDc","type":"session.input_transcript.delta"},"rx_ms":26974,"sent_ms":27000}
+{"event":{"delta":"rock","elapsed_ms":26800,"event_id":"event_EmRoPWEm7YkAc3q4Vf9T3","type":"session.input_transcript.delta"},"rx_ms":26980,"sent_ms":27000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13600,"event_id":"event_EmRoQfpQaBYZ5chl4Ex3A","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":27261,"sent_ms":27400}
+{"event":{"delta":".","elapsed_ms":27200,"event_id":"event_EmRoQN5o5bfOGRyQFjBy1","type":"session.input_transcript.delta"},"rx_ms":27373,"sent_ms":27400}
+{"event":{"delta":" We","elapsed_ms":27200,"event_id":"event_EmRoQ06asW3OBojC3AAvo","type":"session.input_transcript.delta"},"rx_ms":27379,"sent_ms":27400}
+{"event":{"delta":" Bed","elapsed_ms":27400,"event_id":"event_EmRoQhAKN8GNfwGZw6H8J","type":"session.output_transcript.delta"},"rx_ms":27389,"sent_ms":27400}
+{"event":{"delta":" are","elapsed_ms":27400,"event_id":"event_EmRoQCjcps1Wy2gXNmyAJ","type":"session.input_transcript.delta"},"rx_ms":27643,"sent_ms":27800}
+{"event":{"delta":"rock","elapsed_ms":27600,"event_id":"event_EmRoQe5he82OyShV4enYS","type":"session.output_transcript.delta"},"rx_ms":27669,"sent_ms":27800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":13800,"event_id":"event_EmRoQlG3OuBkfH27896zS","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":27732,"sent_ms":27800}
+{"event":{"delta":" 上","elapsed_ms":27800,"event_id":"event_EmRoQRGzNplYhNlKsJW7n","type":"session.output_transcript.delta"},"rx_ms":27776,"sent_ms":27800}
+{"event":{"delta":" also","elapsed_ms":27800,"event_id":"event_EmRoQj765iBJRXic4YkBY","type":"session.input_transcript.delta"},"rx_ms":28003,"sent_ms":28000}
+{"event":{"delta":"发","elapsed_ms":28000,"event_id":"event_EmRoQZMAx2u3qokq9Nfj7","type":"session.output_transcript.delta"},"rx_ms":28006,"sent_ms":28000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14000,"event_id":"event_EmRoQixiG0GBH1GejhVCy","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":28065,"sent_ms":28200}
+{"event":{"delta":"起","elapsed_ms":28200,"event_id":"event_EmRoQVBUwRwSlLbtZ4VzS","type":"session.output_transcript.delta"},"rx_ms":28174,"sent_ms":28200}
+{"event":{"delta":" announcing","elapsed_ms":28200,"event_id":"event_EmRoRUQKxDEUKxXaApljx","type":"session.input_transcript.delta"},"rx_ms":28374,"sent_ms":28400}
+{"event":{"delta":"了","elapsed_ms":28400,"event_id":"event_EmRoRfErK5bFObYphbXAA","type":"session.output_transcript.delta"},"rx_ms":28397,"sent_ms":28400}
+{"event":{"delta":"超过","elapsed_ms":28400,"event_id":"event_EmRoR4ftxkbc40vGcqTKn","type":"session.output_transcript.delta"},"rx_ms":28400,"sent_ms":28400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14200,"event_id":"event_EmRoRJy3jhAfsofuFVXvz","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":28529,"sent_ms":28600}
+{"event":{"delta":" ","elapsed_ms":28800,"event_id":"event_EmRoRmjNFmbe135zeaE8r","type":"session.output_transcript.delta"},"rx_ms":28750,"sent_ms":28800}
+{"event":{"delta":"15","elapsed_ms":28800,"event_id":"event_EmRoRzavy8G2nZUMYHWB2","type":"session.output_transcript.delta"},"rx_ms":28753,"sent_ms":28800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14400,"event_id":"event_EmRoR4aD7LQWiRcBDhTxo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":28811,"sent_ms":29000}
+{"event":{"delta":" 亿","elapsed_ms":29200,"event_id":"event_EmRoRDpT2oAwiAHRUa82s","type":"session.output_transcript.delta"},"rx_ms":29198,"sent_ms":29200}
+{"event":{"delta":" Gr","elapsed_ms":29000,"event_id":"event_EmRoSrqpUUjzoeGkZEVB9","type":"session.input_transcript.delta"},"rx_ms":29224,"sent_ms":29400}
+{"event":{"delta":"avit","elapsed_ms":29000,"event_id":"event_EmRoSiQixQSoq27VgTy2y","type":"session.input_transcript.delta"},"rx_ms":29226,"sent_ms":29400}
+{"event":{"delta":"on","elapsed_ms":29000,"event_id":"event_EmRoSRJCNDiaBqEJ1PCZl","type":"session.input_transcript.delta"},"rx_ms":29231,"sent_ms":29400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14600,"event_id":"event_EmRoStwJ0t2VtI2jn3GBl","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":29259,"sent_ms":29400}
+{"event":{"delta":"次","elapsed_ms":29400,"event_id":"event_EmRoSyQb16PxQN5Psv2Do","type":"session.output_transcript.delta"},"rx_ms":29358,"sent_ms":29400}
+{"event":{"delta":"5","elapsed_ms":29400,"event_id":"event_EmRoStfWzwy8wWdzjen0j","type":"session.input_transcript.delta"},"rx_ms":29580,"sent_ms":29600}
+{"event":{"delta":"推","elapsed_ms":29600,"event_id":"event_EmRoSyX9ywaVn4VR2mAKG","type":"session.output_transcript.delta"},"rx_ms":29610,"sent_ms":29600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":14800,"event_id":"event_EmRoSTliYbgV2ivo1fuCC","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":29667,"sent_ms":29800}
+{"event":{"delta":"理","elapsed_ms":29800,"event_id":"event_EmRoSkqwKihKelwe7Xh0L","type":"session.output_transcript.delta"},"rx_ms":29807,"sent_ms":30000}
+{"event":{"delta":"请求","elapsed_ms":30000,"event_id":"event_EmRoSUbEBuBQYOA5m4nAF","type":"session.output_transcript.delta"},"rx_ms":29967,"sent_ms":30000}
+{"event":{"delta":",","elapsed_ms":29800,"event_id":"event_EmRoS2rufpGA0ZEJlp0yh","type":"session.input_transcript.delta"},"rx_ms":29974,"sent_ms":30000}
+{"event":{"delta":" which","elapsed_ms":29800,"event_id":"event_EmRoSybqTa4VhupKhmMuN","type":"session.input_transcript.delta"},"rx_ms":29982,"sent_ms":30000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15000,"event_id":"event_EmRoS70QLwgdWCkZxM5Qx","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":30106,"sent_ms":30200}
+{"event":{"delta":"。","elapsed_ms":30400,"event_id":"event_EmRoTYq7AHuRjEzCvDjio","type":"session.output_transcript.delta"},"rx_ms":30369,"sent_ms":30400}
+{"event":{"delta":" delivers","elapsed_ms":30200,"event_id":"event_EmRoTYa4NcBUKh4c6ZGUS","type":"session.input_transcript.delta"},"rx_ms":30379,"sent_ms":30400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15200,"event_id":"event_EmRoTh3CFkpWYCDEc4g88","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":30426,"sent_ms":30600}
+{"event":{"delta":" up","elapsed_ms":30400,"event_id":"event_EmRoTLuVzZd88RYahhKWT","type":"session.input_transcript.delta"},"rx_ms":30625,"sent_ms":30800}
+{"event":{"delta":"我们","elapsed_ms":30600,"event_id":"event_EmRoTGTs4mBkkIAwavMPM","type":"session.output_transcript.delta"},"rx_ms":30626,"sent_ms":30800}
+{"event":{"delta":" to","elapsed_ms":30600,"event_id":"event_EmRoTMnIP49rABOUCqj5K","type":"session.input_transcript.delta"},"rx_ms":30787,"sent_ms":30800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15400,"event_id":"event_EmRoTcUJj06UK7Si3gDGm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":30867,"sent_ms":31000}
+{"event":{"delta":"还","elapsed_ms":31000,"event_id":"event_EmRoTfFvRbcCX5JtEDSdr","type":"session.output_transcript.delta"},"rx_ms":31012,"sent_ms":31200}
+{"event":{"delta":" ","elapsed_ms":31000,"event_id":"event_EmRoTRgjuOR9pfzfObACA","type":"session.input_transcript.delta"},"rx_ms":31180,"sent_ms":31200}
+{"event":{"delta":"30","elapsed_ms":31000,"event_id":"event_EmRoTO32hOKusrR8hm1HI","type":"session.input_transcript.delta"},"rx_ms":31186,"sent_ms":31200}
+{"event":{"delta":"在","elapsed_ms":31200,"event_id":"event_EmRoUjZcaGuHnSuSCDB5k","type":"session.output_transcript.delta"},"rx_ms":31204,"sent_ms":31200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15600,"event_id":"event_EmRoUvAdN12xzX7BCP558","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":31262,"sent_ms":31400}
+{"event":{"delta":"发布","elapsed_ms":31400,"event_id":"event_EmRoUxgpS6Q7fpaqiD8La","type":"session.output_transcript.delta"},"rx_ms":31405,"sent_ms":31400}
+{"event":{"delta":"%","elapsed_ms":31400,"event_id":"event_EmRoUfctSNRdHqU6xe6YL","type":"session.input_transcript.delta"},"rx_ms":31676,"sent_ms":31800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":15800,"event_id":"event_EmRoUo3BxlmaLU4z0TGnd","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":31678,"sent_ms":31800}
+{"event":{"delta":" Gr","elapsed_ms":31800,"event_id":"event_EmRoUmBRNks3OrVzL6pZf","type":"session.output_transcript.delta"},"rx_ms":31831,"sent_ms":32000}
+{"event":{"delta":"avit","elapsed_ms":31800,"event_id":"event_EmRoU2zEjzuuq2le3GFPS","type":"session.output_transcript.delta"},"rx_ms":31835,"sent_ms":32000}
+{"event":{"delta":" better","elapsed_ms":31600,"event_id":"event_EmRoU9XjJd6YJUdKJMSs3","type":"session.input_transcript.delta"},"rx_ms":31841,"sent_ms":32000}
+{"event":{"delta":"on","elapsed_ms":32000,"event_id":"event_EmRoUzxJ8FBWF5pRROyTB","type":"session.output_transcript.delta"},"rx_ms":31984,"sent_ms":32000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16000,"event_id":"event_EmRoUL9S3izKC45U1HQpc","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":32043,"sent_ms":32200}
+{"event":{"delta":" price","elapsed_ms":32000,"event_id":"event_EmRoU6DyE2Vo6oRKR4M8U","type":"session.input_transcript.delta"},"rx_ms":32199,"sent_ms":32200}
+{"event":{"delta":" ","elapsed_ms":32200,"event_id":"event_EmRoUYJIOyKI1jITc0NtM","type":"session.output_transcript.delta"},"rx_ms":32199,"sent_ms":32200}
+{"event":{"delta":"5","elapsed_ms":32400,"event_id":"event_EmRoVNWTxDXtuoFkf0Wc1","type":"session.output_transcript.delta"},"rx_ms":32408,"sent_ms":32400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16200,"event_id":"event_EmRoVweDHPkpNLt6N1ReZ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":32468,"sent_ms":32600}
+{"event":{"delta":",","elapsed_ms":32600,"event_id":"event_EmRoVX4q10Kc07x2hAYpm","type":"session.output_transcript.delta"},"rx_ms":32610,"sent_ms":32800}
+{"event":{"delta":"它","elapsed_ms":32800,"event_id":"event_EmRoVZ1sh467CmD6ny2CJ","type":"session.output_transcript.delta"},"rx_ms":32766,"sent_ms":32800}
+{"event":{"delta":"的","elapsed_ms":32800,"event_id":"event_EmRoV1roqzC9TPdl6UiLo","type":"session.output_transcript.delta"},"rx_ms":32769,"sent_ms":32800}
+{"event":{"delta":" performance","elapsed_ms":32600,"event_id":"event_EmRoVwK73pHxW32wvsdTy","type":"session.input_transcript.delta"},"rx_ms":32784,"sent_ms":32800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16400,"event_id":"event_EmRoVpi0rkdxaSIWz3GPm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":32828,"sent_ms":33000}
+{"event":{"delta":" than","elapsed_ms":32800,"event_id":"event_EmRoVRO4Dusk4x2GIlAHs","type":"session.input_transcript.delta"},"rx_ms":32978,"sent_ms":33000}
+{"event":{"delta":"性","elapsed_ms":33000,"event_id":"event_EmRoVKz1S4zjVrkZDwu4H","type":"session.output_transcript.delta"},"rx_ms":32995,"sent_ms":33000}
+{"event":{"delta":"价","elapsed_ms":33200,"event_id":"event_EmRoWgTLjaAOVxNca4LZi","type":"session.output_transcript.delta"},"rx_ms":33246,"sent_ms":33400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16600,"event_id":"event_EmRoWIBVmmDkUdgdgCCYE","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":33264,"sent_ms":33400}
+{"event":{"delta":"比","elapsed_ms":33400,"event_id":"event_EmRoWP6XUT2ggt7Ztl8uH","type":"session.output_transcript.delta"},"rx_ms":33399,"sent_ms":33400}
+{"event":{"delta":" Gr","elapsed_ms":33400,"event_id":"event_EmRoWyURZ5jjS57HbhNgx","type":"session.input_transcript.delta"},"rx_ms":33577,"sent_ms":33600}
+{"event":{"delta":"avit","elapsed_ms":33400,"event_id":"event_EmRoWT2DwxedRUGapfvKQ","type":"session.input_transcript.delta"},"rx_ms":33583,"sent_ms":33600}
+{"event":{"delta":"on","elapsed_ms":33400,"event_id":"event_EmRoWcGylvwe46TynF7Ta","type":"session.input_transcript.delta"},"rx_ms":33590,"sent_ms":33600}
+{"event":{"delta":"最高","elapsed_ms":33600,"event_id":"event_EmRoWrv9od17bjulxc7kO","type":"session.output_transcript.delta"},"rx_ms":33602,"sent_ms":33600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":16800,"event_id":"event_EmRoWVX9RPWdLCo3HHmr8","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":33663,"sent_ms":33800}
+{"event":{"delta":"4","elapsed_ms":33800,"event_id":"event_EmRoWkEZEQFCzFcp4HuPu","type":"session.input_transcript.delta"},"rx_ms":33991,"sent_ms":34000}
+{"event":{"delta":"可","elapsed_ms":34000,"event_id":"event_EmRoW6qhTfxljtqGZqOxF","type":"session.output_transcript.delta"},"rx_ms":33994,"sent_ms":34000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17000,"event_id":"event_EmRoWM5VOvErT2SDDDZaU","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":34053,"sent_ms":34200}
+{"event":{"delta":"比","elapsed_ms":34200,"event_id":"event_EmRoWRVmyPr6SSeXJ0S2m","type":"session.output_transcript.delta"},"rx_ms":34199,"sent_ms":34200}
+{"event":{"delta":" Gr","elapsed_ms":34400,"event_id":"event_EmRoX0o7csTLxgRZOAHwf","type":"session.output_transcript.delta"},"rx_ms":34451,"sent_ms":34600}
+{"event":{"delta":"avit","elapsed_ms":34400,"event_id":"event_EmRoXC0OMGK1sZetPuM8g","type":"session.output_transcript.delta"},"rx_ms":34455,"sent_ms":34600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17200,"event_id":"event_EmRoXxcAEbhcnc4OEAs0o","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":34516,"sent_ms":34600}
+{"event":{"delta":"on","elapsed_ms":34600,"event_id":"event_EmRoX5WEAcPPf95jG31VP","type":"session.output_transcript.delta"},"rx_ms":34573,"sent_ms":34600}
+{"event":{"delta":".","elapsed_ms":34400,"event_id":"event_EmRoXNlUW9iEGhRK9Dc1N","type":"session.input_transcript.delta"},"rx_ms":34580,"sent_ms":34600}
+{"event":{"delta":" Our","elapsed_ms":34400,"event_id":"event_EmRoXgMne09iUESDNzJt7","type":"session.input_transcript.delta"},"rx_ms":34587,"sent_ms":34600}
+{"event":{"delta":" new","elapsed_ms":34600,"event_id":"event_EmRoXh2QUSsRRBDU4YPoJ","type":"session.input_transcript.delta"},"rx_ms":34820,"sent_ms":35000}
+{"event":{"delta":" ","elapsed_ms":34800,"event_id":"event_EmRoXrcZ571aU7kqLHM5B","type":"session.output_transcript.delta"},"rx_ms":34832,"sent_ms":35000}
+{"event":{"delta":"4","elapsed_ms":34800,"event_id":"event_EmRoXeuLFvwg2u5cNq7NF","type":"session.output_transcript.delta"},"rx_ms":34835,"sent_ms":35000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17400,"event_id":"event_EmRoX32ndbeevXNqihDQ4","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":34896,"sent_ms":35000}
+{"event":{"delta":"提升","elapsed_ms":35000,"event_id":"event_EmRoXDVLMv7g68JUrrrae","type":"session.output_transcript.delta"},"rx_ms":35007,"sent_ms":35000}
+{"event":{"delta":" foundation","elapsed_ms":35000,"event_id":"event_EmRoXebQZ6vPPdLFVS4pq","type":"session.input_transcript.delta"},"rx_ms":35178,"sent_ms":35200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17600,"event_id":"event_EmRoYXcKWvV4u91WlImYK","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":35345,"sent_ms":35400}
+{"event":{"delta":" ","elapsed_ms":35400,"event_id":"event_EmRoYadXXmVlTT7ihI6MF","type":"session.output_transcript.delta"},"rx_ms":35408,"sent_ms":35600}
+{"event":{"delta":"30","elapsed_ms":35400,"event_id":"event_EmRoYt2kH62aNzFPOhUTB","type":"session.output_transcript.delta"},"rx_ms":35413,"sent_ms":35600}
+{"event":{"delta":" models","elapsed_ms":35400,"event_id":"event_EmRoY7wH8N1LZZFuAkUk5","type":"session.input_transcript.delta"},"rx_ms":35576,"sent_ms":35600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":17800,"event_id":"event_EmRoYDrAPrPXoNdtJ6mrz","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":35632,"sent_ms":35800}
+{"event":{"delta":" support","elapsed_ms":35800,"event_id":"event_EmRoYMCLEYiQac1163jNA","type":"session.input_transcript.delta"},"rx_ms":36045,"sent_ms":36200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18000,"event_id":"event_EmRoYPO5dwYl8I2jHcBgK","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":36097,"sent_ms":36200}
+{"event":{"delta":" a","elapsed_ms":36000,"event_id":"event_EmRoZuXsOP0DAuBz6xDSg","type":"session.input_transcript.delta"},"rx_ms":36212,"sent_ms":36400}
+{"event":{"delta":"%。","elapsed_ms":36200,"event_id":"event_EmRoZYSXK9k7xO8JLGZfx","type":"session.output_transcript.delta"},"rx_ms":36212,"sent_ms":36400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18200,"event_id":"event_EmRoZtCtZteOHy5foDhIs","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":36482,"sent_ms":36600}
+{"event":{"delta":" context","elapsed_ms":36600,"event_id":"event_EmRoZNZhA2fEiymNHFctM","type":"session.input_transcript.delta"},"rx_ms":36785,"sent_ms":36800}
+{"event":{"delta":"我们的","elapsed_ms":36800,"event_id":"event_EmRoZjlkMJWhAmsLityXX","type":"session.output_transcript.delta"},"rx_ms":36818,"sent_ms":37000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18400,"event_id":"event_EmRoZ98qTWAHggLjCXMBU","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":36920,"sent_ms":37000}
+{"event":{"delta":" window","elapsed_ms":36800,"event_id":"event_EmRoZvxDgQUKVpHzgsKl9","type":"session.input_transcript.delta"},"rx_ms":36973,"sent_ms":37000}
+{"event":{"delta":"新","elapsed_ms":37200,"event_id":"event_EmRoZQC9NuvWFP0IccnHp","type":"session.output_transcript.delta"},"rx_ms":37177,"sent_ms":37200}
+{"event":{"delta":" of","elapsed_ms":37000,"event_id":"event_EmRoZ1nhqdjJ2ChORcghz","type":"session.input_transcript.delta"},"rx_ms":37182,"sent_ms":37200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18600,"event_id":"event_EmRoaFfiM3Vdbo6j6zHFx","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":37231,"sent_ms":37400}
+{"event":{"delta":"基","elapsed_ms":37400,"event_id":"event_EmRoa8ndyCxqnQZtUJKXb","type":"session.output_transcript.delta"},"rx_ms":37442,"sent_ms":37600}
+{"event":{"delta":" one","elapsed_ms":37200,"event_id":"event_EmRoaSCpTTyAQ4QNPCLZD","type":"session.input_transcript.delta"},"rx_ms":37442,"sent_ms":37600}
+{"event":{"delta":"座","elapsed_ms":37600,"event_id":"event_EmRoaBZvIm1nKOaY8v95g","type":"session.output_transcript.delta"},"rx_ms":37591,"sent_ms":37600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":18800,"event_id":"event_EmRoaEeDa1uYMOpvAOaOG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":37653,"sent_ms":37800}
+{"event":{"delta":"模型","elapsed_ms":37800,"event_id":"event_EmRoa7VL1dWkvfvrmIHDf","type":"session.output_transcript.delta"},"rx_ms":37757,"sent_ms":37800}
+{"event":{"delta":" million","elapsed_ms":37600,"event_id":"event_EmRoa50prRqwXfIMM0qzi","type":"session.input_transcript.delta"},"rx_ms":37766,"sent_ms":37800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19000,"event_id":"event_EmRoaOtYJAp3g1mIYr7TN","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":38054,"sent_ms":38200}
+{"event":{"delta":"支持","elapsed_ms":38200,"event_id":"event_EmRobfCBeYBPF34ICs85u","type":"session.output_transcript.delta"},"rx_ms":38215,"sent_ms":38400}
+{"event":{"delta":" tokens","elapsed_ms":38200,"event_id":"event_EmRob3sy77lA7BLYzgS2J","type":"session.input_transcript.delta"},"rx_ms":38373,"sent_ms":38400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19200,"event_id":"event_EmRobYiSslDwJUKfa2DMX","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":38492,"sent_ms":38600}
+{"event":{"delta":" ","elapsed_ms":38600,"event_id":"event_EmRobdh0ii16suK60FIiw","type":"session.output_transcript.delta"},"rx_ms":38686,"sent_ms":38800}
+{"event":{"delta":"100","elapsed_ms":38600,"event_id":"event_EmRobp4nEwmmwYV5LATEu","type":"session.output_transcript.delta"},"rx_ms":38690,"sent_ms":38800}
+{"event":{"delta":".","elapsed_ms":38600,"event_id":"event_EmRob0OaIEMvQAxuW64Pw","type":"session.input_transcript.delta"},"rx_ms":38776,"sent_ms":38800}
+{"event":{"delta":" You","elapsed_ms":38600,"event_id":"event_EmRobxZJ8eEfBNvWGK203","type":"session.input_transcript.delta"},"rx_ms":38783,"sent_ms":38800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19400,"event_id":"event_EmRobArAx1FPVWXdmu9Mg","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":38888,"sent_ms":39000}
+{"event":{"delta":" 万","elapsed_ms":39000,"event_id":"event_EmRobemuc4WvbtByblNy4","type":"session.output_transcript.delta"},"rx_ms":39013,"sent_ms":39200}
+{"event":{"delta":" can","elapsed_ms":38800,"event_id":"event_EmRob2UaNrvv1thLYn8z2","type":"session.input_transcript.delta"},"rx_ms":39014,"sent_ms":39200}
+{"event":{"delta":"令","elapsed_ms":39200,"event_id":"event_EmRocFBwoTwCNfP1oR2Tp","type":"session.output_transcript.delta"},"rx_ms":39208,"sent_ms":39200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19600,"event_id":"event_EmRocyA3RSNpUSn60xjkA","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":39267,"sent_ms":39400}
+{"event":{"delta":" deploy","elapsed_ms":39200,"event_id":"event_EmRocUBRqY51Xu0Ly1c3y","type":"session.input_transcript.delta"},"rx_ms":39376,"sent_ms":39400}
+{"event":{"delta":"牌","elapsed_ms":39400,"event_id":"event_EmRockNewjEf8ZjDLa0FI","type":"session.output_transcript.delta"},"rx_ms":39411,"sent_ms":39600}
+{"event":{"delta":"的","elapsed_ms":39600,"event_id":"event_EmRoc6arFAweDjy2q5KMP","type":"session.output_transcript.delta"},"rx_ms":39584,"sent_ms":39600}
+{"event":{"delta":"上下","elapsed_ms":39600,"event_id":"event_EmRocPOR5w6x6XQlprTFv","type":"session.output_transcript.delta"},"rx_ms":39586,"sent_ms":39600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":19800,"event_id":"event_EmRocLPA0B0dAZeqwXMbJ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":39643,"sent_ms":39800}
+{"event":{"delta":" inference","elapsed_ms":39800,"event_id":"event_EmRoc0GIAbZOlPB2UvYMg","type":"session.input_transcript.delta"},"rx_ms":40062,"sent_ms":40200}
+{"event":{"delta":"文","elapsed_ms":40000,"event_id":"event_EmRoc1M95QK2iJY7aYOfr","type":"session.output_transcript.delta"},"rx_ms":40062,"sent_ms":40200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20000,"event_id":"event_EmRocP46N67kJdeKZKjM3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":40065,"sent_ms":40200}
+{"event":{"delta":"窗口","elapsed_ms":40200,"event_id":"event_EmRodnbS2BbzlWhesHQX2","type":"session.output_transcript.delta"},"rx_ms":40257,"sent_ms":40400}
+{"event":{"delta":" endpoints","elapsed_ms":40200,"event_id":"event_EmRodE4nzWeoa7qroH2bB","type":"session.input_transcript.delta"},"rx_ms":40376,"sent_ms":40400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20200,"event_id":"event_EmRodr1BzbA6WPDiGsUm4","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":40450,"sent_ms":40600}
+{"event":{"delta":"。","elapsed_ms":40600,"event_id":"event_EmRodrtDYThb8CCsTJCyt","type":"session.output_transcript.delta"},"rx_ms":40585,"sent_ms":40600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20400,"event_id":"event_EmRodrkjcneXepwfywvHc","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":40855,"sent_ms":41000}
+{"event":{"delta":"你","elapsed_ms":41000,"event_id":"event_EmRodvJx8MGMXTbASl7H4","type":"session.output_transcript.delta"},"rx_ms":40958,"sent_ms":41000}
+{"event":{"delta":" across","elapsed_ms":40800,"event_id":"event_EmRodexdUup5RO91s0i2l","type":"session.input_transcript.delta"},"rx_ms":40971,"sent_ms":41000}
+{"event":{"delta":" three","elapsed_ms":41000,"event_id":"event_EmRodecr15HNjgb6nT8hQ","type":"session.input_transcript.delta"},"rx_ms":41181,"sent_ms":41200}
+{"event":{"delta":"可以","elapsed_ms":41200,"event_id":"event_EmRodLBMvSiyLCpowJd04","type":"session.output_transcript.delta"},"rx_ms":41196,"sent_ms":41200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20600,"event_id":"event_EmRoeLK28OTs8JptoHiwy","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":41250,"sent_ms":41400}
+{"event":{"delta":"跨","elapsed_ms":41600,"event_id":"event_EmRoeKfswlxpCtqfXQuZz","type":"session.output_transcript.delta"},"rx_ms":41636,"sent_ms":41800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":20800,"event_id":"event_EmRoewdYhMKfckfWwK5Qw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":41636,"sent_ms":41800}
+{"event":{"delta":" Availability","elapsed_ms":41600,"event_id":"event_EmRoe8aQ0FqprY986l0MK","type":"session.input_transcript.delta"},"rx_ms":41802,"sent_ms":41800}
+{"event":{"delta":"三个","elapsed_ms":41800,"event_id":"event_EmRoeiYQNNZaEHr4MrNlJ","type":"session.output_transcript.delta"},"rx_ms":41845,"sent_ms":42000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21000,"event_id":"event_EmRoeNkc4mxbFQu3dkONr","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":42159,"sent_ms":42200}
+{"event":{"delta":" Zones","elapsed_ms":42000,"event_id":"event_EmRoeC0NYKsWLhDIya6Fs","type":"session.input_transcript.delta"},"rx_ms":42182,"sent_ms":42200}
+{"event":{"delta":"可","elapsed_ms":42200,"event_id":"event_EmRofOwBV4l1DfkclNO7z","type":"session.output_transcript.delta"},"rx_ms":42211,"sent_ms":42200}
+{"event":{"delta":"用","elapsed_ms":42400,"event_id":"event_EmRofKSeCNYUw9oH7DgK6","type":"session.output_transcript.delta"},"rx_ms":42379,"sent_ms":42400}
+{"event":{"delta":" to","elapsed_ms":42200,"event_id":"event_EmRofLKVho18Y9DnYYFsF","type":"session.input_transcript.delta"},"rx_ms":42383,"sent_ms":42400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21200,"event_id":"event_EmRofccvZ077s0nXIPz59","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":42440,"sent_ms":42600}
+{"event":{"delta":"区","elapsed_ms":42600,"event_id":"event_EmRofHV0OIVjPiGGxBR0e","type":"session.output_transcript.delta"},"rx_ms":42685,"sent_ms":42800}
+{"event":{"delta":" improve","elapsed_ms":42600,"event_id":"event_EmRofHlzyv7Ifdrp8jort","type":"session.input_transcript.delta"},"rx_ms":42859,"sent_ms":43000}
+{"event":{"delta":"部署","elapsed_ms":42800,"event_id":"event_EmRofokGqtiUvqlB58B8f","type":"session.output_transcript.delta"},"rx_ms":42882,"sent_ms":43000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21400,"event_id":"event_EmRofyotB2r5YdEjFQkjq","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":42943,"sent_ms":43000}
+{"event":{"delta":" throughput","elapsed_ms":43000,"event_id":"event_EmRofjOFeGNFuL8cMcvHb","type":"session.input_transcript.delta"},"rx_ms":43210,"sent_ms":43400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21600,"event_id":"event_EmRogUqScXpkhxRVmrqo3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":43247,"sent_ms":43400}
+{"event":{"delta":"推","elapsed_ms":43400,"event_id":"event_EmRogMCOa4piZBRzZduf6","type":"session.output_transcript.delta"},"rx_ms":43369,"sent_ms":43400}
+{"event":{"delta":" and","elapsed_ms":43200,"event_id":"event_EmRogb5i3ROF8z58PDzrZ","type":"session.input_transcript.delta"},"rx_ms":43373,"sent_ms":43400}
+{"event":{"delta":"理","elapsed_ms":43600,"event_id":"event_EmRogg3qw94mHSTZpZNJP","type":"session.output_transcript.delta"},"rx_ms":43604,"sent_ms":43600}
+{"event":{"delta":"终","elapsed_ms":43600,"event_id":"event_EmRogPiKJzoOznrO0gxoC","type":"session.output_transcript.delta"},"rx_ms":43609,"sent_ms":43600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":21800,"event_id":"event_EmRogdTfgQL24JWfvYOgi","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":43736,"sent_ms":43800}
+{"event":{"delta":"端","elapsed_ms":43800,"event_id":"event_EmRogptwHqgopMr8ZWwUq","type":"session.output_transcript.delta"},"rx_ms":43808,"sent_ms":43800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22000,"event_id":"event_EmRogvIMagoek9NZbHG6j","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":44056,"sent_ms":44200}
+{"event":{"delta":",","elapsed_ms":44200,"event_id":"event_EmRogXFR5niLv1ccY6nz5","type":"session.output_transcript.delta"},"rx_ms":44257,"sent_ms":44400}
+{"event":{"delta":" resilience","elapsed_ms":44000,"event_id":"event_EmRogmyC7NKApuCtQS9cv","type":"session.input_transcript.delta"},"rx_ms":44257,"sent_ms":44400}
+{"event":{"delta":"提升","elapsed_ms":44400,"event_id":"event_EmRohZpDT5qnpXIWb6U4v","type":"session.output_transcript.delta"},"rx_ms":44421,"sent_ms":44600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22200,"event_id":"event_EmRohcuGbYDWguHy21gjX","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":44480,"sent_ms":44600}
+{"event":{"delta":".","elapsed_ms":44400,"event_id":"event_EmRohXd43ovADvyG5TSuU","type":"session.input_transcript.delta"},"rx_ms":44580,"sent_ms":44600}
+{"event":{"delta":" With","elapsed_ms":44400,"event_id":"event_EmRohoM69s5UT8Xbj9X1w","type":"session.input_transcript.delta"},"rx_ms":44589,"sent_ms":44600}
+{"event":{"delta":"吞","elapsed_ms":44800,"event_id":"event_EmRohXhhar0jOAuzu8RRb","type":"session.output_transcript.delta"},"rx_ms":44808,"sent_ms":44800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22400,"event_id":"event_EmRohmZ0weDpYGS0PetuI","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":44865,"sent_ms":45000}
+{"event":{"delta":"吐","elapsed_ms":45000,"event_id":"event_EmRohU8yJmt6AkD4vdbMk","type":"session.output_transcript.delta"},"rx_ms":45006,"sent_ms":45000}
+{"event":{"delta":" retrieval","elapsed_ms":45000,"event_id":"event_EmRohDT7FVfoZp1pcHZlD","type":"session.input_transcript.delta"},"rx_ms":45180,"sent_ms":45200}
+{"event":{"delta":"量","elapsed_ms":45200,"event_id":"event_EmRoipLzroiHwxd0XpRC3","type":"session.output_transcript.delta"},"rx_ms":45209,"sent_ms":45200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22600,"event_id":"event_EmRoisS5kZpQKxf1eQDNw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":45308,"sent_ms":45400}
+{"event":{"delta":"和","elapsed_ms":45400,"event_id":"event_EmRoipT7GFmaozfJXv6yI","type":"session.output_transcript.delta"},"rx_ms":45390,"sent_ms":45400}
+{"event":{"delta":"弹","elapsed_ms":45600,"event_id":"event_EmRoieu2r4zGCKR2bhw56","type":"session.output_transcript.delta"},"rx_ms":45613,"sent_ms":45800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":22800,"event_id":"event_EmRoi3uMoP2nh9Pd0GwaR","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":45671,"sent_ms":45800}
+{"event":{"delta":" augmented","elapsed_ms":45600,"event_id":"event_EmRoiVjphBdY89W66zkib","type":"session.input_transcript.delta"},"rx_ms":45831,"sent_ms":46000}
+{"event":{"delta":"性","elapsed_ms":45800,"event_id":"event_EmRoi7ie7tEbUYaiIK5TS","type":"session.output_transcript.delta"},"rx_ms":45831,"sent_ms":46000}
+{"event":{"delta":"。","elapsed_ms":46000,"event_id":"event_EmRoicEg2ooW0zm76yQG1","type":"session.output_transcript.delta"},"rx_ms":46017,"sent_ms":46200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23000,"event_id":"event_EmRoiQ0SDi9P3fHlFOOL5","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":46076,"sent_ms":46200}
+{"event":{"delta":"借","elapsed_ms":46200,"event_id":"event_EmRoixhOJ3QoprW3LU7Es","type":"session.output_transcript.delta"},"rx_ms":46194,"sent_ms":46200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23200,"event_id":"event_EmRojbq6NsncFFklc2B9Z","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":46423,"sent_ms":46600}
+{"event":{"delta":" generation","elapsed_ms":46400,"event_id":"event_EmRojrj1mEr2GNynTGdds","type":"session.input_transcript.delta"},"rx_ms":46574,"sent_ms":46600}
+{"event":{"delta":"助","elapsed_ms":46600,"event_id":"event_EmRojYMAoFIomogygE3MU","type":"session.output_transcript.delta"},"rx_ms":46602,"sent_ms":46600}
+{"event":{"delta":",","elapsed_ms":46600,"event_id":"event_EmRojGSIzx51xL2Y5VwgW","type":"session.input_transcript.delta"},"rx_ms":46779,"sent_ms":46800}
+{"event":{"delta":"检","elapsed_ms":46800,"event_id":"event_EmRojqDS8FStCKd3mddx5","type":"session.output_transcript.delta"},"rx_ms":46784,"sent_ms":46800}
+{"event":{"delta":" you","elapsed_ms":46600,"event_id":"event_EmRojr5zve3pKnmIgoJIF","type":"session.input_transcript.delta"},"rx_ms":46786,"sent_ms":46800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23400,"event_id":"event_EmRojwv1obJWHiTUrQmsX","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":46883,"sent_ms":47000}
+{"event":{"delta":" can","elapsed_ms":46800,"event_id":"event_EmRojOXqoJto5GH0cIgA0","type":"session.input_transcript.delta"},"rx_ms":47045,"sent_ms":47200}
+{"event":{"delta":"索","elapsed_ms":47000,"event_id":"event_EmRojRFZPWfJap0GeFO4H","type":"session.output_transcript.delta"},"rx_ms":47061,"sent_ms":47200}
+{"event":{"delta":"增强","elapsed_ms":47200,"event_id":"event_EmRokey7IoZJiZukUqop8","type":"session.output_transcript.delta"},"rx_ms":47209,"sent_ms":47400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23600,"event_id":"event_EmRokZGoHKgGcJFT1HjPL","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":47268,"sent_ms":47400}
+{"event":{"delta":" ground","elapsed_ms":47200,"event_id":"event_EmRokyaVRjk6gUpV0aSeC","type":"session.input_transcript.delta"},"rx_ms":47403,"sent_ms":47400}
+{"event":{"delta":" the","elapsed_ms":47400,"event_id":"event_EmRok6YQ2lD1CE2TRdgNJ","type":"session.input_transcript.delta"},"rx_ms":47578,"sent_ms":47600}
+{"event":{"delta":"生成","elapsed_ms":47600,"event_id":"event_EmRokxOB9f1O3VgaCzK63","type":"session.output_transcript.delta"},"rx_ms":47597,"sent_ms":47600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":23800,"event_id":"event_EmRokpyvTIJlNni05xfTm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":47655,"sent_ms":47800}
+{"event":{"delta":" model","elapsed_ms":47600,"event_id":"event_EmRokAKtFCdshgxy5ZrOi","type":"session.input_transcript.delta"},"rx_ms":47781,"sent_ms":47800}
+{"event":{"delta":"'s","elapsed_ms":47600,"event_id":"event_EmRokhkX2NUHj0yut5x87","type":"session.input_transcript.delta"},"rx_ms":47787,"sent_ms":47800}
+{"event":{"delta":",","elapsed_ms":48000,"event_id":"event_EmRokiKHQmTnHWhAcsMOY","type":"session.output_transcript.delta"},"rx_ms":48022,"sent_ms":48200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24000,"event_id":"event_EmRokOtN4hXIy4LaeeG2m","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":48090,"sent_ms":48200}
+{"event":{"delta":"你","elapsed_ms":48200,"event_id":"event_EmRolbmePZbspWoB1I55z","type":"session.output_transcript.delta"},"rx_ms":48207,"sent_ms":48400}
+{"event":{"delta":" responses","elapsed_ms":48200,"event_id":"event_EmRolia1pRUQqr7F82Hu0","type":"session.input_transcript.delta"},"rx_ms":48453,"sent_ms":48600}
+{"event":{"delta":"可以","elapsed_ms":48400,"event_id":"event_EmRoloULxLY1AZ04BhMSR","type":"session.output_transcript.delta"},"rx_ms":48453,"sent_ms":48600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24200,"event_id":"event_EmRolYZrbBckxQQ6lOp9p","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":48453,"sent_ms":48600}
+{"event":{"delta":"让","elapsed_ms":48600,"event_id":"event_EmRolPXQk3Law7U33CKov","type":"session.output_transcript.delta"},"rx_ms":48608,"sent_ms":48600}
+{"event":{"delta":" in","elapsed_ms":48400,"event_id":"event_EmRolAsrSWQXtkobFwrpx","type":"session.input_transcript.delta"},"rx_ms":48616,"sent_ms":48800}
+{"event":{"delta":"模型","elapsed_ms":48800,"event_id":"event_EmRolUTNIqL2a8nGH3wnI","type":"session.output_transcript.delta"},"rx_ms":48762,"sent_ms":48800}
+{"event":{"delta":" your","elapsed_ms":48600,"event_id":"event_EmRolEh4eZvldyQp31Wwo","type":"session.input_transcript.delta"},"rx_ms":48778,"sent_ms":48800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24400,"event_id":"event_EmRolRsCZ5eUD3mjRzBmN","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":48819,"sent_ms":49000}
+{"event":{"delta":" own","elapsed_ms":48800,"event_id":"event_EmRolQvPnkFWCHpdOHOQQ","type":"session.input_transcript.delta"},"rx_ms":48977,"sent_ms":49000}
+{"event":{"delta":"的","elapsed_ms":49200,"event_id":"event_EmRoloHQBC6HwmvoY2ypV","type":"session.output_transcript.delta"},"rx_ms":49182,"sent_ms":49200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24600,"event_id":"event_EmRom3xzsqMr90SyVpU2k","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":49239,"sent_ms":49400}
+{"event":{"delta":" data","elapsed_ms":49200,"event_id":"event_EmRomLFwoAC4j9AK6gQND","type":"session.input_transcript.delta"},"rx_ms":49371,"sent_ms":49400}
+{"event":{"delta":"回答","elapsed_ms":49400,"event_id":"event_EmRomwvFzUF7hposOAVO1","type":"session.output_transcript.delta"},"rx_ms":49408,"sent_ms":49400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":24800,"event_id":"event_EmRomgMo2nWde7bgn40iG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":49730,"sent_ms":49800}
+{"event":{"delta":"基","elapsed_ms":49800,"event_id":"event_EmRomYCKGEJ4TOvcGuTwX","type":"session.output_transcript.delta"},"rx_ms":49808,"sent_ms":49800}
+{"event":{"delta":"于","elapsed_ms":50000,"event_id":"event_EmRomqoT7rcnhzxNso2P9","type":"session.output_transcript.delta"},"rx_ms":50025,"sent_ms":50200}
+{"event":{"delta":"你","elapsed_ms":50000,"event_id":"event_EmRom5kZL377q5NNcopI0","type":"session.output_transcript.delta"},"rx_ms":50025,"sent_ms":50200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25000,"event_id":"event_EmRomUGPtTjMK3ZrpDBYS","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":50051,"sent_ms":50200}
+{"event":{"delta":"自己的","elapsed_ms":50200,"event_id":"event_EmRonXT5donhhxtohYFJZ","type":"session.output_transcript.delta"},"rx_ms":50223,"sent_ms":50400}
+{"event":{"delta":".","elapsed_ms":50200,"event_id":"event_EmRonhd5CS1FaFoa7jBGe","type":"session.input_transcript.delta"},"rx_ms":50372,"sent_ms":50400}
+{"event":{"delta":" Amazon","elapsed_ms":50200,"event_id":"event_EmRonnffgfV400slx5V4v","type":"session.input_transcript.delta"},"rx_ms":50378,"sent_ms":50400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25200,"event_id":"event_EmRonXuUh5rHq4PKLi1Zo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":50421,"sent_ms":50600}
+{"event":{"delta":"数据","elapsed_ms":50600,"event_id":"event_EmRonBvASdUUd94xCXH3s","type":"session.output_transcript.delta"},"rx_ms":50611,"sent_ms":50600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25400,"event_id":"event_EmRon8SAdmmhVuk7VKRWN","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":50863,"sent_ms":51000}
+{"event":{"delta":" S","elapsed_ms":50800,"event_id":"event_EmRonTacYUc2zCjCRpCwW","type":"session.input_transcript.delta"},"rx_ms":50981,"sent_ms":51000}
+{"event":{"delta":"3","elapsed_ms":50800,"event_id":"event_EmRondo2597aUYbXSMUxe","type":"session.input_transcript.delta"},"rx_ms":51072,"sent_ms":51200}
+{"event":{"delta":" V","elapsed_ms":51000,"event_id":"event_EmRoo1lL53AqqiRrmipl2","type":"session.input_transcript.delta"},"rx_ms":51238,"sent_ms":51400}
+{"event":{"delta":"ectors","elapsed_ms":51000,"event_id":"event_EmRooQ095KxY99Y687pWP","type":"session.input_transcript.delta"},"rx_ms":51245,"sent_ms":51400}
+{"event":{"delta":"。","elapsed_ms":51200,"event_id":"event_EmRoop3BM5P5jpgdDQAhS","type":"session.output_transcript.delta"},"rx_ms":51251,"sent_ms":51400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25600,"event_id":"event_EmRooYOjuQvTR7HeYQ4DF","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":51311,"sent_ms":51400}
+{"event":{"delta":" reduces","elapsed_ms":51400,"event_id":"event_EmRoo2AJdL3NDSS9fOy96","type":"session.input_transcript.delta"},"rx_ms":51597,"sent_ms":51600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":25800,"event_id":"event_EmRooTcDHSkrmU3VWyhAb","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":51634,"sent_ms":51800}
+{"event":{"delta":" the","elapsed_ms":51600,"event_id":"event_EmRooZ4yvhwzfnEy7K7zK","type":"session.input_transcript.delta"},"rx_ms":51769,"sent_ms":51800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":26000,"event_id":"event_EmRooiMGjCnTcktfnrmpt","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":52122,"sent_ms":52200}
+{"event":{"delta":" cost","elapsed_ms":52000,"event_id":"event_EmRooAKRQTWETlol7u5uV","type":"session.input_transcript.delta"},"rx_ms":52175,"sent_ms":52200}
+{"event":{"delta":" of","elapsed_ms":52200,"event_id":"event_EmRopy0wGwLXqKwKg2nSw","type":"session.input_transcript.delta"},"rx_ms":52371,"sent_ms":52400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":26200,"event_id":"event_EmRop0iPqMLMdBbvu8Aua","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":52390,"sent_ms":52400}
+{"event":{"delta":" storing","elapsed_ms":52400,"event_id":"event_EmRopwnSkUgyjo35Dlkfr","type":"session.input_transcript.delta"},"rx_ms":52644,"sent_ms":52800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":26400,"event_id":"event_EmRop6FFDUxfcO4aF1FYp","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":52837,"sent_ms":53000}
+{"event":{"delta":" and","elapsed_ms":53000,"event_id":"event_EmRopnEXxEifBMZG4edFH","type":"session.input_transcript.delta"},"rx_ms":53171,"sent_ms":53200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":26600,"event_id":"event_EmRoq7wUevnYxV9Eq2HWf","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":53229,"sent_ms":53400}
+{"event":{"delta":" querying","elapsed_ms":53200,"event_id":"event_EmRoqdOsTitQCywZEtN9K","type":"session.input_transcript.delta"},"rx_ms":53380,"sent_ms":53400}
+{"event":{"delta":"Amazon","elapsed_ms":53600,"event_id":"event_EmRoqVviwHnnkwDCQdFAF","type":"session.output_transcript.delta"},"rx_ms":53574,"sent_ms":53600}
+{"event":{"delta":" vectors","elapsed_ms":53400,"event_id":"event_EmRoqyfjWz5TZF0J55dra","type":"session.input_transcript.delta"},"rx_ms":53586,"sent_ms":53600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":26800,"event_id":"event_EmRoq60gLteXMxB2rRhAZ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":53694,"sent_ms":53800}
+{"event":{"delta":" by","elapsed_ms":53800,"event_id":"event_EmRoqT779VoQpgXjBdNL8","type":"session.input_transcript.delta"},"rx_ms":53977,"sent_ms":54000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":27000,"event_id":"event_EmRoqmF5pqin4XymiSYbR","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":54059,"sent_ms":54200}
+{"event":{"delta":" up","elapsed_ms":54000,"event_id":"event_EmRoqjudTXVdfujDTShPe","type":"session.input_transcript.delta"},"rx_ms":54219,"sent_ms":54400}
+{"event":{"delta":" S","elapsed_ms":54200,"event_id":"event_EmRorGKiAFuwYFiBb3tRK","type":"session.output_transcript.delta"},"rx_ms":54219,"sent_ms":54400}
+{"event":{"delta":"3","elapsed_ms":54400,"event_id":"event_EmRorE8OlP6WCI0jcrsDd","type":"session.output_transcript.delta"},"rx_ms":54371,"sent_ms":54400}
+{"event":{"delta":" to","elapsed_ms":54200,"event_id":"event_EmRorxyfLBS8tzGQybLiG","type":"session.input_transcript.delta"},"rx_ms":54389,"sent_ms":54400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":27200,"event_id":"event_EmRoralM0MuSMTgsSunvo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":54436,"sent_ms":54600}
+{"event":{"delta":" ninety","elapsed_ms":54400,"event_id":"event_EmRortH6WR5z5cRfzYLFF","type":"session.input_transcript.delta"},"rx_ms":54574,"sent_ms":54600}
+{"event":{"delta":" 向","elapsed_ms":54600,"event_id":"event_EmRorgHfvFSVvpg806xP0","type":"session.output_transcript.delta"},"rx_ms":54614,"sent_ms":54800}
+{"event":{"delta":"量","elapsed_ms":54800,"event_id":"event_EmRorYqzZNPIzMSNSbUwZ","type":"session.output_transcript.delta"},"rx_ms":54809,"sent_ms":55000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":27400,"event_id":"event_EmRorZ730RPdablhEawPD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":54870,"sent_ms":55000}
+{"event":{"delta":"可","elapsed_ms":55000,"event_id":"event_EmRor5VuyiPyjWHuwVcbp","type":"session.output_transcript.delta"},"rx_ms":54997,"sent_ms":55000}
+{"event":{"delta":"将","elapsed_ms":55200,"event_id":"event_EmRorF87LfQ2yAVHCy8FP","type":"session.output_transcript.delta"},"rx_ms":55175,"sent_ms":55200}
+{"event":{"delta":" percent","elapsed_ms":55000,"event_id":"event_EmRorfiY3opcHJuwPu3C5","type":"session.input_transcript.delta"},"rx_ms":55268,"sent_ms":55400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":27600,"event_id":"event_EmRosQgQBTc7zaswnyBXt","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":55269,"sent_ms":55400}
+{"event":{"delta":"向","elapsed_ms":55400,"event_id":"event_EmRosBZwjqJPkl9EHEbCY","type":"session.output_transcript.delta"},"rx_ms":55466,"sent_ms":55600}
+{"event":{"delta":"量","elapsed_ms":55600,"event_id":"event_EmRostt1ZZDTOmyROQoQb","type":"session.output_transcript.delta"},"rx_ms":55601,"sent_ms":55600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":27800,"event_id":"event_EmRosO2CrkHxH2BPcQAPo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":55653,"sent_ms":55800}
+{"event":{"delta":"存","elapsed_ms":55800,"event_id":"event_EmRosAyvRNNamx8MTHtF6","type":"session.output_transcript.delta"},"rx_ms":55792,"sent_ms":55800}
+{"event":{"delta":"储","elapsed_ms":56000,"event_id":"event_EmRos1CW9ujQbab3idXIQ","type":"session.output_transcript.delta"},"rx_ms":56002,"sent_ms":56000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":28000,"event_id":"event_EmRossOTqhvzopOdSdXzx","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":56063,"sent_ms":56200}
+{"event":{"delta":".","elapsed_ms":55800,"event_id":"event_EmRosSG79Fuotdd5BvsFl","type":"session.input_transcript.delta"},"rx_ms":56175,"sent_ms":56200}
+{"event":{"delta":" Server","elapsed_ms":55800,"event_id":"event_EmRoslFS3XLxrhHBl9rPK","type":"session.input_transcript.delta"},"rx_ms":56184,"sent_ms":56200}
+{"event":{"delta":"less","elapsed_ms":55800,"event_id":"event_EmRosVCHeO1JU7iW5KW2I","type":"session.input_transcript.delta"},"rx_ms":56189,"sent_ms":56200}
+{"event":{"delta":"和","elapsed_ms":56200,"event_id":"event_EmRot29JDZJHxxTV6xvDX","type":"session.output_transcript.delta"},"rx_ms":56218,"sent_ms":56400}
+{"event":{"delta":"查询","elapsed_ms":56400,"event_id":"event_EmRotWD4hccVwMODoS7zt","type":"session.output_transcript.delta"},"rx_ms":56397,"sent_ms":56400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":28200,"event_id":"event_EmRotBfkNL0C1b2LWEzgK","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":56455,"sent_ms":56600}
+{"event":{"delta":" inference","elapsed_ms":56400,"event_id":"event_EmRotI1SulGUDSXuwahLq","type":"session.input_transcript.delta"},"rx_ms":56569,"sent_ms":56600}
+{"event":{"delta":"成本","elapsed_ms":56800,"event_id":"event_EmRotrRPGYR2aVnohxtTe","type":"session.output_transcript.delta"},"rx_ms":56843,"sent_ms":57000}
+{"event":{"delta":" means","elapsed_ms":56600,"event_id":"event_EmRotDte4B5ZXKfeg3q9c","type":"session.input_transcript.delta"},"rx_ms":56844,"sent_ms":57000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":28400,"event_id":"event_EmRotATO451I0xx7g5APG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":56844,"sent_ms":57000}
+{"event":{"delta":" you","elapsed_ms":56800,"event_id":"event_EmRot6wYUx6dPPVqAsrev","type":"session.input_transcript.delta"},"rx_ms":57010,"sent_ms":57200}
+{"event":{"delta":" only","elapsed_ms":57000,"event_id":"event_EmRotSGedg3CVAnBnyUCR","type":"session.input_transcript.delta"},"rx_ms":57173,"sent_ms":57200}
+{"event":{"delta":"最多","elapsed_ms":57200,"event_id":"event_EmRou2XDr1Wyy6LVGIQl8","type":"session.output_transcript.delta"},"rx_ms":57207,"sent_ms":57200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":28600,"event_id":"event_EmRouirYsq67Q3n9Af0Jk","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":57268,"sent_ms":57400}
+{"event":{"delta":" pay","elapsed_ms":57400,"event_id":"event_EmRou4NX6qVXxjmDJnIk6","type":"session.input_transcript.delta"},"rx_ms":57580,"sent_ms":57600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":28800,"event_id":"event_EmRouiWQO2Uh87qrWxR0G","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":57662,"sent_ms":57800}
+{"event":{"delta":" for","elapsed_ms":57600,"event_id":"event_EmRouSlu77pkdVxWrqgTB","type":"session.input_transcript.delta"},"rx_ms":57778,"sent_ms":57800}
+{"event":{"delta":" the","elapsed_ms":57600,"event_id":"event_EmRouPJYD9l2tdqxzRTVe","type":"session.input_transcript.delta"},"rx_ms":57784,"sent_ms":57800}
+{"event":{"delta":"降低","elapsed_ms":57800,"event_id":"event_EmRoul1FeT5ksAOyk7Aqj","type":"session.output_transcript.delta"},"rx_ms":57888,"sent_ms":58000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":29000,"event_id":"event_EmRouIgeJ6U4peR5n1HzM","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":58108,"sent_ms":58200}
+{"event":{"delta":" ","elapsed_ms":58200,"event_id":"event_EmRounjGDkj959xcgleki","type":"session.output_transcript.delta"},"rx_ms":58169,"sent_ms":58200}
+{"event":{"delta":"90","elapsed_ms":58200,"event_id":"event_EmRouODt0RBWLWQ4y6jd5","type":"session.output_transcript.delta"},"rx_ms":58174,"sent_ms":58200}
+{"event":{"delta":" tokens","elapsed_ms":58000,"event_id":"event_EmRouHhZXtJPV79chJeCV","type":"session.input_transcript.delta"},"rx_ms":58180,"sent_ms":58200}
+{"event":{"delta":" you","elapsed_ms":58200,"event_id":"event_EmRov4UeCdZalIGCyUFWJ","type":"session.input_transcript.delta"},"rx_ms":58413,"sent_ms":58400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":29200,"event_id":"event_EmRovHhOsHLCj8GXn1kTT","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":58427,"sent_ms":58600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":29400,"event_id":"event_EmRov7bU30EGjCiWyNbed","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":58938,"sent_ms":59000}
+{"event":{"delta":" actually","elapsed_ms":58800,"event_id":"event_EmRovigc8uhztwPWbbdJB","type":"session.input_transcript.delta"},"rx_ms":58986,"sent_ms":59000}
+{"event":{"delta":"%。","elapsed_ms":59000,"event_id":"event_EmRovTML3BwT5zol8M9uH","type":"session.output_transcript.delta"},"rx_ms":59016,"sent_ms":59200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":29600,"event_id":"event_EmRow6oLxJLUs2KgN32EG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":59221,"sent_ms":59400}
+{"event":{"delta":" use","elapsed_ms":59200,"event_id":"event_EmRoweZsET54SC4r9rSX6","type":"session.input_transcript.delta"},"rx_ms":59462,"sent_ms":59600}
+{"event":{"delta":"无","elapsed_ms":59600,"event_id":"event_EmRowNsXg68JbkskVQvbT","type":"session.output_transcript.delta"},"rx_ms":59659,"sent_ms":59800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":29800,"event_id":"event_EmRowpLKZgHuLpegfVwJo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":59723,"sent_ms":59800}
+{"event":{"delta":"服务器","elapsed_ms":60000,"event_id":"event_EmRowUxygtXHkx0xjCH7g","type":"session.output_transcript.delta"},"rx_ms":59987,"sent_ms":60000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":30000,"event_id":"event_EmRowfzpg4TOQiQ8GFSh5","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":60021,"sent_ms":60200}
+{"event":{"delta":".","elapsed_ms":60000,"event_id":"event_EmRowTJrCbq45Y6P0UxqF","type":"session.input_transcript.delta"},"rx_ms":60178,"sent_ms":60200}
+{"event":{"delta":" Lat","elapsed_ms":60000,"event_id":"event_EmRowKQeUQaTTb0dxenjI","type":"session.input_transcript.delta"},"rx_ms":60184,"sent_ms":60200}
+{"event":{"delta":"ency","elapsed_ms":60000,"event_id":"event_EmRow0u3wg5HcVoWC0P3f","type":"session.input_transcript.delta"},"rx_ms":60191,"sent_ms":60200}
+{"event":{"delta":"推","elapsed_ms":60400,"event_id":"event_EmRoxK85gNghNz7mQwq8y","type":"session.output_transcript.delta"},"rx_ms":60380,"sent_ms":60400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":30200,"event_id":"event_EmRox2ntXU9oEXbGWOEey","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":60510,"sent_ms":60600}
+{"event":{"delta":"理","elapsed_ms":60600,"event_id":"event_EmRox3K89ubd3zQ6rc03f","type":"session.output_transcript.delta"},"rx_ms":60613,"sent_ms":60800}
+{"event":{"delta":"意味着","elapsed_ms":60800,"event_id":"event_EmRoxjiWStvePt4Sb81H8","type":"session.output_transcript.delta"},"rx_ms":60770,"sent_ms":60800}
+{"event":{"delta":" matters","elapsed_ms":60600,"event_id":"event_EmRoxx5Uyxpz6DhFs1ULY","type":"session.input_transcript.delta"},"rx_ms":60780,"sent_ms":60800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":30400,"event_id":"event_EmRoxY6nExHkEaa2dKZGs","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":60830,"sent_ms":61000}
+{"event":{"delta":",","elapsed_ms":61200,"event_id":"event_EmRoxmTywB6Gb56l58tyB","type":"session.output_transcript.delta"},"rx_ms":61189,"sent_ms":61200}
+{"event":{"delta":".","elapsed_ms":61000,"event_id":"event_EmRoyx8O1wqKv0tihES9c","type":"session.input_transcript.delta"},"rx_ms":61200,"sent_ms":61200}
+{"event":{"delta":" Our","elapsed_ms":61000,"event_id":"event_EmRoyRt81Uq6dRX3HuiNP","type":"session.input_transcript.delta"},"rx_ms":61207,"sent_ms":61400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":30600,"event_id":"event_EmRoyHekeAb6GcTRClEr1","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":61250,"sent_ms":61400}
+{"event":{"delta":"你","elapsed_ms":61400,"event_id":"event_EmRoySsQZqlSgALVYdQWV","type":"session.output_transcript.delta"},"rx_ms":61373,"sent_ms":61400}
+{"event":{"delta":"只","elapsed_ms":61400,"event_id":"event_EmRoybF9lIuOMwqBn5WmZ","type":"session.output_transcript.delta"},"rx_ms":61377,"sent_ms":61400}
+{"event":{"delta":"为","elapsed_ms":61600,"event_id":"event_EmRoyenYxDbYtY2RETPQV","type":"session.output_transcript.delta"},"rx_ms":61606,"sent_ms":61600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":30800,"event_id":"event_EmRoyskv8lSw3ZOo8bpsj","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":61666,"sent_ms":61800}
+{"event":{"delta":" customers","elapsed_ms":61600,"event_id":"event_EmRoya5w7DghoR3D1sl0T","type":"session.input_transcript.delta"},"rx_ms":61782,"sent_ms":61800}
+{"event":{"delta":"实际","elapsed_ms":61800,"event_id":"event_EmRoynHqMX1d3K0JIvhMP","type":"session.output_transcript.delta"},"rx_ms":61807,"sent_ms":61800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":31000,"event_id":"event_EmRoymhzFJgltu7osd4l9","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":62083,"sent_ms":62200}
+{"event":{"delta":" expect","elapsed_ms":62000,"event_id":"event_EmRozv7gvtseiaDvuWXCN","type":"session.input_transcript.delta"},"rx_ms":62246,"sent_ms":62400}
+{"event":{"delta":" a","elapsed_ms":62200,"event_id":"event_EmRozboYr96sAJsm8v9Au","type":"session.input_transcript.delta"},"rx_ms":62375,"sent_ms":62400}
+{"event":{"delta":"使用","elapsed_ms":62400,"event_id":"event_EmRozQq3xb8Mg002s79lq","type":"session.output_transcript.delta"},"rx_ms":62401,"sent_ms":62400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":31200,"event_id":"event_EmRozEsstHLrzRALFn1RA","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":62465,"sent_ms":62600}
+{"event":{"delta":" time","elapsed_ms":62400,"event_id":"event_EmRozlM6sRjtyaea3lqbf","type":"session.input_transcript.delta"},"rx_ms":62609,"sent_ms":62800}
+{"event":{"delta":"的","elapsed_ms":62600,"event_id":"event_EmRozeiI9Mxtb96T8OOcM","type":"session.output_transcript.delta"},"rx_ms":62609,"sent_ms":62800}
+{"event":{"delta":" to","elapsed_ms":62600,"event_id":"event_EmRoz3qEl2xTpyUoCT13j","type":"session.input_transcript.delta"},"rx_ms":62775,"sent_ms":62800}
+{"event":{"delta":"令","elapsed_ms":62800,"event_id":"event_EmRoz3SbVPcVr3JOni2vg","type":"session.output_transcript.delta"},"rx_ms":62776,"sent_ms":62800}
+{"event":{"delta":"牌","elapsed_ms":62800,"event_id":"event_EmRoz4cUkMBGReqjBGFvZ","type":"session.output_transcript.delta"},"rx_ms":62779,"sent_ms":62800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":31400,"event_id":"event_EmRozNLQuapKaLUy7eB5p","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":62839,"sent_ms":63000}
+{"event":{"delta":"付","elapsed_ms":63000,"event_id":"event_EmRozhDW6tt1z3Wtv736m","type":"session.output_transcript.delta"},"rx_ms":62967,"sent_ms":63000}
+{"event":{"delta":" first","elapsed_ms":62800,"event_id":"event_EmRozF04UsdiFYA9mrwIL","type":"session.input_transcript.delta"},"rx_ms":62970,"sent_ms":63000}
+{"event":{"delta":"费","elapsed_ms":63200,"event_id":"event_EmRp0R5QIfAKh4ejDk19k","type":"session.output_transcript.delta"},"rx_ms":63202,"sent_ms":63200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":31600,"event_id":"event_EmRp0M7VMZNp4puKSfvFh","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":63261,"sent_ms":63400}
+{"event":{"delta":" token","elapsed_ms":63200,"event_id":"event_EmRp00amMlOSnvANro9RF","type":"session.input_transcript.delta"},"rx_ms":63378,"sent_ms":63400}
+{"event":{"delta":"。","elapsed_ms":63400,"event_id":"event_EmRp0iuaOJi7dnYy92UOs","type":"session.output_transcript.delta"},"rx_ms":63411,"sent_ms":63600}
+{"event":{"delta":" of","elapsed_ms":63400,"event_id":"event_EmRp0xjI6S1HXvNzBIhmM","type":"session.input_transcript.delta"},"rx_ms":63656,"sent_ms":63800}
+{"event":{"delta":"延","elapsed_ms":63600,"event_id":"event_EmRp0Mway0E3zCD9iNTX8","type":"session.output_transcript.delta"},"rx_ms":63656,"sent_ms":63800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":31800,"event_id":"event_EmRp0EXXPbaLnXKJQpzxL","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":63656,"sent_ms":63800}
+{"event":{"delta":" less","elapsed_ms":63600,"event_id":"event_EmRp0HITNtYemvWylW9rg","type":"session.input_transcript.delta"},"rx_ms":63820,"sent_ms":64000}
+{"event":{"delta":" than","elapsed_ms":63800,"event_id":"event_EmRp0PZL63FxxeBGkhVx9","type":"session.input_transcript.delta"},"rx_ms":63976,"sent_ms":64000}
+{"event":{"delta":"迟","elapsed_ms":64000,"event_id":"event_EmRp0SP0ByAThEtS5bVGp","type":"session.output_transcript.delta"},"rx_ms":63986,"sent_ms":64000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":32000,"event_id":"event_EmRp0bVHIMvOiJYZpExKS","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":64047,"sent_ms":64200}
+{"event":{"delta":" two","elapsed_ms":64000,"event_id":"event_EmRp0dddneurzCPhgxqlN","type":"session.input_transcript.delta"},"rx_ms":64180,"sent_ms":64200}
+{"event":{"delta":"很","elapsed_ms":64200,"event_id":"event_EmRp1xsE1SOtXNd8BwPDu","type":"session.output_transcript.delta"},"rx_ms":64208,"sent_ms":64400}
+{"event":{"delta":"重要","elapsed_ms":64400,"event_id":"event_EmRp1LLkLTdiU1zgp2oFd","type":"session.output_transcript.delta"},"rx_ms":64404,"sent_ms":64400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":32200,"event_id":"event_EmRp1tZHeAOeiT8q3yI7F","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":64461,"sent_ms":64600}
+{"event":{"delta":" hundred","elapsed_ms":64400,"event_id":"event_EmRp1f7s7cclBjLvFzCLR","type":"session.input_transcript.delta"},"rx_ms":64580,"sent_ms":64600}
+{"event":{"delta":"。","elapsed_ms":64800,"event_id":"event_EmRp1XLW02C9AFKFt2L33","type":"session.output_transcript.delta"},"rx_ms":64814,"sent_ms":65000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":32400,"event_id":"event_EmRp1VIkZMIio4zuzSpEk","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":64872,"sent_ms":65000}
+{"event":{"delta":"客户","elapsed_ms":65000,"event_id":"event_EmRp17FRKidQzM7hVzXJj","type":"session.output_transcript.delta"},"rx_ms":64989,"sent_ms":65000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":32600,"event_id":"event_EmRp2kNmHgHYWvrP2vRqD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":65229,"sent_ms":65400}
+{"event":{"delta":" milliseconds","elapsed_ms":65200,"event_id":"event_EmRp2CEO6QnE2IE3QUpdT","type":"session.input_transcript.delta"},"rx_ms":65395,"sent_ms":65400}
+{"event":{"delta":"希望","elapsed_ms":65600,"event_id":"event_EmRp26VNgVQOJYUYaUdTV","type":"session.output_transcript.delta"},"rx_ms":65577,"sent_ms":65600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":32800,"event_id":"event_EmRp2WmAb4XkhsPkKBxNY","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":65636,"sent_ms":65800}
+{"event":{"delta":"首","elapsed_ms":65800,"event_id":"event_EmRp22uBZ8IRtAzjLHiT7","type":"session.output_transcript.delta"},"rx_ms":65805,"sent_ms":65800}
+{"event":{"delta":".","elapsed_ms":65800,"event_id":"event_EmRp2iv7SqvNUbN8PLnCN","type":"session.input_transcript.delta"},"rx_ms":65990,"sent_ms":66000}
+{"event":{"delta":" So","elapsed_ms":65800,"event_id":"event_EmRp2xFrs7GLKOX83jIHr","type":"session.input_transcript.delta"},"rx_ms":65996,"sent_ms":66000}
+{"event":{"delta":"个","elapsed_ms":66000,"event_id":"event_EmRp2SpwystCFeh1Ak5Au","type":"session.output_transcript.delta"},"rx_ms":66014,"sent_ms":66200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":33000,"event_id":"event_EmRp2IC8oaVXvwoWvlrkS","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":66075,"sent_ms":66200}
+{"event":{"delta":" what","elapsed_ms":66000,"event_id":"event_EmRp2Dibg6r0zu7FYDdaB","type":"session.input_transcript.delta"},"rx_ms":66180,"sent_ms":66200}
+{"event":{"delta":"令","elapsed_ms":66200,"event_id":"event_EmRp3jNXc22eHR2RjVi4O","type":"session.output_transcript.delta"},"rx_ms":66277,"sent_ms":66400}
+{"event":{"delta":"牌","elapsed_ms":66400,"event_id":"event_EmRp3Ks7pGddzioScwUqK","type":"session.output_transcript.delta"},"rx_ms":66444,"sent_ms":66600}
+{"event":{"delta":" does","elapsed_ms":66200,"event_id":"event_EmRp32XotEurkbwkofmxe","type":"session.input_transcript.delta"},"rx_ms":66446,"sent_ms":66600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":33200,"event_id":"event_EmRp3vJdfh0TiCEhEILSS","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":66499,"sent_ms":66600}
+{"event":{"delta":" this","elapsed_ms":66400,"event_id":"event_EmRp34OGUqi7RchBgucZC","type":"session.input_transcript.delta"},"rx_ms":66587,"sent_ms":66600}
+{"event":{"delta":"到","elapsed_ms":66600,"event_id":"event_EmRp3jqxG6GJ6tpt6AQRH","type":"session.output_transcript.delta"},"rx_ms":66613,"sent_ms":66800}
+{"event":{"delta":" mean","elapsed_ms":66600,"event_id":"event_EmRp3P9LeAYBtLSX0uMMi","type":"session.input_transcript.delta"},"rx_ms":66801,"sent_ms":66800}
+{"event":{"delta":"达","elapsed_ms":66800,"event_id":"event_EmRp37bRXFfA6NRsrJ2Yt","type":"session.output_transcript.delta"},"rx_ms":66801,"sent_ms":66800}
+{"event":{"delta":"时间","elapsed_ms":66800,"event_id":"event_EmRp31lVSX7ssUH7cJoh8","type":"session.output_transcript.delta"},"rx_ms":66802,"sent_ms":66800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":33400,"event_id":"event_EmRp35Mu6vQtI52VxNWvN","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":66849,"sent_ms":67000}
+{"event":{"delta":" for","elapsed_ms":66800,"event_id":"event_EmRp3sukBTLSIKBMzXFmj","type":"session.input_transcript.delta"},"rx_ms":66983,"sent_ms":67000}
+{"event":{"delta":"低","elapsed_ms":67200,"event_id":"event_EmRp4LL4P8NbPScCyX4pZ","type":"session.output_transcript.delta"},"rx_ms":67220,"sent_ms":67400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":33600,"event_id":"event_EmRp46ftOm8ZLMCTESlIw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":67326,"sent_ms":67400}
+{"event":{"delta":"于","elapsed_ms":67400,"event_id":"event_EmRp4TOrqljBmgJ2515HL","type":"session.output_transcript.delta"},"rx_ms":67364,"sent_ms":67400}
+{"event":{"delta":" your","elapsed_ms":67200,"event_id":"event_EmRp44LbggloyTl8tytij","type":"session.input_transcript.delta"},"rx_ms":67372,"sent_ms":67400}
+{"event":{"delta":" ","elapsed_ms":67600,"event_id":"event_EmRp4B3WF5zDL7J1rRPNH","type":"session.output_transcript.delta"},"rx_ms":67572,"sent_ms":67600}
+{"event":{"delta":"200","elapsed_ms":67600,"event_id":"event_EmRp4De144h6fJ9QOUTwT","type":"session.output_transcript.delta"},"rx_ms":67576,"sent_ms":67600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":33800,"event_id":"event_EmRp4dRE0jvyJ9tBbgFI4","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":67636,"sent_ms":67800}
+{"event":{"delta":" architecture","elapsed_ms":67800,"event_id":"event_EmRp46ZFr301jh3yEM5p0","type":"session.input_transcript.delta"},"rx_ms":68012,"sent_ms":68000}
+{"event":{"delta":"?","elapsed_ms":67800,"event_id":"event_EmRp4mFvulbOwNQJ9rvOZ","type":"session.input_transcript.delta"},"rx_ms":68019,"sent_ms":68200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":34000,"event_id":"event_EmRp4LQLIBn96BlVuFpjC","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":68070,"sent_ms":68200}
+{"event":{"delta":" 毫","elapsed_ms":68200,"event_id":"event_EmRp5NuaoEaOs3NBtTEgh","type":"session.output_transcript.delta"},"rx_ms":68205,"sent_ms":68400}
+{"event":{"delta":"秒","elapsed_ms":68200,"event_id":"event_EmRp50TDkWwyVwBW2LhPE","type":"session.output_transcript.delta"},"rx_ms":68211,"sent_ms":68400}
+{"event":{"delta":"。那么","elapsed_ms":68400,"event_id":"event_EmRp5WWAnwkqZUxgtuCGy","type":"session.output_transcript.delta"},"rx_ms":68373,"sent_ms":68400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":34200,"event_id":"event_EmRp5yKdnrvFvpvreWZbe","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":68425,"sent_ms":68600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":34400,"event_id":"event_EmRp5Wl3Ci8U4dM6MwGvU","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":68900,"sent_ms":69000}
+{"event":{"delta":" First","elapsed_ms":68800,"event_id":"event_EmRp5z7jGzEVn4dDpiQl0","type":"session.input_transcript.delta"},"rx_ms":69066,"sent_ms":69200}
+{"event":{"delta":"这","elapsed_ms":69000,"event_id":"event_EmRp5eZG3OT0kOjNtxKwJ","type":"session.output_transcript.delta"},"rx_ms":69108,"sent_ms":69200}
+{"event":{"delta":"对","elapsed_ms":69200,"event_id":"event_EmRp5L959RvnPZzjHjuzj","type":"session.output_transcript.delta"},"rx_ms":69170,"sent_ms":69200}
+{"event":{"delta":"你的","elapsed_ms":69200,"event_id":"event_EmRp5pyy6X5hOYtV1rrwI","type":"session.output_transcript.delta"},"rx_ms":69173,"sent_ms":69200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":34600,"event_id":"event_EmRp6YKennriPDBKJTo10","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":69240,"sent_ms":69400}
+{"event":{"delta":",","elapsed_ms":69200,"event_id":"event_EmRp6nf4oeM4buyyPeJ4n","type":"session.input_transcript.delta"},"rx_ms":69422,"sent_ms":69600}
+{"event":{"delta":" start","elapsed_ms":69200,"event_id":"event_EmRp6NdXEofBWHo9B3fQV","type":"session.input_transcript.delta"},"rx_ms":69422,"sent_ms":69600}
+{"event":{"delta":" with","elapsed_ms":69400,"event_id":"event_EmRp6eZKS5LVsKw3vGiBj","type":"session.input_transcript.delta"},"rx_ms":69585,"sent_ms":69600}
+{"event":{"delta":"架","elapsed_ms":69600,"event_id":"event_EmRp6Q9P1DyFLFK8FzNrx","type":"session.output_transcript.delta"},"rx_ms":69624,"sent_ms":69800}
+{"event":{"delta":"构","elapsed_ms":69600,"event_id":"event_EmRp6plnREH03EOBoRTog","type":"session.output_transcript.delta"},"rx_ms":69626,"sent_ms":69800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":34800,"event_id":"event_EmRp6OYW2fWYfCN6vp5Xb","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":69690,"sent_ms":69800}
+{"event":{"delta":" a","elapsed_ms":69600,"event_id":"event_EmRp6Ysmu4Jw3eigtqGE8","type":"session.input_transcript.delta"},"rx_ms":69777,"sent_ms":69800}
+{"event":{"delta":" small","elapsed_ms":69800,"event_id":"event_EmRp6zmp3ymoCWOfgzIFO","type":"session.input_transcript.delta"},"rx_ms":69972,"sent_ms":70000}
+{"event":{"delta":"意味着","elapsed_ms":70000,"event_id":"event_EmRp6wanqEv31Q8OqZ3EX","type":"session.output_transcript.delta"},"rx_ms":70002,"sent_ms":70000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":35000,"event_id":"event_EmRp6fNWfDGDBXewyECzV","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":70063,"sent_ms":70200}
+{"event":{"delta":"什么","elapsed_ms":70200,"event_id":"event_EmRp7EvcQ010ksnITco4e","type":"session.output_transcript.delta"},"rx_ms":70209,"sent_ms":70200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":35200,"event_id":"event_EmRp7deR2g90mtLs3xFk9","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":70474,"sent_ms":70600}
+{"event":{"delta":"?","elapsed_ms":70600,"event_id":"event_EmRp7A4rgOexa3hyXE2ez","type":"session.output_transcript.delta"},"rx_ms":70666,"sent_ms":70800}
+{"event":{"delta":" evaluation","elapsed_ms":70600,"event_id":"event_EmRp7vN88673boIGey4tC","type":"session.input_transcript.delta"},"rx_ms":70775,"sent_ms":70800}
+{"event":{"delta":"首先","elapsed_ms":70800,"event_id":"event_EmRp7jJf6NchGoRWIUuzz","type":"session.output_transcript.delta"},"rx_ms":70788,"sent_ms":70800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":35400,"event_id":"event_EmRp7pxX36ATIDts6j5JF","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":70848,"sent_ms":71000}
+{"event":{"delta":" set","elapsed_ms":71000,"event_id":"event_EmRp7QSpO3FqW0vWddjyo","type":"session.input_transcript.delta"},"rx_ms":71171,"sent_ms":71200}
+{"event":{"delta":",","elapsed_ms":71200,"event_id":"event_EmRp8v5hVhRR9LeBnazR4","type":"session.output_transcript.delta"},"rx_ms":71212,"sent_ms":71200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":35600,"event_id":"event_EmRp8GInPCN6NhuYkPsJB","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":71270,"sent_ms":71400}
+{"event":{"delta":" and","elapsed_ms":71400,"event_id":"event_EmRp8CWqhTbaLXb2uPZg7","type":"session.input_transcript.delta"},"rx_ms":71571,"sent_ms":71600}
+{"event":{"delta":"从","elapsed_ms":71600,"event_id":"event_EmRp8gUzwkCuUFezHY6vq","type":"session.output_transcript.delta"},"rx_ms":71585,"sent_ms":71600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":35800,"event_id":"event_EmRp8BszFlg79hFkj9DEG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":71645,"sent_ms":71800}
+{"event":{"delta":"一个","elapsed_ms":71800,"event_id":"event_EmRp8XD1CES8IizZ75ph1","type":"session.output_transcript.delta"},"rx_ms":71775,"sent_ms":71800}
+{"event":{"delta":" measure","elapsed_ms":71600,"event_id":"event_EmRp8KQONq9qEszn04ZJK","type":"session.input_transcript.delta"},"rx_ms":71781,"sent_ms":71800}
+{"event":{"delta":"小","elapsed_ms":72000,"event_id":"event_EmRp8yG3kWA9kMwOwVdIm","type":"session.output_transcript.delta"},"rx_ms":72047,"sent_ms":72200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":36000,"event_id":"event_EmRp8PB55Q7ACYwS9ibJR","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":72047,"sent_ms":72200}
+{"event":{"delta":"型","elapsed_ms":72200,"event_id":"event_EmRp99bKLJ11kvekP4UKU","type":"session.output_transcript.delta"},"rx_ms":72203,"sent_ms":72200}
+{"event":{"delta":" before","elapsed_ms":72200,"event_id":"event_EmRp9RmkEYKRACnqWr4bD","type":"session.input_transcript.delta"},"rx_ms":72376,"sent_ms":72400}
+{"event":{"delta":"评","elapsed_ms":72400,"event_id":"event_EmRp9glRuGjYyCkmM5gip","type":"session.output_transcript.delta"},"rx_ms":72416,"sent_ms":72600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":36200,"event_id":"event_EmRp9vwZoFw4o2pEzebGF","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":72477,"sent_ms":72600}
+{"event":{"delta":"测","elapsed_ms":72600,"event_id":"event_EmRp9ifN5sFFjzI0GN8qy","type":"session.output_transcript.delta"},"rx_ms":72572,"sent_ms":72600}
+{"event":{"delta":" you","elapsed_ms":72400,"event_id":"event_EmRp9729uK2nQfGi1Oznd","type":"session.input_transcript.delta"},"rx_ms":72580,"sent_ms":72600}
+{"event":{"delta":"集","elapsed_ms":72800,"event_id":"event_EmRp9Jipve94jQDimSMnh","type":"session.output_transcript.delta"},"rx_ms":72806,"sent_ms":72800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":36400,"event_id":"event_EmRp99HZAuFUqisPNK1Zj","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":72866,"sent_ms":73000}
+{"event":{"delta":"开始","elapsed_ms":73000,"event_id":"event_EmRp9hrLyUpSyCqkyougs","type":"session.output_transcript.delta"},"rx_ms":72974,"sent_ms":73000}
+{"event":{"delta":" optimize","elapsed_ms":73000,"event_id":"event_EmRpAGI4TUGRVtFADhlFb","type":"session.input_transcript.delta"},"rx_ms":73263,"sent_ms":73400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":36600,"event_id":"event_EmRpAhDl06BZAHsYrBbPJ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":73369,"sent_ms":73400}
+{"event":{"delta":",","elapsed_ms":73400,"event_id":"event_EmRpAoG557zt0Kfg6Ptg9","type":"session.output_transcript.delta"},"rx_ms":73413,"sent_ms":73600}
+{"event":{"delta":"优化","elapsed_ms":73600,"event_id":"event_EmRpAUz5aUb3DgTduwgkI","type":"session.output_transcript.delta"},"rx_ms":73620,"sent_ms":73800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":36800,"event_id":"event_EmRpAXnJuGIKPrhaXIELD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":73642,"sent_ms":73800}
+{"event":{"delta":"之前","elapsed_ms":74000,"event_id":"event_EmRpA4Fy7XwdVWZ0AraZj","type":"session.output_transcript.delta"},"rx_ms":74019,"sent_ms":74200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":37000,"event_id":"event_EmRpANCeyIB3Bx3ybhJEA","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":74147,"sent_ms":74200}
+{"event":{"delta":".","elapsed_ms":74000,"event_id":"event_EmRpAzq09JloejXa3OkRp","type":"session.input_transcript.delta"},"rx_ms":74178,"sent_ms":74200}
+{"event":{"delta":" Second","elapsed_ms":74000,"event_id":"event_EmRpAGli9HXbQAczWOIaP","type":"session.input_transcript.delta"},"rx_ms":74185,"sent_ms":74200}
+{"event":{"delta":"先","elapsed_ms":74400,"event_id":"event_EmRpBEEqlGsOlXas6L8Ly","type":"session.output_transcript.delta"},"rx_ms":74410,"sent_ms":74400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":37200,"event_id":"event_EmRpBD2dgHbmxFqMZWnNk","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":74470,"sent_ms":74600}
+{"event":{"delta":",","elapsed_ms":74400,"event_id":"event_EmRpB2hQuSxn3NvJCJj0z","type":"session.input_transcript.delta"},"rx_ms":74580,"sent_ms":74600}
+{"event":{"delta":" use","elapsed_ms":74400,"event_id":"event_EmRpBILC1zjKixuGWhbc7","type":"session.input_transcript.delta"},"rx_ms":74670,"sent_ms":74800}
+{"event":{"delta":"进行","elapsed_ms":74600,"event_id":"event_EmRpB4Q1rWMnSeHMkxxqk","type":"session.output_transcript.delta"},"rx_ms":74670,"sent_ms":74800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":37400,"event_id":"event_EmRpBLH9zie25bFdvODLP","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":74939,"sent_ms":75000}
+{"event":{"delta":"测","elapsed_ms":75000,"event_id":"event_EmRpBQ9L9pms5cKGbdxsu","type":"session.output_transcript.delta"},"rx_ms":74980,"sent_ms":75000}
+{"event":{"delta":" guard","elapsed_ms":75000,"event_id":"event_EmRpBL8vdNu2T7HxF8lD9","type":"session.input_transcript.delta"},"rx_ms":75201,"sent_ms":75200}
+{"event":{"delta":"量","elapsed_ms":75200,"event_id":"event_EmRpBRPCWU0pa04CvhDkT","type":"session.output_transcript.delta"},"rx_ms":75201,"sent_ms":75200}
+{"event":{"delta":"rails","elapsed_ms":75000,"event_id":"event_EmRpBXU01LmnrTSuVJBxp","type":"session.input_transcript.delta"},"rx_ms":75201,"sent_ms":75200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":37600,"event_id":"event_EmRpCLwzBj3iq9Um0rohW","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":75248,"sent_ms":75400}
+{"event":{"delta":" to","elapsed_ms":75200,"event_id":"event_EmRpCWtFPCCLHvAGSh1Rm","type":"session.input_transcript.delta"},"rx_ms":75380,"sent_ms":75400}
+{"event":{"delta":"。","elapsed_ms":75400,"event_id":"event_EmRpCN6xUMQexWSdDVG38","type":"session.output_transcript.delta"},"rx_ms":75418,"sent_ms":75600}
+{"event":{"delta":" keep","elapsed_ms":75400,"event_id":"event_EmRpCKZF1hlxkoIgjNzJH","type":"session.input_transcript.delta"},"rx_ms":75588,"sent_ms":75600}
+{"event":{"delta":"第二","elapsed_ms":75600,"event_id":"event_EmRpCq9lvdtWBUkim8vsO","type":"session.output_transcript.delta"},"rx_ms":75624,"sent_ms":75800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":37800,"event_id":"event_EmRpCRavmmfOhDRwt2pA5","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":75719,"sent_ms":75800}
+{"event":{"delta":" your","elapsed_ms":75600,"event_id":"event_EmRpCoXiYLixSE0mvu4d8","type":"session.input_transcript.delta"},"rx_ms":75790,"sent_ms":75800}
+{"event":{"delta":",","elapsed_ms":76000,"event_id":"event_EmRpCKZaCBNjKmlMswgm3","type":"session.output_transcript.delta"},"rx_ms":76036,"sent_ms":76200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":38000,"event_id":"event_EmRpCo4dqxVWUTbnIyFC0","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":76137,"sent_ms":76200}
+{"event":{"delta":" agents","elapsed_ms":76000,"event_id":"event_EmRpCbFmFli41VNbQvP0N","type":"session.input_transcript.delta"},"rx_ms":76270,"sent_ms":76400}
+{"event":{"delta":"使用","elapsed_ms":76200,"event_id":"event_EmRpDtlEkMvPIyFWFWLJz","type":"session.output_transcript.delta"},"rx_ms":76271,"sent_ms":76400}
+{"event":{"delta":" safe","elapsed_ms":76200,"event_id":"event_EmRpDjdyMlK1oC7XT4LcL","type":"session.input_transcript.delta"},"rx_ms":76450,"sent_ms":76600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":38200,"event_id":"event_EmRpDU671wvupMQMJdXGC","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":76517,"sent_ms":76600}
+{"event":{"delta":" and","elapsed_ms":76400,"event_id":"event_EmRpDZcVjq585PtXCVXCr","type":"session.input_transcript.delta"},"rx_ms":76609,"sent_ms":76800}
+{"event":{"delta":"护","elapsed_ms":76600,"event_id":"event_EmRpD5Uh654LjesHB0Byv","type":"session.output_transcript.delta"},"rx_ms":76631,"sent_ms":76800}
+{"event":{"delta":"栏","elapsed_ms":76800,"event_id":"event_EmRpDw5PtK20xS4abCrf7","type":"session.output_transcript.delta"},"rx_ms":76785,"sent_ms":76800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":38400,"event_id":"event_EmRpDLswUnmm4DKCFntLi","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":76842,"sent_ms":77000}
+{"event":{"delta":",","elapsed_ms":77000,"event_id":"event_EmRpDAItapAtkOAmOMZcD","type":"session.output_transcript.delta"},"rx_ms":76973,"sent_ms":77000}
+{"event":{"delta":"确保","elapsed_ms":77200,"event_id":"event_EmRpDIXVET3j1XT7SSmsN","type":"session.output_transcript.delta"},"rx_ms":77198,"sent_ms":77200}
+{"event":{"delta":" compliant","elapsed_ms":77000,"event_id":"event_EmRpEcuS66Q7HcYpTHULZ","type":"session.input_transcript.delta"},"rx_ms":77291,"sent_ms":77400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":38600,"event_id":"event_EmRpEUNGlI01cgFLkuNSt","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":77292,"sent_ms":77400}
+{"event":{"delta":"你的","elapsed_ms":77400,"event_id":"event_EmRpEM5uHHb36GM4Eme4h","type":"session.output_transcript.delta"},"rx_ms":77496,"sent_ms":77600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":38800,"event_id":"event_EmRpEj5wdk1ksb0gkLXBl","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":77613,"sent_ms":77600}
+{"event":{"delta":"代理","elapsed_ms":77800,"event_id":"event_EmRpEOdwe5GphokBvpcLT","type":"session.output_transcript.delta"},"rx_ms":77826,"sent_ms":78000}
+{"event":{"delta":".","elapsed_ms":77800,"event_id":"event_EmRpE8XiN7345ZCjwxs0F","type":"session.input_transcript.delta"},"rx_ms":77999,"sent_ms":78000}
+{"event":{"delta":" Third","elapsed_ms":77800,"event_id":"event_EmRpEnlcNoH2tlObkugxl","type":"session.input_transcript.delta"},"rx_ms":78006,"sent_ms":78000}
+{"event":{"delta":"安全","elapsed_ms":78000,"event_id":"event_EmRpET05RPminyDFsUVMA","type":"session.output_transcript.delta"},"rx_ms":78031,"sent_ms":78200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":39000,"event_id":"event_EmRpEChcNpvn791angVH0","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":78093,"sent_ms":78200}
+{"event":{"delta":"且","elapsed_ms":78400,"event_id":"event_EmRpF2JFDMXhLSblf21FK","type":"session.output_transcript.delta"},"rx_ms":78412,"sent_ms":78600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":39200,"event_id":"event_EmRpFqV9h6b4aewDL7gur","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":78471,"sent_ms":78600}
+{"event":{"delta":",","elapsed_ms":78400,"event_id":"event_EmRpFOLAgnEh2KZ83RPx8","type":"session.input_transcript.delta"},"rx_ms":78570,"sent_ms":78600}
+{"event":{"delta":"合","elapsed_ms":78600,"event_id":"event_EmRpFOSi3IbpWmERiFnYa","type":"session.output_transcript.delta"},"rx_ms":78575,"sent_ms":78600}
+{"event":{"delta":" monitor","elapsed_ms":78400,"event_id":"event_EmRpFLBc8h1rpHlOdQTGC","type":"session.input_transcript.delta"},"rx_ms":78577,"sent_ms":78600}
+{"event":{"delta":"规","elapsed_ms":78800,"event_id":"event_EmRpFufNIf3Kqr3pdhWrr","type":"session.output_transcript.delta"},"rx_ms":78865,"sent_ms":79000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":39400,"event_id":"event_EmRpFSNnXml7SUttzi5ur","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":78866,"sent_ms":79000}
+{"event":{"delta":" everything","elapsed_ms":78800,"event_id":"event_EmRpFngCT0wM3Yw62cl3K","type":"session.input_transcript.delta"},"rx_ms":79027,"sent_ms":79200}
+{"event":{"delta":"。","elapsed_ms":79000,"event_id":"event_EmRpFJJjgGupcMjKdGGHx","type":"session.output_transcript.delta"},"rx_ms":79058,"sent_ms":79200}
+{"event":{"delta":" with","elapsed_ms":79000,"event_id":"event_EmRpF8Fye0Wa7xEZ80Kh8","type":"session.input_transcript.delta"},"rx_ms":79182,"sent_ms":79200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":39600,"event_id":"event_EmRpG8X00OvnnlZYMmXsD","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":79279,"sent_ms":79400}
+{"event":{"delta":"第三","elapsed_ms":79400,"event_id":"event_EmRpGAwfwRtgVLa9uWD8H","type":"session.output_transcript.delta"},"rx_ms":79398,"sent_ms":79400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":39800,"event_id":"event_EmRpGWwxxkE2qFENjzFSQ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":79669,"sent_ms":79800}
+{"event":{"delta":",","elapsed_ms":79800,"event_id":"event_EmRpGnBXOyDsPQ94TLeSM","type":"session.output_transcript.delta"},"rx_ms":79776,"sent_ms":79800}
+{"event":{"delta":" observ","elapsed_ms":79800,"event_id":"event_EmRpGZss0iQNNHzKxI7o1","type":"session.input_transcript.delta"},"rx_ms":79979,"sent_ms":80000}
+{"event":{"delta":"ability","elapsed_ms":79800,"event_id":"event_EmRpG2Gxzr8PNpImKAe64","type":"session.input_transcript.delta"},"rx_ms":79986,"sent_ms":80000}
+{"event":{"delta":"借","elapsed_ms":80000,"event_id":"event_EmRpGybRr2seJyGaWJIMg","type":"session.output_transcript.delta"},"rx_ms":80010,"sent_ms":80200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":40000,"event_id":"event_EmRpGAsDKHEp1ZE37SEKU","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":80067,"sent_ms":80200}
+{"event":{"delta":" tools","elapsed_ms":80000,"event_id":"event_EmRpGTFnKzJxDJcErd7O2","type":"session.input_transcript.delta"},"rx_ms":80181,"sent_ms":80200}
+{"event":{"delta":"助","elapsed_ms":80200,"event_id":"event_EmRpG9z91W130aqI6QFJ3","type":"session.output_transcript.delta"},"rx_ms":80196,"sent_ms":80200}
+{"event":{"delta":"像","elapsed_ms":80400,"event_id":"event_EmRpH65pYaHs8dy1tBX1I","type":"session.output_transcript.delta"},"rx_ms":80436,"sent_ms":80600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":40200,"event_id":"event_EmRpHkcX2bZWA8Uj8lEmH","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":80436,"sent_ms":80600}
+{"event":{"delta":" like","elapsed_ms":80400,"event_id":"event_EmRpHOaAcjrcRw2eA95jk","type":"session.input_transcript.delta"},"rx_ms":80601,"sent_ms":80600}
+{"event":{"delta":" Amazon","elapsed_ms":80600,"event_id":"event_EmRpHvvsUxceNIWBAT4SW","type":"session.output_transcript.delta"},"rx_ms":80636,"sent_ms":80800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":40400,"event_id":"event_EmRpHDKI1KLbPMAuQBq4r","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":80864,"sent_ms":81000}
+{"event":{"delta":" Amazon","elapsed_ms":80800,"event_id":"event_EmRpHRNzzxzBKnqdiTfjv","type":"session.input_transcript.delta"},"rx_ms":80984,"sent_ms":81000}
+{"event":{"delta":" Cloud","elapsed_ms":81200,"event_id":"event_EmRpInJWyMqUOF13dvUdO","type":"session.output_transcript.delta"},"rx_ms":81203,"sent_ms":81200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":40600,"event_id":"event_EmRpIaJ1UEJarATGCgfzW","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":81261,"sent_ms":81400}
+{"event":{"delta":"Watch","elapsed_ms":81400,"event_id":"event_EmRpIvIZbAsn84i7zykgy","type":"session.output_transcript.delta"},"rx_ms":81390,"sent_ms":81400}
+{"event":{"delta":" ","elapsed_ms":81600,"event_id":"event_EmRpIMgLbheZTgzMeFixi","type":"session.output_transcript.delta"},"rx_ms":81680,"sent_ms":81800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":40800,"event_id":"event_EmRpIqlOQfDHmKQTdH0Az","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":81752,"sent_ms":81800}
+{"event":{"delta":"这样的","elapsed_ms":81800,"event_id":"event_EmRpIrxo4CziN81Qn5NGz","type":"session.output_transcript.delta"},"rx_ms":81785,"sent_ms":81800}
+{"event":{"delta":" Cloud","elapsed_ms":81600,"event_id":"event_EmRpISW57U7sVH8IfhmBb","type":"session.input_transcript.delta"},"rx_ms":81787,"sent_ms":81800}
+{"event":{"delta":"Watch","elapsed_ms":81600,"event_id":"event_EmRpIlPYJYiY402gNicUG","type":"session.input_transcript.delta"},"rx_ms":81797,"sent_ms":81800}
+{"event":{"delta":"可","elapsed_ms":82000,"event_id":"event_EmRpIuPsaINV5VyP6bcvO","type":"session.output_transcript.delta"},"rx_ms":82024,"sent_ms":82200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":41000,"event_id":"event_EmRpIe98110dgyZCkhhPP","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":82090,"sent_ms":82200}
+{"event":{"delta":"观察","elapsed_ms":82200,"event_id":"event_EmRpJUcMNqYjIa06GmR3C","type":"session.output_transcript.delta"},"rx_ms":82205,"sent_ms":82200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":41200,"event_id":"event_EmRpJfYmBZzRHGDM7QvuG","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":82532,"sent_ms":82600}
+{"event":{"delta":".","elapsed_ms":82400,"event_id":"event_EmRpJm6SOAjQwqkmfVK0Q","type":"session.input_transcript.delta"},"rx_ms":82580,"sent_ms":82600}
+{"event":{"delta":" One","elapsed_ms":82400,"event_id":"event_EmRpJw0nCvt62x40cHrXg","type":"session.input_transcript.delta"},"rx_ms":82586,"sent_ms":82600}
+{"event":{"delta":"性","elapsed_ms":82600,"event_id":"event_EmRpJ33A4MDu4BeMz7mGC","type":"session.output_transcript.delta"},"rx_ms":82618,"sent_ms":82800}
+{"event":{"delta":"工具","elapsed_ms":82800,"event_id":"event_EmRpJCM7QhV7y3WyWwJEX","type":"session.output_transcript.delta"},"rx_ms":82810,"sent_ms":82800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":41400,"event_id":"event_EmRpJgw8Y7UhTZNULCSL4","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":82868,"sent_ms":83000}
+{"event":{"delta":" customer","elapsed_ms":82800,"event_id":"event_EmRpJqZVRzX5OR5p1U3Xq","type":"session.input_transcript.delta"},"rx_ms":83056,"sent_ms":83200}
+{"event":{"delta":"监","elapsed_ms":83200,"event_id":"event_EmRpKzYvsc1DJlzukxsqz","type":"session.output_transcript.delta"},"rx_ms":83250,"sent_ms":83400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":41600,"event_id":"event_EmRpKg6B0JEZdN0CXWbUz","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":83312,"sent_ms":83400}
+{"event":{"delta":"控","elapsed_ms":83400,"event_id":"event_EmRpKtCy5a9msxrbaRzZB","type":"session.output_transcript.delta"},"rx_ms":83399,"sent_ms":83400}
+{"event":{"delta":" reduced","elapsed_ms":83200,"event_id":"event_EmRpKj20RArjQS6NwZ14Y","type":"session.input_transcript.delta"},"rx_ms":83399,"sent_ms":83400}
+{"event":{"delta":" their","elapsed_ms":83400,"event_id":"event_EmRpKvUkSXdPCEcQiYfWv","type":"session.input_transcript.delta"},"rx_ms":84628,"sent_ms":84800}
+{"event":{"delta":"一","elapsed_ms":83600,"event_id":"event_EmRpKpaOxOqtR5XdBlYbG","type":"session.output_transcript.delta"},"rx_ms":84629,"sent_ms":84800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":41800,"event_id":"event_EmRpK2D2QNsGiz6068Fnb","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":84629,"sent_ms":84800}
+{"event":{"delta":"切","elapsed_ms":83800,"event_id":"event_EmRpKCp6hVBsbiXSQRNGm","type":"session.output_transcript.delta"},"rx_ms":84629,"sent_ms":84800}
+{"event":{"delta":" deployment","elapsed_ms":84000,"event_id":"event_EmRpLZ3qiAFCdvdpOjfHm","type":"session.input_transcript.delta"},"rx_ms":84820,"sent_ms":85000}
+{"event":{"delta":"。有","elapsed_ms":84000,"event_id":"event_EmRpLusiows1pDgyCq3A3","type":"session.output_transcript.delta"},"rx_ms":84836,"sent_ms":85000}
+{"event":{"delta":" time","elapsed_ms":84200,"event_id":"event_EmRpLUSEjO3Owyk96THAU","type":"session.input_transcript.delta"},"rx_ms":84873,"sent_ms":85000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":42000,"event_id":"event_EmRpLwclcHqRdld0yAXG2","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":84905,"sent_ms":85000}
+{"event":{"delta":" from","elapsed_ms":84400,"event_id":"event_EmRpLCqQniNoLeDs3AaEp","type":"session.input_transcript.delta"},"rx_ms":84906,"sent_ms":85000}
+{"event":{"delta":"一家","elapsed_ms":84200,"event_id":"event_EmRpLIF6Hqk1dmbi9iLmj","type":"session.output_transcript.delta"},"rx_ms":84921,"sent_ms":85000}
+{"event":{"delta":" six","elapsed_ms":84800,"event_id":"event_EmRpLfPrYZO5CJftU0bMN","type":"session.input_transcript.delta"},"rx_ms":84985,"sent_ms":85000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":42200,"event_id":"event_EmRpLQMwL2tBkShc3a2e4","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":85155,"sent_ms":85200}
+{"event":{"delta":"客户","elapsed_ms":84800,"event_id":"event_EmRpLiexPm1IoM4A6ZRVg","type":"session.output_transcript.delta"},"rx_ms":85157,"sent_ms":85200}
+{"event":{"delta":" weeks","elapsed_ms":85000,"event_id":"event_EmRpLr3Mh0mUxwKHr8eHv","type":"session.input_transcript.delta"},"rx_ms":85180,"sent_ms":85200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":42400,"event_id":"event_EmRpLxakMFQoF1OEA36Gu","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":85203,"sent_ms":85200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":42600,"event_id":"event_EmRpMZYDg4xWXo5KqZzre","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":85320,"sent_ms":85400}
+{"event":{"delta":" to","elapsed_ms":85200,"event_id":"event_EmRpMC9Xvhfdaloop5DFj","type":"session.input_transcript.delta"},"rx_ms":85378,"sent_ms":85400}
+{"event":{"delta":" four","elapsed_ms":85400,"event_id":"event_EmRpMmbgilmfk6VFs2yul","type":"session.input_transcript.delta"},"rx_ms":85582,"sent_ms":85600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":42800,"event_id":"event_EmRpMFJJs9kxpZmUE8rz3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":85678,"sent_ms":85800}
+{"event":{"delta":"把","elapsed_ms":85800,"event_id":"event_EmRpMjp7LeyIzBCNvsm5z","type":"session.output_transcript.delta"},"rx_ms":85863,"sent_ms":86000}
+{"event":{"delta":"部署","elapsed_ms":86000,"event_id":"event_EmRpM4Nz02zEgceuJYlQU","type":"session.output_transcript.delta"},"rx_ms":85983,"sent_ms":86000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":43000,"event_id":"event_EmRpMVCaLSsOTRbJhhWYj","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":86038,"sent_ms":86200}
+{"event":{"delta":" days","elapsed_ms":86000,"event_id":"event_EmRpMtgVDzrw2HHssManr","type":"session.input_transcript.delta"},"rx_ms":86206,"sent_ms":86200}
+{"event":{"delta":"时间","elapsed_ms":86400,"event_id":"event_EmRpNYELmn3PssIkEOI0Q","type":"session.output_transcript.delta"},"rx_ms":86383,"sent_ms":86400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":43200,"event_id":"event_EmRpNFmiwobOFX1acPVlq","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":86439,"sent_ms":86600}
+{"event":{"delta":".","elapsed_ms":86400,"event_id":"event_EmRpNtg3C2WBsp1B2znT3","type":"session.input_transcript.delta"},"rx_ms":86580,"sent_ms":86600}
+{"event":{"delta":" That","elapsed_ms":86400,"event_id":"event_EmRpNAJrAHDVv9QMse4Wb","type":"session.input_transcript.delta"},"rx_ms":86589,"sent_ms":86600}
+{"event":{"delta":" is","elapsed_ms":86600,"event_id":"event_EmRpNWrGeOskYIbrQHaoM","type":"session.input_transcript.delta"},"rx_ms":86780,"sent_ms":86800}
+{"event":{"delta":"从","elapsed_ms":86800,"event_id":"event_EmRpN97CjYYsOnwFc4nrd","type":"session.output_transcript.delta"},"rx_ms":86822,"sent_ms":87000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":43400,"event_id":"event_EmRpNeZwysUVX0Pjtk0yc","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":86884,"sent_ms":87000}
+{"event":{"delta":" the","elapsed_ms":86800,"event_id":"event_EmRpNXefI9wagULNZF4OY","type":"session.input_transcript.delta"},"rx_ms":86984,"sent_ms":87000}
+{"event":{"delta":" power","elapsed_ms":87000,"event_id":"event_EmRpNXx86CGmMiK5wQhEP","type":"session.input_transcript.delta"},"rx_ms":87253,"sent_ms":87400}
+{"event":{"delta":"六","elapsed_ms":87200,"event_id":"event_EmRpNvCdpnQYs23riY2AH","type":"session.output_transcript.delta"},"rx_ms":87253,"sent_ms":87400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":43600,"event_id":"event_EmRpOr2I2HcXsqPzrNGxZ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":87254,"sent_ms":87400}
+{"event":{"delta":"周","elapsed_ms":87400,"event_id":"event_EmRpOyxrShx0kwYaYwc62","type":"session.output_transcript.delta"},"rx_ms":87417,"sent_ms":87600}
+{"event":{"delta":" of","elapsed_ms":87200,"event_id":"event_EmRpOP8iPZfSe3IIvGS3I","type":"session.input_transcript.delta"},"rx_ms":87418,"sent_ms":87600}
+{"event":{"delta":"缩","elapsed_ms":87600,"event_id":"event_EmRpOEreMzanfowPdaw4z","type":"session.output_transcript.delta"},"rx_ms":87581,"sent_ms":87600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":43800,"event_id":"event_EmRpOvCWYcYB4Ki7SZtAO","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":87637,"sent_ms":87800}
+{"event":{"delta":" building","elapsed_ms":87600,"event_id":"event_EmRpOJt0c1QeTegv7GGlZ","type":"session.input_transcript.delta"},"rx_ms":87777,"sent_ms":87800}
+{"event":{"delta":"短","elapsed_ms":87800,"event_id":"event_EmRpOZfKzMpeAKxUPSuku","type":"session.output_transcript.delta"},"rx_ms":87811,"sent_ms":87800}
+{"event":{"delta":"到","elapsed_ms":88000,"event_id":"event_EmRpObTQU8Iyjn4kVqIp6","type":"session.output_transcript.delta"},"rx_ms":87977,"sent_ms":88000}
+{"event":{"delta":" on","elapsed_ms":87800,"event_id":"event_EmRpOg7OhajKMJuNMs05A","type":"session.input_transcript.delta"},"rx_ms":87981,"sent_ms":88000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":44000,"event_id":"event_EmRpOO9JNUhtIomQYj8J0","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":88035,"sent_ms":88200}
+{"event":{"delta":"四","elapsed_ms":88200,"event_id":"event_EmRpP0QFKuXQw0tquFKdY","type":"session.output_transcript.delta"},"rx_ms":88300,"sent_ms":88400}
+{"event":{"delta":" a","elapsed_ms":88200,"event_id":"event_EmRpPn1So9SWi18Cjo1fM","type":"session.input_transcript.delta"},"rx_ms":88464,"sent_ms":88600}
+{"event":{"delta":" secure","elapsed_ms":88200,"event_id":"event_EmRpPHVK9pEZyCPKZrpWx","type":"session.input_transcript.delta"},"rx_ms":88471,"sent_ms":88600}
+{"event":{"delta":"天","elapsed_ms":88400,"event_id":"event_EmRpPmq4pH4VoPUhdHF67","type":"session.output_transcript.delta"},"rx_ms":88509,"sent_ms":88600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":44200,"event_id":"event_EmRpPooRxGu95ZDf021v7","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":88575,"sent_ms":88600}
+{"event":{"delta":"。这","elapsed_ms":88600,"event_id":"event_EmRpPjEJobrfkaiEI4WiQ","type":"session.output_transcript.delta"},"rx_ms":88579,"sent_ms":88600}
+{"event":{"delta":" and","elapsed_ms":88400,"event_id":"event_EmRpPgAljeFynGYAApLy8","type":"session.input_transcript.delta"},"rx_ms":88582,"sent_ms":88600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":44400,"event_id":"event_EmRpPMGFJLSfpMsh4LQ72","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":88837,"sent_ms":89000}
+{"event":{"delta":"就是","elapsed_ms":89000,"event_id":"event_EmRpP03TdIeokI3SQgh7B","type":"session.output_transcript.delta"},"rx_ms":89025,"sent_ms":89200}
+{"event":{"delta":" scalable","elapsed_ms":89000,"event_id":"event_EmRpP9xrjv73Q0FACbsNY","type":"session.input_transcript.delta"},"rx_ms":89177,"sent_ms":89200}
+{"event":{"delta":"建立","elapsed_ms":89200,"event_id":"event_EmRpP8hqour9JJklxSXsb","type":"session.output_transcript.delta"},"rx_ms":89194,"sent_ms":89200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":44600,"event_id":"event_EmRpQFR8RTHtSTEYJyIoQ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":89231,"sent_ms":89400}
+{"event":{"delta":"在","elapsed_ms":89600,"event_id":"event_EmRpQyplE1FndUsTv4qTe","type":"session.output_transcript.delta"},"rx_ms":89617,"sent_ms":89800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":44800,"event_id":"event_EmRpQu5Vu4CA8vyoyNs44","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":89682,"sent_ms":89800}
+{"event":{"delta":"安全","elapsed_ms":89800,"event_id":"event_EmRpQ1IfKH8gRgMIO2gYf","type":"session.output_transcript.delta"},"rx_ms":89780,"sent_ms":89800}
+{"event":{"delta":" foundation","elapsed_ms":89600,"event_id":"event_EmRpQwKCQp8o5cRU2L1b5","type":"session.input_transcript.delta"},"rx_ms":89784,"sent_ms":89800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":45000,"event_id":"event_EmRpQ9Gf9myLHdkWK4YHE","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":90133,"sent_ms":90200}
+{"event":{"delta":"且","elapsed_ms":90200,"event_id":"event_EmRpQ7TkosI11JjB2IIUh","type":"session.output_transcript.delta"},"rx_ms":90180,"sent_ms":90200}
+{"event":{"delta":".","elapsed_ms":90200,"event_id":"event_EmRpRBfQagxZ9OxEXmuq0","type":"session.input_transcript.delta"},"rx_ms":90395,"sent_ms":90400}
+{"event":{"delta":" Thank","elapsed_ms":90200,"event_id":"event_EmRpRvKl2VZhtXnQHWqsD","type":"session.input_transcript.delta"},"rx_ms":90396,"sent_ms":90400}
+{"event":{"delta":"可","elapsed_ms":90400,"event_id":"event_EmRpRlCymFUwp13clkYqB","type":"session.output_transcript.delta"},"rx_ms":90419,"sent_ms":90600}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":45200,"event_id":"event_EmRpRMHlYmjUxulNXa0ZJ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":90509,"sent_ms":90600}
+{"event":{"delta":"扩","elapsed_ms":90600,"event_id":"event_EmRpR5ODLTn5Z5zgbkXAD","type":"session.output_transcript.delta"},"rx_ms":90619,"sent_ms":90800}
+{"event":{"delta":" you","elapsed_ms":90600,"event_id":"event_EmRpR4qOJYBkCKkwFzIqj","type":"session.input_transcript.delta"},"rx_ms":90782,"sent_ms":90800}
+{"event":{"delta":"展","elapsed_ms":90800,"event_id":"event_EmRpRNOFJKOHMfEWAIa7a","type":"session.output_transcript.delta"},"rx_ms":90796,"sent_ms":90800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":45400,"event_id":"event_EmRpRXPC1fH7sucewCd59","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":90921,"sent_ms":91000}
+{"event":{"delta":",","elapsed_ms":90800,"event_id":"event_EmRpR6cbaA7Sk8XPpsA8z","type":"session.input_transcript.delta"},"rx_ms":90974,"sent_ms":91000}
+{"event":{"delta":" and","elapsed_ms":90800,"event_id":"event_EmRpRAGybIeSSIv0SNrF5","type":"session.input_transcript.delta"},"rx_ms":90984,"sent_ms":91000}
+{"event":{"delta":"基础","elapsed_ms":91000,"event_id":"event_EmRpRsleCPlAAEs7MK7Wo","type":"session.output_transcript.delta"},"rx_ms":91013,"sent_ms":91000}
+{"event":{"delta":"上的","elapsed_ms":91200,"event_id":"event_EmRpSFI5YTuEwhzi0EKHv","type":"session.output_transcript.delta"},"rx_ms":91276,"sent_ms":91400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":45600,"event_id":"event_EmRpSnAxbJEsSfwsqWuLT","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":91342,"sent_ms":91400}
+{"event":{"delta":" enjoy","elapsed_ms":91200,"event_id":"event_EmRpSJaYtFIm7cCCSMccQ","type":"session.input_transcript.delta"},"rx_ms":91444,"sent_ms":91600}
+{"event":{"delta":" the","elapsed_ms":91400,"event_id":"event_EmRpSYxretFYRWXSQfjjf","type":"session.input_transcript.delta"},"rx_ms":91608,"sent_ms":91800}
+{"event":{"delta":"力量","elapsed_ms":91600,"event_id":"event_EmRpSTDPo28o96RF14smN","type":"session.output_transcript.delta"},"rx_ms":91608,"sent_ms":91800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":45800,"event_id":"event_EmRpSiMMHaI1kuJU56O2Q","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":91666,"sent_ms":91800}
+{"event":{"delta":" rest","elapsed_ms":91600,"event_id":"event_EmRpSrEbYXJdkzgJdDjAc","type":"session.input_transcript.delta"},"rx_ms":91773,"sent_ms":91800}
+{"event":{"delta":"。","elapsed_ms":91800,"event_id":"event_EmRpSaAQHeO0VvgDYl9Xi","type":"session.output_transcript.delta"},"rx_ms":91789,"sent_ms":91800}
+{"event":{"delta":" of","elapsed_ms":91800,"event_id":"event_EmRpSTp5AuIoUsKxJMqFE","type":"session.input_transcript.delta"},"rx_ms":91976,"sent_ms":92000}
+{"event":{"delta":"谢谢","elapsed_ms":92000,"event_id":"event_EmRpSTKoJGLZhi7uWoORY","type":"session.output_transcript.delta"},"rx_ms":91996,"sent_ms":92000}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":46000,"event_id":"event_EmRpSsoSghv7tkKd8Opf0","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":92058,"sent_ms":92200}
+{"event":{"delta":" the","elapsed_ms":92000,"event_id":"event_EmRpSW3yWGiRtmaacNKhI","type":"session.input_transcript.delta"},"rx_ms":92182,"sent_ms":92200}
+{"event":{"delta":"大家","elapsed_ms":92400,"event_id":"event_EmRpT2QatMkhC0U5zZnJ4","type":"session.output_transcript.delta"},"rx_ms":92381,"sent_ms":92400}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":46200,"event_id":"event_EmRpTigDcuoW08YMng28Z","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":92495,"sent_ms":92600}
+{"event":{"delta":" conference","elapsed_ms":92600,"event_id":"event_EmRpTHn8l6EIDBvMW20a7","type":"session.input_transcript.delta"},"rx_ms":92768,"sent_ms":92800}
+{"event":{"delta":",","elapsed_ms":92800,"event_id":"event_EmRpTdtmI2Vs1OgCVPXBJ","type":"session.output_transcript.delta"},"rx_ms":92768,"sent_ms":92800}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":46400,"event_id":"event_EmRpTL01y9odLoK2ZXW9p","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":92828,"sent_ms":93000}
+{"event":{"delta":"祝","elapsed_ms":93000,"event_id":"event_EmRpTt5FWc6ln2zfQ8fTa","type":"session.output_transcript.delta"},"rx_ms":93018,"sent_ms":93200}
+{"event":{"delta":"会议","elapsed_ms":93200,"event_id":"event_EmRpT3uSdLNYKFogLCxZf","type":"session.output_transcript.delta"},"rx_ms":93179,"sent_ms":93200}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":46600,"event_id":"event_EmRpUytXPx7Eon6nhYbKh","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":93234,"sent_ms":93207}
+{"event":{"delta":"接","elapsed_ms":93600,"event_id":"event_EmRpU3MuQRHoye4NbUG5b","type":"session.output_transcript.delta"},"rx_ms":93418,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":46800,"event_id":"event_EmRpUyUVaxPjq2fTDfgwO","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":93545,"sent_ms":93207}
+{"event":{"delta":"下来","elapsed_ms":93800,"event_id":"event_EmRpUecWlEc8GMDTpxX70","type":"session.output_transcript.delta"},"rx_ms":93548,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":47000,"event_id":"event_EmRpUmPmfndBHCMnQXlyY","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":93602,"sent_ms":93207}
+{"event":{"delta":"愉","elapsed_ms":94200,"event_id":"event_EmRpUKbZIyh2KUyBiDW8O","type":"session.output_transcript.delta"},"rx_ms":93604,"sent_ms":93207}
+{"event":{"delta":"快","elapsed_ms":94400,"event_id":"event_EmRpUrZLOloqN0Z0gCNhx","type":"session.output_transcript.delta"},"rx_ms":93645,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":47200,"event_id":"event_EmRpUhSlWwQDSwvJpnEOn","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":93710,"sent_ms":93207}
+{"event":{"delta":"。","elapsed_ms":94600,"event_id":"event_EmRpUgbbzrLuc9jKFwd7o","type":"session.output_transcript.delta"},"rx_ms":93723,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":47400,"event_id":"event_EmRpUPyWWljlETHTYF4t2","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":93802,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":47600,"event_id":"event_EmRpUtnGioAdWWkghQpKp","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":93843,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":47800,"event_id":"event_EmRpU3ncan0Gi3URpdHGa","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":93910,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":48000,"event_id":"event_EmRpUAkVWLnoGrbQmINzn","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94068,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":48200,"event_id":"event_EmRpUHUEVaXJ3hJ77PIue","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94084,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":48400,"event_id":"event_EmRpUfUY9RiDwVWZI0D8w","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94172,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":48600,"event_id":"event_EmRpViJT9GCYwHq43nGN8","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94239,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":48800,"event_id":"event_EmRpVP547nQC6Cju4gqTz","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94332,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":49000,"event_id":"event_EmRpV5yRT77cdsQRbmvTA","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94424,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":49200,"event_id":"event_EmRpVS1WF536vwEcyMiVa","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94608,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":49400,"event_id":"event_EmRpVsD91FqStOqWg8Zok","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94615,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":49600,"event_id":"event_EmRpVGGD52Jngp1iPbYo3","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94699,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":49800,"event_id":"event_EmRpV7mQrXS5TS7oxTkdc","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94808,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":50000,"event_id":"event_EmRpV5l2oXwcovAVFTf7j","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":94879,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":50200,"event_id":"event_EmRpVmxjjFbViGldspTxL","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95179,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":50400,"event_id":"event_EmRpVnx9wsjLbKaD9ZPUm","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95185,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":50600,"event_id":"event_EmRpVkRzXb86DBHFzKacW","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95194,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":50800,"event_id":"event_EmRpWVLWkEjFOFzoo4LR8","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95248,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":51000,"event_id":"event_EmRpWI6CdZyLcPJtjN5NO","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95341,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":51200,"event_id":"event_EmRpWrdWvErDb0y75dtux","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95430,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":51400,"event_id":"event_EmRpW9vRXusPziyJpqfyo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95517,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":51600,"event_id":"event_EmRpWhGrep33BHbzChdyV","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95641,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":51800,"event_id":"event_EmRpWM7Xz9s8VyhCgxAli","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95690,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":52000,"event_id":"event_EmRpWQ6Ua91B2zESee8UA","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95784,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":52200,"event_id":"event_EmRpWhdh6Yfr2Z82dwM2F","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95873,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":52400,"event_id":"event_EmRpWyJ1EEoQxrh4zD6GY","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":95969,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":52600,"event_id":"event_EmRpWA92ZkMwmTO3JZwQB","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96167,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":52800,"event_id":"event_EmRpWThYMY88y62eOiOst","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96188,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":53000,"event_id":"event_EmRpXD1ex9jhbrDfUCJfN","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96277,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":53200,"event_id":"event_EmRpXGXEMMSPkBivj7sn2","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96369,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":53400,"event_id":"event_EmRpXVY3wNYnxphttSzP8","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96461,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":53600,"event_id":"event_EmRpXGxGxal1b48UoePlj","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96555,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":53800,"event_id":"event_EmRpX8vq3oXTY2j3bSv9O","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96690,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":54000,"event_id":"event_EmRpXcpt9BAF1Nwk8IP0S","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96745,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":54200,"event_id":"event_EmRpXeN6Nk5gmZR10RBe1","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96842,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":54400,"event_id":"event_EmRpXOBII5FxEMaGr0lZQ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":96943,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":54600,"event_id":"event_EmRpXdkJ4CHMMXD6bDmwn","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97035,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":54800,"event_id":"event_EmRpXkI6x1F8And3z8Cvf","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97213,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":55000,"event_id":"event_EmRpYjBQ6xy1hz6P53GiW","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97214,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":55200,"event_id":"event_EmRpYDafTMw2fVu8hFFsQ","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97305,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":55400,"event_id":"event_EmRpYM618iGvhksl2hMU7","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97390,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":55600,"event_id":"event_EmRpYJEjyDRpcduXeWWow","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97487,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":55800,"event_id":"event_EmRpYGGX2y60co5I0uKK5","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97576,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":56000,"event_id":"event_EmRpY0wgl6WXLQD53nD2O","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97736,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":56200,"event_id":"event_EmRpYLR3LDMiYgqYSXZ8e","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97756,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":56400,"event_id":"event_EmRpYxpZIR1VjiwBZk3SE","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97844,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":56600,"event_id":"event_EmRpYJeMgl3Kl6fCqMEKo","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":97960,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":56800,"event_id":"event_EmRpYxDQkfRGpGLMYdXTU","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":98028,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":57000,"event_id":"event_EmRpYSk51nIGCzai15efw","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":98119,"sent_ms":93207}
+{"event":{"audio_bytes":19200,"channels":1,"elapsed_ms":57200,"event_id":"event_EmRpZ7Zu0IJyv9Tqn7sBY","format":"pcm16","sample_rate":24000,"type":"session.output_audio.delta"},"rx_ms":98259,"sent_ms":93207}
+{"event":{"event_id":"event_EmRpZlDRdaxbcNCrn3Kdp","type":"session.closed"},"rx_ms":98454,"sent_ms":93207}

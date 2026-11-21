@@ -1,0 +1,20 @@
+# 線上會議風格：口語、日期、數字、待辦事項。內容為測試用途虛構。
+Hi everyone, thanks for joining the weekly sync.
+Let's start with a quick update on the migration project.
+We finished moving the user database to the new cluster on Tuesday.
+The cutover took about forty minutes, which was shorter than the two hours we had planned.
+However, we noticed that the p ninety nine latency went up from eighty milliseconds to one hundred and twenty milliseconds.
+I think the root cause is a missing index on the orders table.
+Could you take a look at that before the end of the week?
+Sure, I will open a pull request by Thursday.
+Great. The second topic is the budget for next quarter.
+Our cloud spending was two hundred and thirty thousand dollars last month, which is twelve percent over budget.
+Most of the increase came from GPU instances used for model training.
+We could save around thirty percent by switching to reserved capacity.
+Let's schedule a review with the finance team on March fifteenth.
+One more thing: the security audit starts on the first of April.
+Please make sure that all access keys are rotated and that multi-factor authentication is enabled.
+To summarize, we have three action items.
+First, fix the missing index. Second, prepare the cost review. Third, complete the security checklist.
+Is there anything else before we wrap up?
+Okay, thanks everyone, talk to you next week.

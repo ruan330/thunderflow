@@ -84,12 +84,15 @@ struct LiveView: View {
             StatusChip(text: recordingLabel, color: recordingColor)
             if model.isRecording {
                 StatusChip(text: engineLabel, color: engineColor)
-                Text(Format.duration(model.elapsed)).monospacedDigit()
+                Text(Format.duration(model.elapsed)).monospacedDigit().fixedSize()
                 LevelMeter(level: model.level)
                 Text(Format.cost(audioSeconds: model.elapsed, provisional: model.settings.showsProvisional))
                     .foregroundStyle(.secondary)
+                    .fixedSize()
                 if !model.sourceDescription.isEmpty {
-                    Text(model.sourceDescription).foregroundStyle(.secondary).lineLimit(1)
+                    // 空間不夠時最先被截短（上方的來源選單已經寫了來源）
+                    Text(model.sourceDescription).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                        .layoutPriority(-1)
                 }
             }
             Spacer()
@@ -100,19 +103,22 @@ struct LiveView: View {
                     Label("標記重點", systemImage: "flag")
                 }
                 .keyboardShortcut("b", modifiers: .command)
+                .fixedSize()
             }
             Button {
                 FloatingCaptions.shared.toggle(model: model)
             } label: {
-                Label("浮動字幕", systemImage: "rectangle.on.rectangle")
+                Label("浮動字幕", systemImage: "rectangle.on.rectangle").labelStyle(.iconOnly)
             }
             .keyboardShortcut("f", modifiers: [.command, .shift])
+            .help("浮動字幕（⌘⇧F）")
             Picker("顯示", selection: $settings.displayMode) {
-                ForEach(DisplayMode.allCases) { Text($0.label).tag($0) }
+                ForEach(DisplayMode.allCases) { Text($0.shortLabel).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 210)
+            .frame(width: 150)
+            .help("雙語／只看中文／只看英文")
             Stepper("字級 \(Int(settings.fontSize))", value: $settings.fontSize, in: 14...48, step: 2)
                 .fixedSize()
         }
@@ -360,11 +366,13 @@ struct StatusChip: View {
     var body: some View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 7, height: 7)
-            Text(text)
+            Text(text).lineLimit(1)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(color.opacity(0.12), in: Capsule())
+        // 狀態最重要：先分到空間，不折行
+        .layoutPriority(1)
     }
 }
 

@@ -32,31 +32,91 @@ struct ThunderFlowApp: App {
     }
 }
 
-/// 左側固定三項：即時翻譯、過去錄音、設定（DESIGN.md 4.1 節）。
+/// 左側固定三項：即時翻譯、過去錄音、設定（DESIGN.md 4.1 節）。⌘1、⌘2、⌘3 切換。
+///
+/// 側邊欄自己畫，不用 NavigationSplitView：實測它讓第一個畫面慢約 90 ms，
+/// 是啟動時間超過預算的主要原因（DESIGN.md 9.8 節，`Scripts/measure-app.sh`）。
 struct RootView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        @Bindable var model = model
-        NavigationSplitView {
-            List(selection: $model.page) {
-                Label("即時翻譯", systemImage: "waveform").tag(AppModel.Page.live)
-                Label("過去錄音", systemImage: "list.bullet.rectangle").tag(AppModel.Page.library)
-                    .badge(model.processing.count)
-                Label("設定", systemImage: "gearshape").tag(AppModel.Page.settings)
+        HStack(spacing: 0) {
+            Sidebar()
+            Divider()
+            Group {
+                switch model.page {
+                case .live: LiveView()
+                case .library: LibraryView()
+                case .settings: SettingsView()
+                }
             }
-            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
-        } detail: {
-            switch model.page {
-            case .live: LiveView()
-            case .library: LibraryView()
-            case .settings: SettingsView()
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear { LaunchProbe.firstAppearance() }
         // 畫面先出現，資料隨後補上
         .task { await model.didAppear() }
     }
+}
+
+private struct Sidebar: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            item(.live, "即時翻譯", systemImage: "waveform", key: "1")
+            item(.library, "過去錄音", systemImage: "list.bullet.rectangle", key: "2", badge: model.processing.count)
+            item(.settings, "設定", systemImage: "gearshape", key: "3")
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 12)
+        .frame(width: 180)
+        .background(SidebarMaterial())
+    }
+
+    private func item(
+        _ page: AppModel.Page, _ title: String, systemImage: String, key: KeyEquivalent, badge: Int = 0
+    ) -> some View {
+        let selected = model.page == page
+        return Button {
+            model.page = page
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .frame(width: 18)
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                Text(title)
+                Spacer(minLength: 0)
+                if badge > 0 {
+                    Text("\(badge)")
+                        .font(.caption.monospacedDigit())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(.quaternary, in: Capsule())
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(selected ? Color.primary.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 6))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut(key, modifiers: .command)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// 系統側邊欄的半透明材質。
+private struct SidebarMaterial: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .sidebar
+        view.blendingMode = .behindWindow
+        view.state = .followsWindowActiveState
+        return view
+    }
+
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
 }
 
 /// 浮動字幕視窗（DESIGN.md 4.4 節）：永遠在最上層，可以跨桌面、疊在全螢幕 App 上。

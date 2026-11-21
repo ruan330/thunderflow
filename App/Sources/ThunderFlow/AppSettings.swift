@@ -14,6 +14,15 @@ enum DisplayMode: String, CaseIterable, Identifiable {
         case .english: "只看英文"
         }
     }
+
+    /// 即時翻譯頁的分段控制用的短標籤。
+    var shortLabel: String {
+        switch self {
+        case .bilingual: "雙語"
+        case .chinese: "中文"
+        case .english: "英文"
+        }
+    }
 }
 
 /// 一般設定，存在 UserDefaults。API Key 不在這裡，只放鑰匙圈。
@@ -108,8 +117,10 @@ enum Format {
         return String(format: "%02d:%02d:%02d", total / 3_600, total % 3_600 / 60, total % 60)
     }
 
+    /// 11/21 12:28。日期和時間分開格式化：合在一起時，中文的格式會把兩者黏成「11/2112:28」。
     static func date(_ date: Date) -> String {
-        date.formatted(.dateTime.month(.twoDigits).day(.twoDigits).hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
+        date.formatted(.dateTime.month(.twoDigits).day(.twoDigits)) + " "
+            + date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
     }
 
     /// 預估費用：轉錄每分鐘 0.017 美元，加上翻譯（實測每小時約 0.03–0.12 美元）。

@@ -92,8 +92,13 @@ final class AppModel {
         SelfTest.runIfRequested(self)
     }
 
+    /// 重新列出收音裝置。在背景做：程式第一次碰 Core Audio 要等它初始化（實測約 70 ms），
+    /// 放在主執行緒上會讓剛出現的畫面卡住（DESIGN.md 9.8 節：第一個畫面前後不在主執行緒上碰 Core Audio）。
     func refreshDevices() {
-        devices = AudioDevices.inputDevices()
+        Task.detached(priority: .userInitiated) { [weak self] in
+            let devices = AudioDevices.inputDevices()
+            await MainActor.run { self?.devices = devices }
+        }
     }
 
     // MARK: 開始與停止
@@ -151,7 +156,8 @@ final class AppModel {
             Task { @MainActor in await self?.stop() }
         }
         do {
-            try recording.start()
+            // 建立擷取點、啟動裝置都是會等待的 Core Audio 呼叫：在背景做，畫面不會卡住
+            try await Task.detached(priority: .userInitiated) { try recording.start() }.value
         } catch {
             banner = "無法開始錄音：\(error)"
             liveState = .idle

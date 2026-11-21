@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import ThunderAudio
 import ThunderCore
 import ThunderUI
 
@@ -200,17 +201,29 @@ struct FloatingCaptionsView: View {
 enum SelfTest {
     static func runIfRequested(_ model: AppModel) {
         let defaults = UserDefaults.standard
-        guard let path = defaults.string(forKey: "selfTestFile") else { return }
+        if defaults.bool(forKey: "diagnoseCapture") {
+            diagnoseCapture()
+            return
+        }
+        let systemAudio = defaults.string(forKey: "selfTestSource") == "system"
+        guard systemAudio || defaults.string(forKey: "selfTestFile") != nil else { return }
         let seconds = defaults.double(forKey: "selfTestSeconds")
         let prefix = defaults.string(forKey: "selfTestSnapshot")
         Task {
-            model.source = .file(URL(fileURLWithPath: path))
+            model.source = systemAudio ? .system : .file(URL(fileURLWithPath: defaults.string(forKey: "selfTestFile") ?? ""))
             model.title = defaults.string(forKey: "selfTestTitle") ?? ""
             await model.start()
+            print("selfTest: started state=\(model.liveState) banner=\(model.banner ?? "-") \(model.captureDiagnostics)")
             let limit = seconds > 0 ? seconds : 3_600
             let started = ContinuousClock.now
+            var lastReport = ContinuousClock.now
             while model.isRecording, ContinuousClock.now - started < .seconds(limit) {
                 try? await Task.sleep(for: .milliseconds(200))
+                if ContinuousClock.now - lastReport >= .milliseconds(1_000) {
+                    lastReport = ContinuousClock.now
+                    print("selfTest: \(model.captureDiagnostics)")
+                    fflush(stdout)
+                }
             }
             if let prefix { snapshot(to: prefix + "-live.png") }
             await model.stop()
@@ -228,6 +241,59 @@ enum SelfTest {
             }
             let states = model.sessions.map { "\($0.meta.title.isEmpty ? "未命名" : $0.meta.title)｜\($0.meta.state.rawValue)｜\(Int($0.meta.durationSeconds)) 秒｜失敗的步驟 \($0.meta.failedSteps)" }
             print("selfTest: done banner=\(model.banner ?? "-") sessions=\(states)")
+            if defaults.bool(forKey: "selfTestQuit") { NSApp.terminate(nil) }
+        }
+    }
+
+    /// 實機檢查系統音訊的擷取（不連線、不需要 Key、不建立場次）：啟動參數 `-diagnoseCapture YES`，
+    /// 秒數用 `-diagnoseSeconds`（預設 5）。和錄音時一樣在背景啟動擷取，每秒印出收到的樣本數與峰值，
+    /// 最後印出收到的音訊長度與實際經過時間的比例：沒有任何 App 出聲時也應該接近 1（收到的是靜音）。
+    static func diagnoseCapture() {
+        Task {
+            let defaults = UserDefaults.standard
+            let seconds = defaults.integer(forKey: "diagnoseSeconds") > 0 ? defaults.integer(forKey: "diagnoseSeconds") : 5
+            let ring = RingBuffer(minimumCapacity: 1 << 22)
+            let capture = AudioCapture(source: .systemAudio, ring: ring)
+            let began = ContinuousClock.now
+            // 還沒有授權時，第一次開始收音會立刻失敗、同時跳出授權視窗；之後的嘗試會等到使用者回答才回來
+            // （實機觀察）。其他原因的失敗每秒重試，最多 60 次
+            var sampleRate = 0.0
+            for attempt in 1...60 {
+                do {
+                    sampleRate = try await Task.detached { try capture.start() }.value
+                    break
+                } catch {
+                    if attempt == 1 { print("diagnose: start failed, retrying every second for 60 s: \(error)") }
+                    if attempt == 60 {
+                        print("diagnose: gave up")
+                        if defaults.bool(forKey: "selfTestQuit") { NSApp.terminate(nil) }
+                        return
+                    }
+                    fflush(stdout)
+                    try? await Task.sleep(for: .seconds(1))
+                }
+            }
+            let started = ContinuousClock.now
+            print("diagnose: started in \(started - began), sampleRate=\(sampleRate)")
+            var buffer = [Float](repeating: 0, count: 1 << 20)
+            var frames = 0
+            for second in 1...seconds {
+                try? await Task.sleep(until: started + .seconds(second), clock: .continuous)
+                let count = buffer.withUnsafeMutableBufferPointer { ring.read(into: $0) }
+                frames += count
+                let peak = buffer.prefix(count).reduce(Float(0)) { max($0, abs($1)) }
+                print("diagnose: t=\(second)s callbacks=\(capture.mixer.callbackCount) frames=\(frames) peak=\(peak)")
+                fflush(stdout)
+            }
+            let elapsed = (ContinuousClock.now - started).components
+            let wall = Double(elapsed.seconds) + Double(elapsed.attoseconds) / 1e18
+            capture.stop()
+            let audio = sampleRate > 0 ? Double(frames) / sampleRate : 0
+            print(
+                String(
+                    format: "diagnose: wall=%.2fs audio=%.2fs ratio=%.3f discontinuities=%d", wall, audio, audio / wall,
+                    capture.mixer.discontinuityCount))
+            fflush(stdout)
             if defaults.bool(forKey: "selfTestQuit") { NSApp.terminate(nil) }
         }
     }

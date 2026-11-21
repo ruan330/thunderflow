@@ -53,6 +53,12 @@ final class AppModel {
     var searchText = ""
 
     private var recording: LiveRecording?
+
+    /// 自我檢查用：收音的 callback 次數、已經錄下的長度、音量。
+    var captureDiagnostics: String {
+        guard let recording else { return "no recording" }
+        return "callbacks=\(recording.captureCallbackCount) audio=\(recording.audioTime.seconds) level=\(recording.level)"
+    }
     private var ticker: Task<Void, Never>?
     private var activity: NSObjectProtocol?
     private var lastCallbackCount = 0

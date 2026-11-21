@@ -20,26 +20,27 @@ public struct Toast: Sendable, Equatable, Identifiable {
 /// 目前的提示：一則顯示 1.5 秒；新的一則馬上取代目前的，不排隊。
 ///
 /// 時間由呼叫的人傳入，畫面在 `expiresAt` 重畫一次，提示就會在對的時間消失。
-///
-/// 尚未實作：介面先行，見 `ToastStateTests`。
 public struct ToastState: Sendable, Equatable {
     /// 一則提示顯示多久。
     public let duration: Duration
+    /// 最新的一則提示消失的時間（可能已經過了）；還沒有任何提示時是 nil。
+    public private(set) var expiresAt: ContinuousClock.Instant?
+    /// 最新的一則提示。
+    private var latest: Toast?
 
     public init(duration: Duration = .milliseconds(1500)) {
         self.duration = duration
     }
 
     /// 顯示一則新的提示，取代目前的（不論舊的還剩多久）。
-    public mutating func post(_ kind: Toast.Kind, _ text: String, at now: ContinuousClock.Instant) {}
+    public mutating func post(_ kind: Toast.Kind, _ text: String, at now: ContinuousClock.Instant) {
+        latest = Toast(id: (latest?.id ?? 0) + 1, kind: kind, text: text)
+        expiresAt = now + duration
+    }
 
     /// 在 `now` 時要顯示的提示：最新的一則出現後未滿 `duration` 就是它，滿了就沒有。
     public func visible(at now: ContinuousClock.Instant) -> Toast? {
-        nil
-    }
-
-    /// 最新的一則提示消失的時間（可能已經過了）；還沒有任何提示時是 nil。
-    public var expiresAt: ContinuousClock.Instant? {
-        nil
+        guard let latest, let expiresAt, now < expiresAt else { return nil }
+        return latest
     }
 }

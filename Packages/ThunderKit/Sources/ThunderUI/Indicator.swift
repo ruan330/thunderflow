@@ -1,4 +1,5 @@
 import ThunderCore
+import ThunderSession
 
 /// 一個狀態的表示：符號、色調與文字。
 ///
@@ -56,26 +57,39 @@ public enum IndicatorTone: Sendable, Hashable, CaseIterable {
 
 extension Indicator {
     /// 錄音的狀態。
-    ///
-    /// 尚未實作：介面先行，見 `IndicatorTests`。
     public static func recorder(_ phase: RecorderPhase) -> Indicator {
-        Indicator(symbol: .dot, tone: .neutral, text: "")
+        switch phase {
+        case .idle: Indicator(symbol: .dot, tone: .neutral, text: "尚未開始")
+        case .starting: Indicator(symbol: .spinner, tone: .neutral, text: "準備中")
+        case .recording: Indicator(symbol: .dot, tone: .recording, text: "錄音中")
+        case .paused: Indicator(symbol: .pause, tone: .attention, text: "已暫停")
+        case .stopping: Indicator(symbol: .spinner, tone: .neutral, text: "收尾中")
+        }
     }
 
     /// 翻譯的狀態（`LiveCaptionModel.engineStatus`）。和錄音分開顯示：翻譯斷線或停止時，錄音仍然持續。
     /// 引擎還沒回報任何狀態（nil）時當成連線中。
-    ///
-    /// 尚未實作：介面先行，見 `IndicatorTests`。
     public static func engine(_ status: EngineStatus?) -> Indicator {
-        Indicator(symbol: .dot, tone: .neutral, text: "")
+        switch status {
+        case nil, .connecting?: Indicator(symbol: .boltOutline, tone: .attention, text: "翻譯連線中")
+        case .live?: Indicator(symbol: .bolt, tone: .live, text: "翻譯即時")
+        case .reconnecting?: Indicator(symbol: .boltOutline, tone: .attention, text: "翻譯重新連線中，錄音持續中")
+        case .idle?: Indicator(symbol: .boltOutline, tone: .neutral, text: "翻譯待命")
+        case .failed(let reason)?: Indicator(symbol: .boltSlash, tone: .danger, text: "翻譯已停止：\(reason)（錄音持續中）")
+        }
     }
 
     /// 過去錄音的狀態標籤。正常完成的場次不顯示標籤（nil）。
     ///
     /// 依序判斷：正在處理時顯示處理的進度（`progress`）；還沒處理完顯示「處理中」；摘要失敗；其他步驟失敗；已復原。
-    ///
-    /// 尚未實作：介面先行，見 `IndicatorTests`。
     public static func sessionBadge(_ meta: SessionMeta, progress: String? = nil) -> Indicator? {
-        nil
+        if let progress { return Indicator(symbol: .spinner, tone: .neutral, text: progress) }
+        if meta.state != .complete { return Indicator(symbol: .spinner, tone: .neutral, text: "處理中") }
+        if meta.failedSteps.contains(FinalizationStep.summary.rawValue) {
+            return Indicator(symbol: .warning, tone: .danger, text: "摘要失敗")
+        }
+        if !meta.failedSteps.isEmpty { return Indicator(symbol: .warning, tone: .danger, text: "部分處理失敗") }
+        if meta.recovered { return Indicator(symbol: .recovered, tone: .attention, text: "已復原") }
+        return nil
     }
 }

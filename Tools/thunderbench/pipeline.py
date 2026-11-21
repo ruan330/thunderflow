@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """M0b：把錄下來的英文逐字稿時間軸接上「切句 → 文字模型翻譯」，算出端到端的延遲。（探索用）
 
-用法：pipeline.py <輸出資料夾> <clip.json> [--trigger period|turn] [--partials] [--partial-words 3] [--partial-interval 1.0]
+用法：pipeline.py <輸出資料夾> <clip.json> [--trigger period|turn|pause] [--partials] [--partial-words 3] [--partial-interval 1.0]
+                  [--vad <vad.json> --quiet 0.35 --patience 1.5 --min-words 3 --max-words 0]
                   [--model gpt-6-luna] [--effort none] [--loops N] [--label 名稱] [--workers 6] [--show]
 
 時間是「虛擬」的：英文每個字到達的時間來自錄下來的事件；翻譯是真的呼叫 API，量它花多久，再把這段時間接在
@@ -10,6 +11,10 @@
 切段（--trigger）：
 - period：看到句號（. ? !），而且後面接的是空白或 0.2 秒內沒有別的字，就把這一句送去翻譯。兩種連線都能用。
 - turn：純轉錄連線專用。除了句號，一段音訊 commit 之後收到完成事件，也把還沒翻的文字送去翻譯。
+- pause：不靠 commit。除了句號，用戶端自己偵測到停頓（--vad 指定 vad-plan.py 的輸出）之後，等文字流也安靜了 --quiet 秒
+  （停頓前說的字都到了），就把還沒翻的文字當成一段送去翻譯。停頓開始後 --patience 秒內文字都沒有安靜下來就不切。
+  這一段不到 --min-words 個字時也不切，併到下一段。
+  --max-words 大於 0 時，一段超過這麼多字還沒有邊界，就在最近的逗號處切開。
 
 暫定譯文（--partials）：一句還沒說完時，每多 N 個字、而且距離上次至少 T 秒，就把目前的半句送去翻譯，
 畫面上先顯示這個暫定的譯文，整句完成後再換成定稿。
@@ -55,6 +60,11 @@ effort = option("--effort", "none")
 loops = int(option("--loops", "0"))
 label = option("--label")
 workers = int(option("--workers", "6"))
+vad_path = option("--vad")
+quiet = float(option("--quiet", "0.35"))
+patience = float(option("--patience", "1.5"))
+min_words = int(option("--min-words", "3"))
+max_words = int(option("--max-words", "0"))
 with_partials = flag("--partials")
 show = flag("--show")
 dry_run = flag("--dry-run")
@@ -106,6 +116,45 @@ if trigger_mode == "turn":
     for item, done in run.completed.items():
         if item in last_position:
             boundaries.append((last_position[item], done["rx"], "turn"))
+if trigger_mode == "pause":
+    # 「聲音停了，而且文字也停了」才切：
+    # 用戶端偵測到停頓（靜音滿 silence_ms）之後，等文字流安靜 quiet 秒（停頓前說的字都到了），把還沒翻的文字當成一段。
+    # 停頓很短、下一句的字緊接著到，文字流沒有安靜下來，就不切，併到下一段。
+    vad = json.load(open(vad_path, encoding="utf-8"))
+    arrivals = sorted({rx for _, rx, _ in chars})
+    last_char_at = {}
+    for char_index, (_, rx, _) in enumerate(chars):
+        last_char_at[rx] = char_index
+    for turn in vad["turns"]:
+        pause_start = turn["speech_end_ms"] / 1000
+        detected = turn["commit_ms"] / 1000            # 靜音滿門檻、用戶端知道「停頓了」的時間
+        # 找停頓開始之後第一個「安靜了 quiet 秒」的地方
+        for k, rx in enumerate(arrivals):
+            following = arrivals[k + 1] if k + 1 < len(arrivals) else float("inf")
+            if following - rx < quiet:
+                continue
+            if rx + quiet < detected:
+                continue                                 # 這段安靜在偵測到停頓之前就結束了，跟這次停頓無關
+            if rx > pause_start + patience:
+                break                                    # 等太久文字都沒有安靜下來：放棄這次停頓
+            boundaries.append((last_char_at[rx], max(rx + quiet, detected), "pause"))
+            break
+if max_words > 0:
+    # 太長的一段在逗號處切開：逗號後面的字出現時就切（逗號本身常常晚到）
+    word_count, last_cut = 0, -1
+    known = sorted(position for position, _, _ in boundaries)
+    import bisect
+    for position, (ch, rx, _) in enumerate(chars):
+        if ch.isspace():
+            word_count += 1
+        k = bisect.bisect_left(known, position)
+        if k < len(known) and known[k] == position:
+            word_count, last_cut = 0, position
+        elif ch in ",;:，；：" and word_count >= max_words:
+            follow = position + 1
+            if follow < len(chars) and chars[follow][0].isspace():
+                boundaries.append((position, chars[follow][1], "comma"))
+                word_count, last_cut = 0, position
 # 同一個位置取最早確認的；位置在前的邊界不能比後面的晚（後面確認了，前面也就確定了）
 earliest = {}
 for position, confirmed, reason in boundaries:
@@ -122,6 +171,15 @@ for position, (confirmed, reason) in ordered:
     if not re.search(r"\w", text):
         continue
     if reason == "turn" and segments and segments[-1]["end"] > position:
+        continue
+    if reason == "pause" and len(text.split()) < min_words:
+        continue  # 太短，不切，併到下一段
+    if (reason == "period" and segments and segments[-1]["reason"] == "pause" and len(text.split()) <= 2
+            and confirmed - segments[-1]["t"] <= 1.5):
+        # 停頓前的最後一兩個字比較晚才到（連同句號）：併回剛剛那一段，那一段的定稿時間跟著延後
+        previous = segments[-1]
+        previous.update({"end": position + 1, "text": previous["text"] + " " + text, "t": confirmed, "reason": "pause+tail"})
+        cursor = position + 1
         continue
     segments.append({"start": cursor, "end": position + 1, "text": text, "t": confirmed, "reason": reason})
     cursor = position + 1
@@ -284,6 +342,36 @@ if with_partials:
     if kept:
         print(f"  暫定譯文改版時，開頭保留的比例：平均 {statistics.mean(kept) * 100:.0f}%、中位數 {statistics.median(kept) * 100:.0f}%（{len(kept)} 次改版；100% 表示只往後加字）")
 
+# ---------------------------------------------------------------- 真實錄音：以「段」為單位
+# 參考稿有逐字時間時（reference.py），可以知道每一段是什麼時候說的。真人演講一句話常常十幾秒，
+# 所以這裡看的是「一段說完之後多久出現中文」，不是「一句說完之後」。
+by_segment = {}
+if run.spoken:
+    seg_ready, seg_final, seg_first, seg_words, seg_seconds = [], [], [], [], []
+    with_terminator = 0
+    for segment_index, segment in enumerate(segments):
+        span = run.spoken_span(segment["start"], segment["end"])
+        if not span:
+            continue
+        spoken_start, spoken_end, _ = span
+        final = finals[segment_index]
+        seg_ready.append(final["t"] - spoken_end)
+        seg_final.append(final["t"] + final["total"] - spoken_end)
+        candidates = [final["t"] + final["first"]] + [p["t"] + p["first"] for p in partials.get(segment_index, [])]
+        seg_first.append(min(candidates) - spoken_start)
+        seg_words.append(len(segment["text"].split()))
+        seg_seconds.append(spoken_end - spoken_start)
+        if segment["text"].rstrip()[-1:] in ".?!。？！":
+            with_terminator += 1
+    print(f"  ── 以段為單位（{len(seg_ready)} 段對得上參考稿；其中 {with_terminator} 段以句號結尾）")
+    describe("每段的字數", seg_words, unit="字")
+    describe("每段說了多久", seg_seconds)
+    describe("英文這一段確定 — 距離這一段說完", seg_ready)
+    describe("中文定稿完整出現 — 距離這一段說完", seg_final)
+    describe("第一個中文字 — 距離這一段開始說" + ("（含暫定譯文）" if with_partials else ""), seg_first)
+    by_segment = {"ready": seg_ready, "final_shown": seg_final, "first_zh": seg_first, "words": seg_words, "seconds": seg_seconds,
+                  "with_terminator": with_terminator}
+
 tokens_in, tokens_out = sum(r["in"] for r in requests), sum(r["out"] for r in requests)
 audio_seconds = run.sentences[-1]["end"]
 PRICES = {"gpt-6-luna": (0.10, 0.50), "gpt-6.1-terra": (1.0, 5.0), "gpt-6.2-sol": (2.0, 10.0)}
@@ -301,7 +389,8 @@ json.dump({"translated_text": translation, "source_text": stream,
           open(f"{out_dir}/summary.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 json.dump({"segments": segments, "requests": requests,
            "metrics": {"ready": ready, "final_shown": shown_done, "first_zh": first_zh, "first_zh_final_only": first_zh_final_only,
-                       "luna_first": luna_first, "luna_total": luna_total, "tokens_in": tokens_in, "tokens_out": tokens_out}},
+                       "luna_first": luna_first, "luna_total": luna_total, "tokens_in": tokens_in, "tokens_out": tokens_out,
+                       "by_segment": by_segment}},
           open(f"{out_dir}/pipeline.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 if show:
     for segment_index in sorted(finals):

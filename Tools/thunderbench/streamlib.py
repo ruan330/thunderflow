@@ -91,6 +91,14 @@ class Run:
         if sent:
             self.sentences = [s for s in self.sentences if s["end"] <= sent + 0.05]
         self.reference = [(normalize(word), index) for index, s in enumerate(self.sentences) for word in split_tokens(s["text"])]
+        # 真實錄音的參考稿（reference.py 產生）帶有每個字的時間：稿子的每個字何時說出來
+        self.reference_times = None
+        if self.clip.get("words") and loops == 1:
+            self.reference, self.reference_times = [], []
+            for item in self.clip["words"]:
+                for word in split_tokens(item["w"]):
+                    self.reference.append((normalize(word), item["sentence"]))
+                    self.reference_times.append((item["start"], item["end"]))
 
         # --- 對齊 ---
         # 循環播放時一輪一輪對：同一份稿子重複出現，整段一起比對會對到別輪去。
@@ -142,6 +150,12 @@ class Run:
         for ref_index, word_index in self.aligned.items():
             self.sentence_words.setdefault(self.reference[ref_index][1], []).append(word_index)
 
+        # 收到的每個字是什麼時候說出來的（只有對得上參考稿、而且參考稿有逐字時間時才知道）
+        self.spoken = {}
+        if self.reference_times:
+            for ref_index, word_index in self.aligned.items():
+                self.spoken[word_index] = self.reference_times[ref_index]
+
         # --- 純轉錄連線才有的：用戶端的 commit 與每一段的完成事件 ---
         self.commits = [e for e in self.events if e.get("client") == "commit" and "rx_ms" in e]
         self.completed = {}  # item -> {"rx":…, "text":…}
@@ -151,6 +165,13 @@ class Run:
                 self.completed[event.get("item_id")] = {"rx": e["rx_ms"] / 1000, "text": event.get("transcript", ""), "usage": event.get("usage")}
         self.committed_order = [(e["rx_ms"] / 1000, e["event"].get("item_id")) for e in self.events
                                 if e.get("event", {}).get("type") == "input_audio_buffer.committed" and "rx_ms" in e]
+
+    def spoken_span(self, start, end):
+        """字元範圍 [start, end) 裡的字是什麼時候說的：回傳（第一個字開始、最後一個字結束、對得上的字數）。"""
+        times = [self.spoken[i] for i, w in enumerate(self.words) if start <= w["start"] < end and i in self.spoken]
+        if not times:
+            return None
+        return min(t[0] for t in times), max(t[1] for t in times), len(times)
 
     def terminator_time(self, word_index):
         """這個字後面、下一個字之前出現的句號（. ? !）的到達時間；沒有就回傳 None。"""

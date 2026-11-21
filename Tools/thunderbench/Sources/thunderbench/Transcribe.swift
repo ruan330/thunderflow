@@ -93,6 +93,14 @@ final class TranscriptRecorder: @unchecked Sendable {
         }
     }
 
+    /// 到目前為止收到的文字的最後 `count` 個字元（依段的順序接起來）。
+    func transcriptTail(_ count: Int) -> String {
+        lock.withLock {
+            let all = itemOrder.map { deltaText[$0] ?? "" }.joined(separator: " ")
+            return String(all.suffix(count))
+        }
+    }
+
     /// 記下用戶端自己做的事（例如送出 commit），和收到的事件用同一條時間軸。
     func note(_ action: String, _ extra: [String: Any] = [:]) {
         lock.withLock {
@@ -140,6 +148,8 @@ enum CommitMode {
     case interval(Double)
     /// 說話之後出現這麼長的靜音就 commit（用戶端的簡易語音偵測）。
     case silence(Int)
+    /// 照事先算好的位置 commit（音訊位置，毫秒，由小到大）。用來試各種停頓偵測的做法，位置由 vad-plan.py 產生。
+    case plan([Int])
 
     init(_ text: String) {
         let parts = text.split(separator: ":", maxSplits: 1).map(String.init)
@@ -147,7 +157,12 @@ enum CommitMode {
         case "none", "end": self = .atEnd
         case "interval": self = .interval(parts.count > 1 ? Double(parts[1]) ?? 10 : 10)
         case "silence": self = .silence(parts.count > 1 ? Int(parts[1]) ?? 300 : 300)
-        default: fail("--commit 只接受 none、interval:<秒>、silence:<毫秒>")
+        case "plan":
+            guard parts.count > 1, let text = try? String(contentsOf: URL(fileURLWithPath: parts[1]), encoding: .utf8) else {
+                fail("--commit plan:<檔案> 讀不到檔案")
+            }
+            self = .plan(text.split(whereSeparator: \.isNewline).compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }.sorted())
+        default: fail("--commit 只接受 none、interval:<秒>、silence:<毫秒>、plan:<檔案>")
         }
     }
 }
@@ -171,6 +186,9 @@ func transcribe(_ arguments: Arguments) async throws {
     let vadThreshold = arguments.double("vad-threshold", default: 100)
     let finalWait = arguments.double("final-wait", default: 20)
     let noise = arguments.string("noise-reduction", default: "none")
+    /// 每次 commit 之後，把目前逐字稿的最後這麼多個字元放進 prompt（0＝不做）。
+    /// 每一段是各自辨識的；這是在試「把前文當成提示」能不能補回上下文。
+    let rollingPrompt = arguments.int("rolling-prompt", default: 0)
     /// 音訊送完、最後一段也完成之後，保持連線但不送音訊這麼多分鐘（測試閒置與到期的行為）。
     let holdMinutes = arguments.double("hold-minutes", default: 0)
 
@@ -273,6 +291,7 @@ func transcribe(_ arguments: Arguments) async throws {
     var commits = 0
     var speechSinceCommit = false
     var silenceRunMs = 0
+    var planIndex = 0
     var nextProgress = 300.0
     recorder.markAudioStart()
     let started = clock.now
@@ -302,6 +321,21 @@ func transcribe(_ arguments: Arguments) async throws {
         recorder.note("commit", ["reason": reason, "turn_seconds": Double(sentBytes - lastCommitBytes) / 48_000, "index": commits])
         lastCommitBytes = sentBytes
         speechSinceCommit = false
+        if rollingPrompt > 0 {
+            // 給伺服器一點時間把這一段的文字送回來，再用它更新 prompt（下一段已經開始送，所以只等很短的時間）
+            let tail = recorder.transcriptTail(rollingPrompt)
+            if !tail.isEmpty, var updated = session["audio"] as? [String: Any], var input = updated["input"] as? [String: Any],
+               var transcription = input["transcription"] as? [String: Any] {
+                let base = arguments.options["prompt"].map { $0 + " " } ?? ""
+                transcription["prompt"] = String((base + "Previous transcript: " + tail).suffix(1000))
+                input["transcription"] = transcription
+                updated["input"] = input
+                var next = session
+                next["audio"] = updated
+                try await send(["type": "session.update", "session": next])
+                recorder.note("prompt-update", ["chars": tail.count])
+            }
+        }
     }
 
     if !noAudio, accepted || arguments.flags.contains("send-anyway") {
@@ -334,6 +368,13 @@ func transcribe(_ arguments: Arguments) async throws {
                             silenceRunMs += frame.count / 48
                         }
                         if speechSinceCommit, silenceRunMs >= ms { reason = "silence" }
+                    case .plan(let positions):
+                        // 循環播放時位置不重複使用；只支援播放一次
+                        let positionMs = (sentBytes + pending.count) / 48
+                        if planIndex < positions.count, positionMs >= positions[planIndex] {
+                            reason = "plan"
+                            while planIndex < positions.count, positionMs >= positions[planIndex] { planIndex += 1 }
+                        }
                     }
                     if reason == nil, maxTurnSeconds > 0, turnSeconds >= maxTurnSeconds { reason = "max-turn" }
                     if let reason {

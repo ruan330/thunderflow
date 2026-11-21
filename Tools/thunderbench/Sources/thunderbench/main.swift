@@ -25,7 +25,7 @@ default:
                                  [--no-source] [--noise-reduction none|near_field|far_field]
                                  [--loop-minutes N] [--preconnect-seconds N] [--close-wait 20]
               把音檔串流到 gpt-realtime-translate，錄下所有事件與時間（會產生 API 費用）。
-          thunderbench transcribe <音檔.wav> --out <資料夾> [--delay minimal|low|medium|high|xhigh] [--commit none|interval:<秒>|silence:<毫秒>]
+          thunderbench transcribe <音檔.wav> --out <資料夾> [--delay minimal|low|medium|high|xhigh] [--commit none|interval:<秒>|silence:<毫秒>|plan:<檔案>]
                                   [--max-turn <秒>] [--keywords <一行一個的檔案>] [--prompt <文字>] [--languages en,zh-tw]
                                   [--chunk-ms 200] [--speed 1] [--loop-minutes N] [--hold-minutes N]
               把音檔串流到純轉錄的連線（gpt-live-transcribe），錄下所有事件與時間（會產生 API 費用）。

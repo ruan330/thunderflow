@@ -21,6 +21,12 @@ __pycache__/
 *.caf
 *.wav
 *.m4a
+*.mp3
+*.mp4
+*.aac
+*.flac
+*.ogg
+*.aiff
 Benchmarks/data/
 Benchmarks/private/
 

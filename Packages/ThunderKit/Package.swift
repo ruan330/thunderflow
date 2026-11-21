@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "ThunderAudio", targets: ["ThunderAudio"]),
         .library(name: "ThunderSession", targets: ["ThunderSession"]),
         .library(name: "ThunderEngines", targets: ["ThunderEngines"]),
+        .library(name: "ThunderUI", targets: ["ThunderUI"]),
     ],
     targets: [
         .target(name: "ThunderCore"),
@@ -18,6 +19,9 @@ let package = Package(
         .target(name: "ThunderSession", dependencies: ["ThunderCore", "ThunderAudio"]),
         // 即時字幕引擎的各個部分：停頓偵測、切段、轉錄連線、翻譯排程。不依賴 ThunderAudio。
         .target(name: "ThunderEngines", dependencies: ["ThunderCore"]),
+
+        // 每個畫面的狀態與邏輯（不含畫面本身），所以 `swift test` 測得到介面行為。
+        .target(name: "ThunderUI", dependencies: ["ThunderCore", "ThunderSession"]),
 
         // 測試工具：合成音訊、腳本引擎、效能預算等。不隨 App 出貨。
         .target(name: "ThunderTestKit", dependencies: ["ThunderCore", "ThunderAudio", "ThunderEngines"]),
@@ -27,5 +31,6 @@ let package = Package(
         .testTarget(name: "ThunderAudioTests", dependencies: ["ThunderAudio", "ThunderTestKit"]),
         .testTarget(name: "ThunderSessionTests", dependencies: ["ThunderSession", "ThunderTestKit"]),
         .testTarget(name: "ThunderEnginesTests", dependencies: ["ThunderEngines", "ThunderTestKit"]),
+        .testTarget(name: "ThunderUITests", dependencies: ["ThunderUI", "ThunderTestKit"]),
     ]
 )

@@ -122,7 +122,9 @@ public enum SystemAudioDevice {
             kAudioAggregateDeviceMainSubDeviceKey: outputUID,
             kAudioAggregateDeviceIsPrivateKey: true,
             kAudioAggregateDeviceIsStackedKey: false,
-            kAudioAggregateDeviceTapAutoStartKey: true,
+            // 不等到有 App 出聲：等的話，開始時沒有播放，裝置就一直不啟動（也不回報錯誤）；
+            // 播放暫停的時段也收不到樣本，錄音會比實際經過的時間短。不等的話，沒有播放時收到的是靜音。
+            kAudioAggregateDeviceTapAutoStartKey: false,
             kAudioAggregateDeviceSubDeviceListKey: [[kAudioSubDeviceUIDKey: outputUID]],
             kAudioAggregateDeviceTapListKey: [
                 [kAudioSubTapDriftCompensationKey: true, kAudioSubTapUIDKey: tapUID.uuidString]

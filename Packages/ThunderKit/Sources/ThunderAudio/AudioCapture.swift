@@ -37,7 +37,10 @@ public enum AudioCaptureError: Error, CustomStringConvertible {
         case .noInputDevice: "找不到可以收音的裝置"
         case .deviceNotFound(let uid): "找不到先前選擇的裝置（\(uid)）"
         case .coreAudio(let operation, let status): "\(operation) 失敗（Core Audio 錯誤 \(status)）"
-        case .systemAudioNotStarted(let status): "系統音訊沒辦法開始（Core Audio 錯誤 \(status)）"
+        case .systemAudioNotStarted(let status):
+            "系統音訊沒辦法開始（Core Audio 錯誤 \(status)），通常是還沒有允許 ThunderFlow 錄製系統音訊。"
+                + "第一次使用時 macOS 會跳出授權視窗：請按「允許」，然後再按一次開始。"
+                + "沒有看到視窗的話，請到「系統設定 → 隱私權與安全性」，在錄製系統音訊的項目裡允許 ThunderFlow。"
         case .unreadableFile(let detail): "音檔讀不出來：\(detail)"
         }
     }
@@ -248,7 +251,7 @@ public final class AudioCapture: @unchecked Sendable {
             try check(AudioHardwareCreateAggregateDevice(aggregate as CFDictionary, &created), "建立系統音訊的裝置")
             aggregateID = created
             sourceDescription = "系統音訊"
-            try startIOProc(on: created)
+            try startIOProc(on: created) { .systemAudioNotStarted(status: $0) }
         } catch {
             stop()
             throw error
@@ -282,7 +285,11 @@ public final class AudioCapture: @unchecked Sendable {
 
     // MARK: IOProc
 
-    private func startIOProc(on target: AudioDeviceID) throws {
+    /// - Parameter startFailed: 裝置沒辦法開始收音時要丟出的錯誤（系統音訊要換成有說明的錯誤）。
+    private func startIOProc(
+        on target: AudioDeviceID,
+        startFailed: (OSStatus) -> AudioCaptureError = { .coreAudio(operation: "開始收音", status: $0) }
+    ) throws {
         let mixer = mixer
         var created: AudioDeviceIOProcID?
         // 不給 dispatch queue：block 直接在裝置的即時 IO 執行緒上被呼叫。裡面只呼叫 `CaptureMixer.process`。
@@ -297,12 +304,11 @@ public final class AudioCapture: @unchecked Sendable {
         }
         try check(status, "建立音訊 callback")
         procID = created
-        do {
-            try check(AudioDeviceStart(target, created), "開始收音")
-        } catch {
+        let started = AudioDeviceStart(target, created)
+        if started != noErr {
             if let created { AudioDeviceDestroyIOProcID(target, created) }
             procID = nil
-            throw error
+            throw startFailed(started)
         }
     }
 

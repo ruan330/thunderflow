@@ -11,6 +11,10 @@ cd Tools/thunderbench && swift build -c release
 .build/release/thunderbench synth ../../Benchmarks/synthetic/keynote.txt --out ../../Benchmarks/data/keynote --voice Samantha
 .build/release/thunderbench synth ../../Benchmarks/synthetic/lecture.txt --out ../../Benchmarks/data/lecture --voice Daniel
 .build/release/thunderbench synth ../../Benchmarks/synthetic/meeting.txt --out ../../Benchmarks/data/meeting --voice Rishi
+.build/release/thunderbench synth ../../Benchmarks/synthetic/names.txt --out ../../Benchmarks/data/names --voice Samantha --rate 170
 ```
 
-`terms.json` 列出每份稿子裡要檢查的術語，以及可以接受的台灣繁體中文譯法。
+- `terms.json`：每份稿子裡要檢查的術語，以及可以接受的台灣繁體中文譯法。
+- `names.txt`：難唸的產品名稱與一個虛構的人名，用來測試關鍵詞提示的效果（M0b）。
+- `keywords-keynote.txt`、`keywords-names.txt`：給轉錄模型的關鍵詞（`keywords`），一行一個。
+

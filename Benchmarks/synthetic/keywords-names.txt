@@ -1,0 +1,16 @@
+# names 這份稿子裡的人名與產品名稱（給 gpt-live-transcribe 的 keywords，一行一個）
+Anneliese Okonkwo-Reyes
+Kiro
+Strands Agents
+Model Context Protocol
+Amazon Nova Act
+Amazon Q Developer
+SageMaker HyperPod
+Trainium3
+EC2 P6e
+Aurora DSQL
+OpenSearch Serverless
+Bedrock Knowledge Bases
+Karpenter
+EKS Auto Mode
+FSx for Lustre

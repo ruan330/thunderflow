@@ -9,6 +9,8 @@ case "synth":
     try synthesize(arguments)
 case "translate":
     try await translate(arguments)
+case "transcribe":
+    try await transcribe(arguments)
 case "analyze":
     try analyze(arguments)
 default:
@@ -23,6 +25,11 @@ default:
                                  [--no-source] [--noise-reduction none|near_field|far_field]
                                  [--loop-minutes N] [--preconnect-seconds N] [--close-wait 20]
               把音檔串流到 gpt-realtime-translate，錄下所有事件與時間（會產生 API 費用）。
+          thunderbench transcribe <音檔.wav> --out <資料夾> [--delay minimal|low|medium|high|xhigh] [--commit none|interval:<秒>|silence:<毫秒>]
+                                  [--max-turn <秒>] [--keywords <一行一個的檔案>] [--prompt <文字>] [--languages en,zh-tw]
+                                  [--chunk-ms 200] [--speed 1] [--loop-minutes N] [--hold-minutes N]
+              把音檔串流到純轉錄的連線（gpt-live-transcribe），錄下所有事件與時間（會產生 API 費用）。
+              加 --no-audio（可搭配 --session-json）只送設定、不送音訊，用來試哪些設定會被接受（免費）。
           thunderbench analyze <translate 的輸出資料夾> [--terms <terms.json> --name keynote]
               分析譯文：簡體或繁體、中國大陸用語、術語與數字的正確率。
         """)

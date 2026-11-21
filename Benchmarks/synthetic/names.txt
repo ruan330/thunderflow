@@ -1,0 +1,6 @@
+Please welcome Doctor Anneliese Okonkwo-Reyes, who leads the agentic platform team.
+Kiro is our new agentic IDE, and it works with Strands Agents and the Model Context Protocol.
+Amazon Nova Act can drive a browser, and Amazon Q Developer reviews your pull requests.
+We trained it on SageMaker HyperPod using Trainium3 chips and EC2 P6e instances.
+Aurora DSQL and OpenSearch Serverless now integrate with Bedrock Knowledge Bases.
+You can run Karpenter on EKS Auto Mode, and store checkpoints in FSx for Lustre.

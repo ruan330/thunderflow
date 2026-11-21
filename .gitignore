@@ -8,6 +8,9 @@ xcuserdata/
 # macOS
 .DS_Store
 
+# Python
+__pycache__/
+
 # Secrets — 憑證只放 Keychain，永遠不進 repo
 .env
 .env.*

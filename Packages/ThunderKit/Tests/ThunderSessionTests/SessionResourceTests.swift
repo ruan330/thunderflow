@@ -9,7 +9,7 @@ import ThunderTestKit
 /// 放在子程序是為了不受同一個程序裡其他測試的記憶體用量干擾。
 enum LongRunScenario {
     /// - Returns: 不會返回錯誤就代表通過；不符合時印出原因並以非 0 結束。
-    static func run(minutes: Int, warmupMinutes: Int, budgetKey: String, expectedSegments: Int? = nil) throws {
+    static func run(minutes: Int, warmupMinutes: Int, budgetKey: String, expectedSegments: Int? = nil) async throws {
         let budget = try PerfBudgets.load().maximum(budgetKey)
         let tmp = try TemporaryDirectory()
         defer { tmp.remove() }
@@ -21,17 +21,13 @@ enum LongRunScenario {
         var baseline = 0.0
         for minute in 0..<minutes {
             if minute == warmupMinutes { baseline = ProcessFootprint.megabytes() }
-            fed += try feedInLockstep(session, engine: engine, seconds: 60)
+            fed += try await feedInLockstep(session, engine: engine, seconds: 60)
         }
         let growth = ProcessFootprint.megabytes() - baseline
 
-        let done = DispatchSemaphore(value: 0)
-        let finished = LockedValue(false)
-        Task {
-            if (try? await session.finish()) != nil { finished.withValue { $0 = true } }
-            done.signal()
-        }
-        guard done.wait(timeout: .now() + 30) == .success, finished.value else {
+        do {
+            try await withDeadline(.seconds(30)) { try await session.finish() }
+        } catch {
             fail("finish() 沒有在 30 秒內完成")
         }
 
@@ -63,7 +59,7 @@ struct SessionResourceTests {
     @Test("30 分鐘的音訊：樣本與字幕都完整，記憶體成長在預算內")
     func thirtyMinutesStaysFlat() async {
         await #expect(processExitsWith: .success) {
-            try LongRunScenario.run(minutes: 30, warmupMinutes: 5, budgetKey: "session.memoryGrowth.megabytes.max")
+            try await LongRunScenario.run(minutes: 30, warmupMinutes: 5, budgetKey: "session.memoryGrowth.megabytes.max")
         }
     }
 }
@@ -77,7 +73,7 @@ struct SessionSoakTests {
     @Test("8 小時的音訊：樣本與字幕都完整、分成 48 段，記憶體成長在預算內")
     func eightHours() async {
         await #expect(processExitsWith: .success) {
-            try LongRunScenario.run(
+            try await LongRunScenario.run(
                 minutes: 480, warmupMinutes: 60, budgetKey: "session.soak8h.memoryGrowth.megabytes.max",
                 expectedSegments: 48)
         }

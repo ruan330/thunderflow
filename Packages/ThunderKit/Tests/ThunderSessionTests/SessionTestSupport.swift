@@ -57,6 +57,7 @@ func feed(
 /// 一秒一秒地送，每送一秒就等引擎跟上（最多落後 0.5 秒）。回傳送入的樣本數。
 ///
 /// 這樣等待區不會溢位，字幕的內容與數量完全確定。用於要核對字幕的測試。
+/// 等引擎的時候把執行緒讓出來，引擎才排得進來（見 `waitUntil` 的說明）。
 @discardableResult
 func feedInLockstep(
     _ session: RecordingSession,
@@ -64,12 +65,12 @@ func feedInLockstep(
     seconds: Int,
     level: Float = 0.25,
     sampleRate: Double = Fixture.sampleRate
-) throws -> Int {
+) async throws -> Int {
     var fed = 0
     for _ in 0..<seconds {
         fed += try feed(session, seconds: 1, level: level, sampleRate: sampleRate)
         let target = session.audioTime.seconds - 0.5
-        guard waitUntil(timeout: .seconds(5), { engine.receivedDuration >= target }) else { throw LockstepTimeout() }
+        guard await waitUntil(timeout: .seconds(5), { engine.receivedDuration >= target }) else { throw LockstepTimeout() }
     }
     return fed
 }

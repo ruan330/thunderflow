@@ -81,7 +81,7 @@ struct EngineFaultTests {
         #expect(session.isEngineRunning)
         try feed(session, seconds: 8)
         // 等場次發現引擎已經結束，再送後面的音訊
-        #expect(waitUntil { !session.isEngineRunning })
+        #expect(await waitUntil { !session.isEngineRunning })
         try feed(session, seconds: 50)
         let meta = try await withDeadline(.seconds(10)) { try await session.finish() }
 
@@ -107,7 +107,7 @@ struct EngineFaultTests {
         }
 
         session.start()
-        try feedInLockstep(session, engine: engine, seconds: 6)
+        try await feedInLockstep(session, engine: engine, seconds: 6)
         let start = ContinuousClock.now
         let meta = try await withDeadline(.seconds(10)) { try await session.finish() }
         let elapsed = ContinuousClock.now - start
@@ -118,7 +118,7 @@ struct EngineFaultTests {
         // 引擎在被放棄之前送出的字幕都有寫進日誌
         let journal = try JournalReader.read(directory.journalURL)
         #expect(journal.sources.map(\.text) == (1...3).map(ScriptedEngine.sourceText))
-        #expect(waitUntil { engine.hasFinished }, "放棄等待後應該取消引擎")
+        #expect(await waitUntil { engine.hasFinished }, "放棄等待後應該取消引擎")
         // 引擎被放棄之前已經把音訊全部取走，所以沒有任何缺口
         #expect(journal.gaps.isEmpty)
         #expect(meta.integrity.untranslatedSeconds == 0)

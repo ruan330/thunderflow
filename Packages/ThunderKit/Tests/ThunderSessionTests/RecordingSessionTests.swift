@@ -36,7 +36,7 @@ struct RecordingSessionTests {
         let (session, directory) = try Fixture.makeSession(in: tmp.url, engine: engine)
 
         session.start()
-        let fed = try feedInLockstep(session, engine: engine, seconds: 30)
+        let fed = try await feedInLockstep(session, engine: engine, seconds: 30)
         let meta = try await withDeadline(.seconds(30)) { try await session.finish() }
 
         // 錄音
@@ -71,7 +71,7 @@ struct RecordingSessionTests {
         let (session, _) = try Fixture.makeSession(in: tmp.url, engine: engine)
 
         session.start()
-        try feedInLockstep(session, engine: engine, seconds: 12)
+        try await feedInLockstep(session, engine: engine, seconds: 12)
         try await withDeadline(.seconds(30)) { try await session.finish() }
 
         let chunks = engine.receivedChunks
@@ -164,7 +164,7 @@ struct RecordingSessionTests {
         let (session, directory) = try Fixture.makeSession(in: tmp.url, engine: engine) { $0.sampleRate = 48_000 }
 
         session.start()
-        let fed = try feedInLockstep(session, engine: engine, seconds: 4, sampleRate: 48_000)
+        let fed = try await feedInLockstep(session, engine: engine, seconds: 4, sampleRate: 48_000)
         let meta = try await withDeadline(.seconds(30)) { try await session.finish() }
 
         let segments = try recordedSegments(directory)
@@ -186,7 +186,7 @@ struct PauseAndMarkerTests {
         let (session, directory) = try Fixture.makeSession(in: tmp.url, engine: engine)
 
         session.start()
-        try feedInLockstep(session, engine: engine, seconds: 10, level: 0.25)
+        try await feedInLockstep(session, engine: engine, seconds: 10, level: 0.25)
 
         session.pause()
         #expect(session.isPaused)
@@ -196,7 +196,7 @@ struct PauseAndMarkerTests {
 
         session.resume()
         #expect(!session.isPaused)
-        try feedInLockstep(session, engine: engine, seconds: 10, level: -0.25)
+        try await feedInLockstep(session, engine: engine, seconds: 10, level: -0.25)
         let meta = try await withDeadline(.seconds(30)) { try await session.finish() }
 
         // 錄音只有 20 秒：前 10 秒是 0.25，後 10 秒是 -0.25，暫停時的 0.75 完全不在裡面

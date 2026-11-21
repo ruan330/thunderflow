@@ -67,7 +67,7 @@ struct TestKitTests {
 
         consumer.cancel()
         _ = await consumer.value
-        #expect(waitUntil { engine.hasFinished })
+        #expect(await waitUntil { engine.hasFinished })
     }
 
     @Test("腳本引擎（提早結束）：消化指定長度後回報失敗並結束", .timeLimit(.minutes(1)))
@@ -86,7 +86,7 @@ struct TestKitTests {
         let events = engine.run(audio: finishedStream(of: chunks(seconds: 2)), config: EngineConfig())
         let consumer = Task { await collect(events) }
 
-        #expect(waitUntil { engine.receivedChunkCount == 10 })
+        #expect(await waitUntil { engine.receivedChunkCount == 10 })
         try? await Task.sleep(for: .milliseconds(50))
         #expect(!engine.hasFinished)
 

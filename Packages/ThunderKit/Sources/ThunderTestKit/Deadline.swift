@@ -54,11 +54,32 @@ public func completesWithin(_ limit: Duration, _ operation: @escaping @Sendable 
 }
 
 /// 等到 `condition` 成立。超過時限回傳 false。
+///
+/// 同步版本：等待期間會占住呼叫它的執行緒。只在不屬於 Swift concurrency 的執行緒上使用
+/// （例如自己開的 `Thread`）。在 async 的測試裡請用下面的 async 版本。
 public func waitUntil(timeout: Duration = .seconds(5), _ condition: () -> Bool) -> Bool {
     let deadline = ContinuousClock.now + timeout
     while !condition() {
         if ContinuousClock.now >= deadline { return false }
         usleep(200)
+    }
+    return true
+}
+
+/// 等到 `condition` 成立。超過時限回傳 false。
+///
+/// async 版本：等待期間把執行緒讓出來。被等待的工作（例如引擎的 task）和測試本身共用 Swift concurrency 的執行緒池，
+/// 核心數少的機器上執行緒只有幾條；測試如果占著執行緒等，被等的工作就排不進來，等到逾時也不會成立。
+public func waitUntil(timeout: Duration = .seconds(5), _ condition: () -> Bool) async -> Bool {
+    let deadline = ContinuousClock.now + timeout
+    while !condition() {
+        if ContinuousClock.now >= deadline { return false }
+        do {
+            try await Task.sleep(for: .microseconds(500))
+        } catch {
+            // 測試被取消：不再等，回報當下的狀態
+            return condition()
+        }
     }
     return true
 }

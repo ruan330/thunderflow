@@ -346,6 +346,21 @@ struct TranslationPlannerProvisionalTests {
         #expect(driver.complete(2, "一二三四五六。", at: 3) == [.translation(segment: 0, text: "一二三四五六。")])
     }
 
+    @Test("內容沒有變的暫定譯文不重複送出")
+    func noDuplicates() {
+        var driver = PlanDriver()
+        driver.run(driver.planner.pendingText("one two three", segment: 0, at: 0))
+        #expect(driver.run(driver.planner.progress(request: 0, text: "一二", at: 0.5)) == [.provisional(segment: 0, text: "一二")])
+        #expect(driver.run(driver.planner.progress(request: 0, text: "一二 ", at: 0.6)).isEmpty, "只多了空白")
+        #expect(driver.run(driver.planner.progress(request: 0, text: "一二三", at: 0.7)) == [.provisional(segment: 0, text: "一二三")])
+        #expect(driver.complete(0, "一二三", at: 0.8).isEmpty, "完成時的全文和剛才送出的一樣")
+
+        // 下一段從頭算起：同樣的字也要送
+        driver.finish(0, "one two three.", at: 1)
+        driver.run(driver.planner.pendingText("one two three", segment: 1, at: 2))
+        #expect(driver.complete(2, "一二三", at: 2.5) == [.provisional(segment: 1, text: "一二三")])
+    }
+
     @Test("中文來源：每 2 個中文字算一個字")
     func chineseWords() {
         var driver = PlanDriver()

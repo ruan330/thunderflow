@@ -13,6 +13,7 @@ struct ThunderFlowApp: App {
             print(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev")
             exit(0)
         }
+        LaunchProbe.appInit()
         // 只有一個主視窗：沒有分頁（分頁的「＋」會開出第二個視窗）
         NSWindow.allowsAutomaticWindowTabbing = false
     }
@@ -52,6 +53,7 @@ struct RootView: View {
             case .settings: SettingsView()
             }
         }
+        .onAppear { LaunchProbe.firstAppearance() }
         // 畫面先出現，資料隨後補上
         .task { await model.didAppear() }
     }

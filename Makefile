@@ -2,7 +2,7 @@
 
 PKG := Packages/ThunderKit
 
-.PHONY: build test test-tsan test-perf test-soak check app run
+.PHONY: build test test-tsan test-perf test-soak check app run measure-app
 
 ## 編譯全部（含測試）
 build:
@@ -36,3 +36,7 @@ app:
 ## 編好之後直接開啟
 run: app
 	open build/ThunderFlow.app
+
+## 量測整個 App：啟動時間、閒置的 CPU 與記憶體、App 大小，和空白的 SwiftUI App 比較（約 3 分鐘，不花 API 費用）
+measure-app:
+	Scripts/measure-app.sh

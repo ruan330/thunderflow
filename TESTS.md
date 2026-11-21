@@ -2,9 +2,9 @@
 
 > 由 `Scripts/list-tests.py` 從測試原始碼產生，請勿手動編輯。
 > 測試就是規格：每一行是一個必須成立的行為。流程與分層見 [DESIGN.md](DESIGN.md) 第 9 節。
-> 目前共 348 個測試。
+> 目前共 350 個測試。
 
-## ThunderAudioTests（51 個測試）
+## ThunderAudioTests（53 個測試）
 
 ### 效能預算 Perf：音訊元件（只在 release 模式執行：`make test-perf`）
 
@@ -86,6 +86,11 @@
 - 關檔之後再 append 會丟出錯誤，重複關檔不算錯
 - 會自動建立還不存在的資料夾
 - segments(in:)：資料夾不存在回傳空陣列，不是分段檔的檔案會被忽略
+
+### 系統音訊：aggregate device 的組成
+
+- 一開始就收音，不等到有 App 出聲：沒有播放時收到靜音，錄音長度等於實際經過的時間
+- 私有的裝置：主裝置與唯一的子裝置是預設輸出裝置，擷取點開啟時脈補償
 
 ## ThunderCoreTests（83 個測試）
 

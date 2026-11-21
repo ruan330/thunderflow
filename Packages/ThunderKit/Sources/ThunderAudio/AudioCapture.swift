@@ -107,6 +107,30 @@ public enum AudioDevices {
     }
 }
 
+/// 系統音訊用的私有 aggregate device 的組成（DESIGN.md 5.4 節）：預設輸出裝置加上一個擷取點。
+///
+/// 抽出來成為純函式，組成可以直接測試；真正的擷取需要實機與權限，用 App 的自我檢查確認。
+public enum SystemAudioDevice {
+    /// - Parameters:
+    ///   - outputUID: 預設輸出裝置的 UID。它是主裝置，aggregate device 的時脈跟著它走。
+    ///   - tapUID: 擷取點的 UUID（`CATapDescription.uuid`）。
+    ///   - aggregateUID: aggregate device 自己的 UID，每次建立都用新的。
+    public static func composition(outputUID: String, tapUID: UUID, aggregateUID: UUID = UUID()) -> [String: Any] {
+        [
+            kAudioAggregateDeviceNameKey: "ThunderFlow 系統音訊",
+            kAudioAggregateDeviceUIDKey: aggregateUID.uuidString,
+            kAudioAggregateDeviceMainSubDeviceKey: outputUID,
+            kAudioAggregateDeviceIsPrivateKey: true,
+            kAudioAggregateDeviceIsStackedKey: false,
+            kAudioAggregateDeviceTapAutoStartKey: true,
+            kAudioAggregateDeviceSubDeviceListKey: [[kAudioSubDeviceUIDKey: outputUID]],
+            kAudioAggregateDeviceTapListKey: [
+                [kAudioSubTapDriftCompensationKey: true, kAudioSubTapUIDKey: tapUID.uuidString]
+            ],
+        ]
+    }
+}
+
 /// 收音：把來源的聲音以單聲道寫進 RingBuffer。麥克風與系統音訊都走 HAL 的 IOProc（DESIGN.md 5.4 節）。
 ///
 /// 這一層只做轉接，不放判斷：真正在即時執行緒上執行的是 `CaptureMixer`。
@@ -212,18 +236,7 @@ public final class AudioCapture: @unchecked Sendable {
         try check(AudioHardwareCreateProcessTap(description, &tap), "建立系統音訊的擷取點")
         tapID = tap
 
-        let aggregate: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "ThunderFlow 系統音訊",
-            kAudioAggregateDeviceUIDKey: UUID().uuidString,
-            kAudioAggregateDeviceMainSubDeviceKey: outputUID,
-            kAudioAggregateDeviceIsPrivateKey: true,
-            kAudioAggregateDeviceIsStackedKey: false,
-            kAudioAggregateDeviceTapAutoStartKey: true,
-            kAudioAggregateDeviceSubDeviceListKey: [[kAudioSubDeviceUIDKey: outputUID]],
-            kAudioAggregateDeviceTapListKey: [
-                [kAudioSubTapDriftCompensationKey: true, kAudioSubTapUIDKey: description.uuid.uuidString]
-            ],
-        ]
+        let aggregate = SystemAudioDevice.composition(outputUID: outputUID, tapUID: description.uuid)
         var created = AudioObjectID(kAudioObjectUnknown)
         do {
             try check(AudioHardwareCreateAggregateDevice(aggregate as CFDictionary, &created), "建立系統音訊的裝置")

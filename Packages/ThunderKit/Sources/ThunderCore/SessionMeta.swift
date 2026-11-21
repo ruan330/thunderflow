@@ -18,24 +18,28 @@ public struct IntegrityReport: Sendable, Equatable, Codable {
     public var untranslatedSeconds: Double
     /// 有英文、但沒有中文定稿的段數（翻譯失敗，或還沒翻完就結束）。精修中文時會補上。
     public var untranslatedSegments: Int
+    /// 錄音檔寫不進去（例如磁碟滿了）而沒有錄到的長度（秒）。這段聲音也沒有送去轉錄，所以字幕的時間仍然對得上錄音。
+    public var unrecordedSeconds: Double
 
     public init(
         ringDroppedSamples: Int = 0,
         captureDiscontinuities: Int = 0,
         untranslatedSeconds: Double = 0,
-        untranslatedSegments: Int = 0
+        untranslatedSegments: Int = 0,
+        unrecordedSeconds: Double = 0
     ) {
         self.ringDroppedSamples = ringDroppedSamples
         self.captureDiscontinuities = captureDiscontinuities
         self.untranslatedSeconds = untranslatedSeconds
         self.untranslatedSegments = untranslatedSegments
+        self.unrecordedSeconds = unrecordedSeconds
     }
 
     /// 錄音有沒有完整保存下來。
     public var isRecordingComplete: Bool { ringDroppedSamples == 0 && captureDiscontinuities == 0 }
 
     private enum CodingKeys: String, CodingKey {
-        case ringDroppedSamples, captureDiscontinuities, untranslatedSeconds, untranslatedSegments
+        case ringDroppedSamples, captureDiscontinuities, untranslatedSeconds, untranslatedSegments, unrecordedSeconds
     }
 
     /// 缺少的欄位用預設值（0），不認識的欄位忽略。
@@ -45,7 +49,8 @@ public struct IntegrityReport: Sendable, Equatable, Codable {
             ringDroppedSamples: try container.decodeIfPresent(Int.self, forKey: .ringDroppedSamples) ?? 0,
             captureDiscontinuities: try container.decodeIfPresent(Int.self, forKey: .captureDiscontinuities) ?? 0,
             untranslatedSeconds: try container.decodeIfPresent(Double.self, forKey: .untranslatedSeconds) ?? 0,
-            untranslatedSegments: try container.decodeIfPresent(Int.self, forKey: .untranslatedSegments) ?? 0)
+            untranslatedSegments: try container.decodeIfPresent(Int.self, forKey: .untranslatedSegments) ?? 0,
+            unrecordedSeconds: try container.decodeIfPresent(Double.self, forKey: .unrecordedSeconds) ?? 0)
     }
 }
 

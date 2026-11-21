@@ -132,6 +132,11 @@ public final class RecordingSession: @unchecked Sendable {
 
     public var isPaused: Bool { pausedFlag.load(ordering: .acquiring) }
 
+    /// 錄音檔寫不進去（例如磁碟滿了）而沒有錄到的長度（秒）。可以從任何執行緒讀取。
+    ///
+    /// 尚未實作：介面先行，見 `RecordingWriteFailureTests`。
+    public var unrecordedSeconds: Double { 0 }
+
     /// 引擎是否還在運作。引擎自己結束（例如回報失敗）之後會變成 false，錄音不受影響。
     public var isEngineRunning: Bool { engineState.load(ordering: .acquiring) == .running }
 

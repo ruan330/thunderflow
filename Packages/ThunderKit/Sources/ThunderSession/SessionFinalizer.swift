@@ -50,6 +50,8 @@ public enum SessionFinalizerError: Error, Equatable {
     case summaryTimedOut
     /// 文字模型回傳的摘要沒有內容（沒有一句話總結、重點與章節）。
     case emptySummary
+    /// 別人正在處理這一場（還在錄音，或另一個結束處理正在進行），這一次什麼都沒有做。
+    case inProgress
 }
 
 /// 結束處理：把剛錄完的場次做成成品（段落、逐字稿、錄音檔），搬進 Library，再產生摘要。

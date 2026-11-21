@@ -36,7 +36,9 @@ public struct IntegrityReport: Sendable, Equatable, Codable {
     }
 
     /// 錄音有沒有完整保存下來。
-    public var isRecordingComplete: Bool { ringDroppedSamples == 0 && captureDiscontinuities == 0 }
+    public var isRecordingComplete: Bool {
+        ringDroppedSamples == 0 && captureDiscontinuities == 0 && unrecordedSeconds == 0
+    }
 
     private enum CodingKeys: String, CodingKey {
         case ringDroppedSamples, captureDiscontinuities, untranslatedSeconds, untranslatedSegments, unrecordedSeconds

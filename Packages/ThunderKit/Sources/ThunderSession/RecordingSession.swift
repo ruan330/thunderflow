@@ -6,6 +6,8 @@ import ThunderCore
 public enum RecordingSessionError: Error, Equatable {
     /// 場次已經結束，不能再送入音訊。
     case alreadyFinished
+    /// 別人正在使用這個場次資料夾（持有它的 `SessionLock`）。新的場次不會遇到。
+    case directoryInUse
 }
 
 /// 一場錄音：把音訊寫成分段錄音、轉送給引擎，並把引擎的字幕寫進日誌。
@@ -27,6 +29,12 @@ public enum RecordingSessionError: Error, Equatable {
 /// - 因此每一段音訊不是被引擎取走，就是記成缺口：引擎取走的長度加上缺口的長度，等於整場錄音。
 ///   日誌裡場次記下的缺口加上引擎自己回報的缺口，就是 `integrity.untranslatedSeconds`。
 ///   唯一的例外是引擎被取消的那一瞬間手上正拿著、還沒處理完的那一包：它算成已經取走。
+///
+/// 錄音檔寫不進去（例如磁碟滿了）時：寫不進去的聲音記成「沒錄到」（`unrecordedSeconds`，結束時寫進
+/// `integrity.unrecordedSeconds`），也不送給引擎，所以字幕的時間仍然對得上錄音；之後寫得進去就接著錄。
+///
+/// 場次的鎖：從建立到結束時寫完 `session.json`（或這個物件被釋放）為止，場次持有資料夾的 `SessionLock`。
+/// 這段期間它不會被當成中斷的場次復原，也不會被拿去做結束處理。
 public final class RecordingSession: @unchecked Sendable {
     // @unchecked Sendable：可變狀態分成四組，各自有保護方式——
     // - 錄音路徑（recorder、encoder，以及 `PathState` 裡等待區的帳）只在持有 `path` 鎖時使用。
@@ -45,6 +53,8 @@ public final class RecordingSession: @unchecked Sendable {
     private let recorder: SegmentedRecorder
     private let encoder: EngineAudioEncoder
     private let waitingArea: WaitingArea
+    /// 場次資料夾的鎖：錄音中由這一場持有。
+    private let lock: SessionLock
 
     /// 錄音路徑的狀態。樣本數都是引擎的取樣率；送給引擎的包從 0 開始一包接一包，所以樣本數也就是時間軸上的位置。
     private struct PathState {
@@ -84,10 +94,12 @@ public final class RecordingSession: @unchecked Sendable {
     private let control = Mutex(ControlState())
     private let accounting = Mutex(Accounting())
     private let framesRecorded = Atomic<Int64>(0)
+    /// 寫不進錄音檔而沒有錄到的樣本數（來源的取樣率）。
+    private let unrecordedFrames = Atomic<Int64>(0)
     private let pausedFlag = Atomic<Bool>(false)
     private let engineState = Atomic<EngineState>(.notStarted)
 
-    /// 建立場次：建立資料夾、寫入 `session.json`（狀態為 recording）、開啟錄音與日誌。
+    /// 建立場次：建立資料夾並鎖住、寫入 `session.json`（狀態為 recording）、開啟錄音與日誌。
     ///
     /// 錄音分段放在 `directory.audioDirectoryURL`，第一個樣本進來時才建立；日誌（空的 `journal.jsonl`）立刻建立。
     /// `startedAt` 以整秒記錄（`session.json` 的日期精確到秒），所以 `finish()` 回傳的內容與檔案一致。
@@ -102,6 +114,9 @@ public final class RecordingSession: @unchecked Sendable {
         recorder = try SegmentedRecorder(
             directory: directory.audioDirectoryURL, sampleRate: config.sampleRate, segmentDuration: config.segmentDuration)
         try directory.create()
+        // 先鎖住再寫入 recording 的狀態：別人看到這個狀態時，一定也看得到鎖
+        guard let lock = try SessionLock.acquire(directory) else { throw RecordingSessionError.directoryInUse }
+        self.lock = lock
         let meta = SessionMeta(
             id: config.id,
             title: config.title,
@@ -133,9 +148,9 @@ public final class RecordingSession: @unchecked Sendable {
     public var isPaused: Bool { pausedFlag.load(ordering: .acquiring) }
 
     /// 錄音檔寫不進去（例如磁碟滿了）而沒有錄到的長度（秒）。可以從任何執行緒讀取。
-    ///
-    /// 尚未實作：介面先行，見 `RecordingWriteFailureTests`。
-    public var unrecordedSeconds: Double { 0 }
+    public var unrecordedSeconds: Double {
+        Double(unrecordedFrames.load(ordering: .relaxed)) / config.sampleRate
+    }
 
     /// 引擎是否還在運作。引擎自己結束（例如回報失敗）之後會變成 false，錄音不受影響。
     public var isEngineRunning: Bool { engineState.load(ordering: .acquiring) == .running }
@@ -162,17 +177,35 @@ public final class RecordingSession: @unchecked Sendable {
     /// 暫停中送入的樣本會被丟棄；結束之後呼叫會丟出 `RecordingSessionError.alreadyFinished`。
     ///
     /// 順序：先寫錄音檔，再推進音訊時間，再轉成引擎的格式，最後把湊滿的包放進等待區（立即返回）。
+    ///
+    /// 錄音檔寫不進去時丟出那個錯誤：已經寫進去的前一部分照常推進時間、送給引擎，
+    /// 其餘記成沒錄到（`unrecordedSeconds`），不送給引擎。下一次呼叫會再試著寫。
     public func process(_ samples: UnsafeBufferPointer<Float>) throws {
         try path.withLock { state in
             guard !state.finished else { throw RecordingSessionError.alreadyFinished }
             guard !pausedFlag.load(ordering: .acquiring), !samples.isEmpty else { return }
             // AVFoundation 的呼叫可能留下 autorelease 物件；Pump 的執行緒長時間不回到事件迴圈，所以每次自己清掉
             try autoreleasepool {
-                try recorder.append(samples)
-                framesRecorded.store(recorder.framesWritten, ordering: .releasing)
-                for chunk in try encoder.encode(samples) {
-                    deliver(chunk, &state)
+                let before = recorder.framesWritten
+                var failure: (any Error)?
+                do {
+                    try recorder.append(samples)
+                } catch {
+                    failure = error
                 }
+                let written = Int(recorder.framesWritten - before)
+                framesRecorded.store(recorder.framesWritten, ordering: .releasing)
+                if written < samples.count {
+                    unrecordedFrames.add(Int64(samples.count - written), ordering: .relaxed)
+                }
+                // 只把真的錄下來的部分送給引擎：字幕的時間軸就是錄音的時間軸
+                if written > 0 {
+                    let recorded = written == samples.count ? samples : UnsafeBufferPointer(rebasing: samples[..<written])
+                    for chunk in try encoder.encode(recorded) {
+                        deliver(chunk, &state)
+                    }
+                }
+                if let failure { throw failure }
             }
         }
     }
@@ -314,6 +347,9 @@ public final class RecordingSession: @unchecked Sendable {
     // MARK: 結束
 
     private func performFinish(eventTask: Task<Void, Never>?) async throws -> SessionMeta {
+        // 最後才交出場次的鎖，結束處理（也可能在另一個程式裡）才接得手。
+        // 失敗時也交出：這時 `session.json` 還停在 recording，交給當機復原處理
+        defer { lock.release() }
         // 1. 擋住錄音路徑：等進行中的 process 做完，之後的 process 會丟出 alreadyFinished
         let closing: Result<TimeInterval, any Error> = path.withLock { state in
             state.finished = true
@@ -344,7 +380,8 @@ public final class RecordingSession: @unchecked Sendable {
         meta.durationSeconds = durationSeconds
         meta.billedAudioSeconds = totals.billedAudioSeconds
         meta.integrity = IntegrityReport(
-            untranslatedSeconds: Double(gapFrames) / Double(config.engineSampleRate) + totals.engineReportedGapSeconds)
+            untranslatedSeconds: Double(gapFrames) / Double(config.engineSampleRate) + totals.engineReportedGapSeconds,
+            unrecordedSeconds: unrecordedSeconds)
         try directory.saveMeta(meta)
         return meta
     }

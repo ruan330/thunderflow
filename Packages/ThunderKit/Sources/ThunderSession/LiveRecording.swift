@@ -80,6 +80,7 @@ public final class LiveRecording: @unchecked Sendable {
             let session = try RecordingSession(config: config, directory: directory, engine: engine)
             let meter = meter
             let pump = Pump(ring: ring) { samples in
+                // 寫不進錄音檔的聲音由場次記帳（`unrecordedSeconds`），這裡不用再處理
                 try? session.process(samples)
                 var peak: Float = 0
                 for sample in samples { peak = max(peak, abs(sample)) }
@@ -100,6 +101,9 @@ public final class LiveRecording: @unchecked Sendable {
 
     /// 最近的音量（峰值，0–1），給音量表用。
     public var level: Float { Float(bitPattern: meter.bits.load(ordering: .relaxed)) }
+
+    /// 錄音檔寫不進去（例如磁碟滿了）而沒有錄到的長度（秒）。大於 0 時畫面要提醒使用者。
+    public var unrecordedSeconds: Double { session?.unrecordedSeconds ?? 0 }
 
     /// 裝置的 callback 到目前為止被呼叫了幾次。一直沒有增加，代表沒有收到聲音。
     public var captureCallbackCount: Int { capture.mixer.callbackCount }

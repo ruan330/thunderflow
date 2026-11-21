@@ -23,7 +23,9 @@ public enum SessionRecovery {
     /// 找出工作目錄裡沒有正常結束的場次。不是場次資料夾的東西會被忽略。
     ///
     /// 場次資料夾是工作目錄底下一層、含有 `.thunderflow/session.json` 的資料夾；
-    /// 只回報 `session.json` 的狀態是 recording 的場次。讀不懂的 `session.json`（例如比這一版新的格式）
+    /// 只回報 `session.json` 的狀態是 recording、而且沒有人持有鎖的場次。正在錄音的場次持有鎖
+    /// （見 `SessionLock`），所以不會被回報；錄音的程式結束（包括當機）之後鎖就釋放了。
+    /// 讀不懂的 `session.json`（例如比這一版新的格式）
     /// 不是這一版能復原的場次，也會被忽略。工作目錄不存在時回傳空陣列。
     /// 結果依開始時間排序。
     public static func findInterrupted(in workingRoot: URL) throws -> [InterruptedSession] {
@@ -37,7 +39,8 @@ public enum SessionRecovery {
             let directory = SessionDirectory(url: workingRoot.appendingPathComponent(name, isDirectory: true))
             guard fileManager.fileExists(atPath: directory.metaURL.path),
                 let meta = try? directory.loadMeta(),
-                meta.state == .recording
+                meta.state == .recording,
+                !SessionLock.isHeld(directory)
             else { continue }
             let segments = try RecordingFiles.segments(in: directory.audioDirectoryURL)
             found.append(

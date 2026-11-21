@@ -81,14 +81,17 @@ public struct SessionFinalizer: Sendable {
     /// - 摘要：`summarize` 是 false、沒有文字模型、或逐字稿沒有任何文字時略過（不算完成也不算失敗，
     ///   下次呼叫會再看一次）；失敗時記進 `failedSteps`。兩種情況場次都照樣完成。
     /// - 這一次要處理的最後一步記錄時，狀態同時改為 `complete`；在那之前（包含發布之後）都是 `finalizing`。
-    /// - 狀態還是 `recording` 的場次丟出 `SessionFinalizerError.stillRecording`，什麼都不動。
+    /// - 狀態還是 `recording` 的場次（還在錄音，或中斷了還沒復原）丟出 `SessionFinalizerError.stillRecording`，什麼都不動。
     /// - 呼叫端的工作被取消時，做完目前這一步就停下來（丟出 `CancellationError`），之後可以再呼叫接著做。
-    /// - 同一個場次不要同時呼叫兩次。
+    /// - 處理期間持有場次的鎖（`SessionLock`），所以同一個場次同時只會有一個結束處理：
+    ///   另一個結束處理（可能在另一個程式裡）正在處理時丟出 `SessionFinalizerError.inProgress`，什麼都不動。
     @discardableResult
     public func finalize(
         _ directory: SessionDirectory,
         onProgress: (@Sendable (FinalizationStep, SessionDirectory) -> Void)? = nil
     ) async throws -> SessionDirectory {
+        var lock = try Self.lock(directory)
+        defer { lock.release() }
         let meta = try directory.loadMeta()
         guard meta.state != .recording else { throw SessionFinalizerError.stillRecording }
         let libraryRoot = options.libraryRoot
@@ -113,6 +116,7 @@ public struct SessionFinalizer: Sendable {
             case .summary:
                 directory = try await summaryStep(in: current, isLast: isLast)
             }
+            if directory != current { lock = Self.relock(lock, at: directory) }
             onProgress?(step, directory)
         }
         if pending.isEmpty, meta.state != .complete {
@@ -130,10 +134,30 @@ public struct SessionFinalizer: Sendable {
     /// - 不看 `summarize`（這是使用者明確要求的）。沒有文字模型丟出 `missingTextModel`，
     ///   逐字稿沒有文字丟出 `emptyTranscript`。
     /// - 失敗時丟出錯誤，原有的摘要與 `session.json` 都不動。
+    /// - 結束處理正在處理這一場時丟出 `SessionFinalizerError.inProgress`，什麼都不動。
     @discardableResult
     public func regenerateSummary(_ directory: SessionDirectory) async throws -> SessionDirectory {
         guard let model = options.textModel else { throw SessionFinalizerError.missingTextModel }
+        let lock = try Self.lock(directory)
+        defer { lock.release() }
         return try await writeSummary(in: directory, model: model, isLast: false)
+    }
+
+    // MARK: 場次的鎖
+
+    /// 拿到這一場的鎖。別人正持有時：還在錄音丟出 `stillRecording`，其餘丟出 `inProgress`。
+    private static func lock(_ directory: SessionDirectory) throws -> SessionLock {
+        if let lock = try SessionLock.acquire(directory) { return lock }
+        let state = try? directory.loadMeta().state
+        throw state == .recording ? SessionFinalizerError.stillRecording : SessionFinalizerError.inProgress
+    }
+
+    /// 資料夾換了位置之後確認還鎖著。同一個磁碟上的搬移，鎖本來就跟著走（這時在新的位置拿不到鎖，沿用原本的）；
+    /// 搬到別的磁碟是複製後刪除，原本的鎖留在已經刪除的資料夾上，要在新的位置重新鎖。
+    private static func relock(_ lock: SessionLock, at directory: SessionDirectory) -> SessionLock {
+        guard let moved = try? SessionLock.acquire(directory) else { return lock }
+        lock.release()
+        return moved
     }
 
     // MARK: 步驟

@@ -1,4 +1,3 @@
-// 尚未實作：這個提交只有介面，讓測試可以編譯、執行並失敗。實作在下一個提交。
 import Foundation
 import Security
 
@@ -21,7 +20,41 @@ public struct KeychainStore: Sendable, Equatable {
         self.service = service
     }
 
-    public func read(account: String) throws -> String? { nil }
-    public func save(_ value: String, account: String) throws {}
-    public func delete(account: String) throws {}
+    /// 讀出存著的值；沒有這個項目時回傳 nil。
+    public func read(account: String) throws -> String? {
+        var query = base(account)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess, let data = result as? Data else { throw KeychainError(status: status) }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// 存入（已經有就覆寫）。
+    public func save(_ value: String, account: String) throws {
+        let data = Data(value.utf8)
+        let update = SecItemUpdate(base(account) as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if update == errSecSuccess { return }
+        guard update == errSecItemNotFound else { throw KeychainError(status: update) }
+        var item = base(account)
+        item[kSecValueData as String] = data
+        let status = SecItemAdd(item as CFDictionary, nil)
+        guard status == errSecSuccess else { throw KeychainError(status: status) }
+    }
+
+    /// 刪除。原本就沒有也不算錯。
+    public func delete(account: String) throws {
+        let status = SecItemDelete(base(account) as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else { throw KeychainError(status: status) }
+    }
+
+    private func base(_ account: String) -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+    }
 }

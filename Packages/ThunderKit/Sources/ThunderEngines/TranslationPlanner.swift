@@ -95,6 +95,8 @@ public struct TranslationPlanner: Sendable {
         var inFlight: (request: Int, startedAt: TimeInterval)?
         /// 這一段已經有完整的暫定譯文顯示在畫面上。
         var shown = false
+        /// 最近一次送出的暫定譯文：內容沒有變就不重複送。
+        var emitted = ""
     }
 
     public let configuration: Configuration
@@ -188,7 +190,8 @@ public struct TranslationPlanner: Sendable {
             finals[segment]?.gotOutput = true
         case .provisional(let segment):
             // 這一段的第一個暫定譯文邊收邊送；之後的版本等完整回來才取代，免得畫面上的字先縮短再變長
-            if segment == live.segment, !live.shown {
+            if segment == live.segment, !live.shown, output != live.emitted {
+                live.emitted = output
                 effects.append(.provisional(segment: segment, text: output))
             }
         }
@@ -226,7 +229,10 @@ public struct TranslationPlanner: Sendable {
             live.inFlight = nil
             if segment == live.segment {
                 if !output.isEmpty {
-                    effects.append(.provisional(segment: segment, text: output))
+                    if output != live.emitted {
+                        live.emitted = output
+                        effects.append(.provisional(segment: segment, text: output))
+                    }
                     live.shown = true
                 }
                 effects += startProvisionalIfDue(at: now)

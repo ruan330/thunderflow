@@ -14,6 +14,8 @@ struct ThunderFlowApp: App {
             print(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev")
             exit(0)
         }
+        // 固定深色（DESIGN.md 4.10.1 節、D27）：不跟隨系統的外觀設定，也不提供外觀的選項
+        NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
         LaunchProbe.appInit()
         // 只有一個主視窗：沒有分頁（分頁的「＋」會開出第二個視窗）
         NSWindow.allowsAutomaticWindowTabbing = false
@@ -43,7 +45,7 @@ struct RootView: View {
     var body: some View {
         HStack(spacing: 0) {
             Sidebar()
-            Divider()
+            Hairline(axis: .vertical).ignoresSafeArea()
             Group {
                 switch model.page {
                 case .live: LiveView()
@@ -52,6 +54,11 @@ struct RootView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // 內容區是不透明的墨黑；側邊欄維持系統的側邊欄材質（DESIGN.md 4.10.3 節）
+            .background(Theme.ink0)
+            .overlay(alignment: .bottom) {
+                ToastOverlay().padding(.bottom, 16)
+            }
         }
         .onAppear { LaunchProbe.firstAppearance() }
         // 畫面先出現，資料隨後補上
@@ -64,28 +71,46 @@ private struct Sidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            item(.live, "即時翻譯", systemImage: "waveform", key: "1")
-            item(.library, "過去錄音", systemImage: "list.bullet.rectangle", key: "2", badge: model.processing.count)
-            item(.settings, "設定", systemImage: "gearshape", key: "3")
+            SidebarItem(page: .live, title: "即時翻譯", icon: .bolt, key: "1")
+            SidebarItem(
+                page: .library, title: "過去錄音", icon: .system("list.bullet.rectangle"), key: "2",
+                badge: model.processing.count)
+            SidebarItem(page: .settings, title: "設定", icon: .system("gearshape"), key: "3")
             Spacer()
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 12)
         .frame(width: 180)
-        .background(SidebarMaterial())
+        // 材質一路延伸到標題列底下，和內容區的墨黑一樣
+        .background { SidebarMaterial().ignoresSafeArea() }
+    }
+}
+
+/// 側邊欄的一項。和系統的側邊欄一樣，滑鼠按下就切換（DESIGN.md 4.10.5 節），不等放開。
+private struct SidebarItem: View {
+    enum Icon {
+        /// App 圖示的閃電（即時翻譯）。
+        case bolt
+        case system(String)
     }
 
-    private func item(
-        _ page: AppModel.Page, _ title: String, systemImage: String, key: KeyEquivalent, badge: Int = 0
-    ) -> some View {
+    @Environment(AppModel.self) private var model
+    let page: AppModel.Page
+    let title: String
+    let icon: Icon
+    let key: KeyEquivalent
+    var badge = 0
+    @State private var hovering = false
+
+    var body: some View {
         let selected = model.page == page
-        return Button {
-            model.page = page
+        Button {
+            select()
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: systemImage)
+                iconView
                     .frame(width: 18)
-                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(selected ? Theme.bolt : Color.secondary)
                 Text(title)
                 Spacer(minLength: 0)
                 if badge > 0 {
@@ -98,12 +123,80 @@ private struct Sidebar: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(selected ? Color.primary.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 6))
+            .background(
+                Color.white.opacity(selected ? 0.10 : hovering ? 0.05 : 0),
+                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // 按下的那一刻就切換；放開時 Button 的動作再切一次（已經是這一頁，不會有變化）
+        .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { _ in select() })
+        .onHover { hovering = $0 }
+        .animation(Theme.quick, value: hovering)
         .keyboardShortcut(key, modifiers: .command)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    @ViewBuilder private var iconView: some View {
+        switch icon {
+        case .bolt: BoltShape().aspectRatio(BoltShape.aspectRatio, contentMode: .fit).frame(height: 14)
+        case .system(let name): Image(systemName: name)
+        }
+    }
+
+    private func select() {
+        if model.page != page { model.page = page }
+    }
+}
+
+/// 結果在畫面上看不到的操作（標記、複製、儲存 Key）做完之後的提示（DESIGN.md 4.10.5 節）：
+/// 內容區底部置中，1.5 秒後消失；新的一則取代舊的。不接受點擊，不擋住底下的東西。
+private struct ToastOverlay: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let toast = model.toast
+        ZStack {
+            if let toast {
+                ToastCapsule(toast: toast)
+                    .id(toast.id)
+                    .transition(Theme.transition(.offset(y: 6), reduceMotion: reduceMotion))
+            }
+        }
+        .animation(Theme.standard, value: toast?.id)
+        .allowsHitTesting(false)
+        .onChange(of: toast?.id) {
+            // VoiceOver 也念出來：提示不會拿到焦點
+            if let toast = model.toast { AccessibilityNotification.Announcement(toast.text).post() }
+        }
+    }
+}
+
+private struct ToastCapsule: View {
+    let toast: Toast
+    @Environment(\.displayScale) private var displayScale
+
+    var body: some View {
+        HStack(spacing: 8) {
+            icon
+            Text(toast.text)
+        }
+        .font(.callout)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Theme.ink2, in: Capsule())
+        .overlay(Capsule().strokeBorder(Theme.hairline, lineWidth: 1 / max(displayScale, 1)))
+        .shadow(color: .black.opacity(0.4), radius: 12, y: 4)
+    }
+
+    @ViewBuilder private var icon: some View {
+        switch toast.kind {
+        case .marked: Image(systemName: "flag.fill").foregroundStyle(Theme.mark)
+        case .copied, .saved: Image(systemName: "checkmark").foregroundStyle(Theme.bolt)
+        case .info: Image(systemName: "info.circle").foregroundStyle(.secondary)
+        }
     }
 }
 
@@ -121,15 +214,20 @@ private struct SidebarMaterial: NSViewRepresentable {
 }
 
 /// 浮動字幕視窗（DESIGN.md 4.4 節）：永遠在最上層，可以跨桌面、疊在全螢幕 App 上。
+///
+/// `isOpen` 給即時翻譯頁的開關用；使用者按字幕視窗自己的關閉鈕時也會更新（`windowWillClose`）。
 @MainActor
-final class FloatingCaptions {
+@Observable
+final class FloatingCaptions: NSObject, NSWindowDelegate {
     static let shared = FloatingCaptions()
-    private var panel: NSPanel?
+    /// 字幕視窗開著沒有。
+    private(set) var isOpen = false
+    @ObservationIgnored private var panel: NSPanel?
 
     func toggle(model: AppModel) {
         if let panel {
+            // 關掉之後由 windowWillClose 更新狀態
             panel.close()
-            self.panel = nil
             return
         }
         let panel = NSPanel(
@@ -148,8 +246,18 @@ final class FloatingCaptions {
             let frame = screen.visibleFrame
             panel.setFrameOrigin(NSPoint(x: frame.midX - 450, y: frame.minY + 60))
         }
+        panel.delegate = self
         panel.orderFrontRegardless()
         self.panel = panel
+        isOpen = true
+    }
+
+    /// 字幕視窗關掉了：不論是開關關的，還是使用者按了字幕視窗自己的關閉鈕。
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSPanel, window === panel else { return }
+        window.delegate = nil
+        panel = nil
+        isOpen = false
     }
 }
 
@@ -193,10 +301,11 @@ struct FloatingCaptionsView: View {
 
 /// 自我檢查：用音檔當來源跑完一整場，並把畫面存成圖檔。只在啟動參數要求時執行，給開發時驗證用。
 ///
-///     ThunderFlow -selfTestFile <音檔> [-selfTestSeconds 30] [-selfTestSnapshot <路徑前綴>]
+///     ThunderFlow -selfTestFile <音檔> [-selfTestSeconds 30] [-selfTestSnapshot <路徑前綴>] [-selfTestMark YES]
 ///                 [-selfTestQuit YES] [-libraryPath <資料夾>] [-workingPath <資料夾>] [-apiKeyFromStdin YES]
 ///
-/// 用法見 CLAUDE.md。
+/// 截圖依序是開始前（`-idle.png`）、錄音中（`-live.png`）、結束後的詳細頁（`-detail.png`）與設定頁（`-settings.png`）。
+/// `-selfTestMark YES` 在錄音中的截圖前 1 秒標記一次重點，截圖裡就看得到提示與字幕的旗子。用法見 CLAUDE.md。
 @MainActor
 enum SelfTest {
     static func runIfRequested(_ model: AppModel) {
@@ -215,16 +324,23 @@ enum SelfTest {
         guard device != nil || defaults.string(forKey: "selfTestFile") != nil else { return }
         let seconds = defaults.double(forKey: "selfTestSeconds")
         let prefix = defaults.string(forKey: "selfTestSnapshot")
+        let marks = defaults.bool(forKey: "selfTestMark")
         Task {
             model.source = device ?? .file(URL(fileURLWithPath: defaults.string(forKey: "selfTestFile") ?? ""))
             model.title = defaults.string(forKey: "selfTestTitle") ?? ""
+            if let prefix { snapshot(to: prefix + "-idle.png") }
             await model.start()
             print("selfTest: started state=\(model.liveState) banner=\(model.banner ?? "-") \(model.captureDiagnostics)")
             let limit = seconds > 0 ? seconds : 3_600
             let started = ContinuousClock.now
             var lastReport = ContinuousClock.now
+            var marked = !marks
             while model.isRecording, ContinuousClock.now - started < .seconds(limit) {
                 try? await Task.sleep(for: .milliseconds(200))
+                if !marked, ContinuousClock.now - started >= .seconds(max(0, limit - 1)) {
+                    marked = true
+                    model.mark()
+                }
                 if ContinuousClock.now - lastReport >= .milliseconds(1_000) {
                     lastReport = ContinuousClock.now
                     print("selfTest: \(model.captureDiagnostics)")

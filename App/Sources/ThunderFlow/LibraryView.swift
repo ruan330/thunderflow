@@ -12,7 +12,21 @@ struct LibraryView: View {
 
     var body: some View {
         @Bindable var model = model
-        HSplitView {
+        VStack(spacing: 0) {
+            // 結束處理、重新產生摘要失敗的說明也在這一頁的頂端（DESIGN.md 4.1 節），不用回到即時翻譯頁才看得到
+            if let banner = model.banner {
+                BannerView(text: banner) { model.banner = nil }
+                Hairline()
+            }
+            library
+        }
+        .navigationTitle("過去錄音")
+        .onAppear { model.reloadLibrary() }
+    }
+
+    private var library: some View {
+        @Bindable var model = model
+        return HSplitView {
             VStack(spacing: 0) {
                 TextField("搜尋標題、摘要…", text: $model.searchText)
                     .textFieldStyle(.roundedBorder)
@@ -56,8 +70,8 @@ struct LibraryView: View {
                     .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle("過去錄音")
-        .onAppear { model.reloadLibrary() }
+        // 橫幅底下的空間全部給分欄
+        .frame(maxHeight: .infinity)
     }
 }
 

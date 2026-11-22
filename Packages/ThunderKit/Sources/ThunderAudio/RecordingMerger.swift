@@ -9,6 +9,18 @@ public enum RecordingMergerError: Error, Equatable {
     case conversionFailed
 }
 
+extension RecordingMergerError: CustomStringConvertible, LocalizedError {
+    /// 給人看的說明（放進橫幅的句子裡，句尾不加句號）。
+    public var description: String {
+        switch self {
+        case .noAudio: "沒有任何聲音可以合併"
+        case .conversionFailed: "錄音的取樣率轉換失敗"
+        }
+    }
+
+    public var errorDescription: String? { description }
+}
+
 /// 合併錄音（結束處理的第 4 步）：把 CAF 分段依序接起來，編碼成一個 m4a（AAC、單聲道、64 kbps）。
 ///
 /// - 一批一批地讀、轉、寫，不會把整場錄音載入記憶體。

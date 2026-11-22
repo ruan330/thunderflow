@@ -259,7 +259,7 @@ final class AppModel {
             // 建立擷取點、啟動裝置都是會等待的 Core Audio 呼叫：在背景做，畫面不會卡住
             try await Task.detached(priority: .userInitiated) { try recording.start() }.value
         } catch {
-            banner = "無法開始錄音：\(error)"
+            banner = "無法開始錄音：\(error.userFacingDescription)。"
             liveState = .idle
             return
         }
@@ -305,7 +305,7 @@ final class AppModel {
             finalize(recording.directory, id: recording.id, showWhenReady: showingResult)
         } catch {
             failed = true
-            banner = "結束錄音時發生錯誤：\(error)。已經錄下的聲音還在，App 會自動復原這一場。"
+            banner = "結束錄音時發生錯誤：\(error.userFacingDescription)。已經錄下的聲音還在，App 會自動復原這一場。"
         }
         self.recording = nil
         level = 0
@@ -497,7 +497,7 @@ final class AppModel {
             } catch SessionFinalizerError.inProgress {
                 // 另一個 ThunderFlow 正在處理這一場：交給它
             } catch {
-                failure = "\(error)"
+                failure = error.userFacingDescription
             }
             await MainActor.run {
                 guard let self else { return }
@@ -568,11 +568,11 @@ final class AppModel {
             } catch SessionFinalizerError.inProgress {
                 failure = "這一場正在處理中，請等它做完再試一次"
             } catch {
-                failure = "\(error)"
+                failure = error.userFacingDescription
             }
             await MainActor.run {
                 self?.processing[item.id] = nil
-                if let failure { self?.banner = "摘要沒有產生成功：\(failure)" }
+                if let failure { self?.banner = "摘要沒有產生成功：\(failure)。錄音與逐字稿不受影響。" }
                 self?.reloadLibrary()
             }
         }

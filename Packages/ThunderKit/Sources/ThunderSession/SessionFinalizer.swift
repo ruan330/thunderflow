@@ -54,6 +54,25 @@ public enum SessionFinalizerError: Error, Equatable {
     case inProgress
 }
 
+extension SessionFinalizerError: CustomStringConvertible, LocalizedError {
+    /// 給人看的說明（放進橫幅的句子裡，句尾不加句號）。
+    public var description: String {
+        switch self {
+        case .stillRecording: "這一場還在錄音，或上次沒有正常結束、還沒復原"
+        case .durationMismatch(let recorded, let merged):
+            "合併出來的錄音（\(String(format: "%.1f", merged)) 秒）和錄下的長度（\(String(format: "%.1f", recorded)) 秒）不一致，"
+                + "原本的錄音分段都還在"
+        case .missingTextModel: "還沒有設定 API Key（請到「設定」貼上）"
+        case .emptyTranscript: "逐字稿沒有任何文字，沒有內容可以摘要"
+        case .summaryTimedOut: "文字模型超過時限沒有回完"
+        case .emptySummary: "文字模型回傳的摘要沒有內容"
+        case .inProgress: "這一場正在處理中"
+        }
+    }
+
+    public var errorDescription: String? { description }
+}
+
 /// 結束處理：把剛錄完的場次做成成品（段落、逐字稿、錄音檔），搬進 Library，再產生摘要。
 ///
 /// - 每一步做完就記進 `session.json` 的 `completedSteps`，所以可以中斷後接著做：再呼叫一次 `finalize`，

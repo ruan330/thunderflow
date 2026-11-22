@@ -5,6 +5,17 @@ public enum SessionSummaryError: Error, Equatable {
     case notJSON
 }
 
+extension SessionSummaryError: CustomStringConvertible, LocalizedError {
+    /// 給人看的說明（放進橫幅的句子裡，句尾不加句號）。
+    public var description: String {
+        switch self {
+        case .notJSON: "文字模型回傳的摘要格式不對（不是 JSON）"
+        }
+    }
+
+    public var errorDescription: String? { description }
+}
+
 /// 一場的摘要（DESIGN.md 5.8 節）。文字模型依 `schema` 輸出 JSON，由 App 自己排版成 `summary.md` 與畫面。
 ///
 /// JSON 的欄位名稱：

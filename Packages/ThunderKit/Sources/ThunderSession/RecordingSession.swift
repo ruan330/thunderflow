@@ -10,6 +10,18 @@ public enum RecordingSessionError: Error, Equatable {
     case directoryInUse
 }
 
+extension RecordingSessionError: CustomStringConvertible, LocalizedError {
+    /// 給人看的說明（放進橫幅的句子裡，句尾不加句號）。
+    public var description: String {
+        switch self {
+        case .alreadyFinished: "這一場已經結束，不能再錄音"
+        case .directoryInUse: "這一場的資料夾正被另一個 ThunderFlow 使用"
+        }
+    }
+
+    public var errorDescription: String? { description }
+}
+
 /// 一場錄音：把音訊寫成分段錄音、轉送給引擎，並把引擎的字幕寫進日誌。
 ///
 /// 最重要的保證：**錄音不受引擎影響**。`process` 是同步的，只做寫檔、轉格式、

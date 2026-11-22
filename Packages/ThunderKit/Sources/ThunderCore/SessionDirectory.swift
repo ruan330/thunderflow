@@ -5,6 +5,18 @@ public enum SessionStoreError: Error, Equatable {
     case unsupportedSchemaVersion(found: Int, supported: Int)
 }
 
+extension SessionStoreError: CustomStringConvertible, LocalizedError {
+    /// 給人看的說明（放進橫幅的句子裡，句尾不加句號）。
+    public var description: String {
+        switch self {
+        case .unsupportedSchemaVersion(let found, let supported):
+            "這一場是比較新版的 ThunderFlow 寫的（格式第 \(found) 版，這一版只讀得懂到第 \(supported) 版），請更新 ThunderFlow"
+        }
+    }
+
+    public var errorDescription: String? { description }
+}
+
 /// 一場錄音的資料夾。錄音中（工作目錄）和完成後（Library）用同一套結構：
 ///
 ///     <場次資料夾>/

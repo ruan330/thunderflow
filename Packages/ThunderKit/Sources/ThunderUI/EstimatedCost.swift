@@ -8,6 +8,8 @@ public struct EstimatedCost: Sendable, Equatable {
     public static let translationPerHour = 0.08
     /// 開了暫定譯文時的翻譯：整句的暫定譯文再加約 0.19，每小時約 US$0.27。
     public static let translationPerHourWithProvisional = 0.27
+    /// 加速翻譯（OpenAI 的 Fast mode）：翻譯的單價約 2 倍（2026-11 的公告價格）。
+    public static let fastTranslationFactor = 2.0
 
     /// 美元。
     public let dollars: Double
@@ -19,9 +21,11 @@ public struct EstimatedCost: Sendable, Equatable {
     ///     沒有送去轉錄的聲音（例如翻譯斷線的那段）不會有譯文。
     ///   - provisional: 這一場有沒有開暫定譯文。要用開始時的設定：引擎的做法在開始時就固定了，
     ///     錄音中切換只改變顯示。
-    public init(audioSeconds: Double, billedSeconds: Double?, provisional: Bool) {
+    ///   - fastTranslation: 這一場有沒有開加速翻譯（同樣用開始時的設定）。
+    public init(audioSeconds: Double, billedSeconds: Double?, provisional: Bool, fastTranslation: Bool = false) {
         let seconds = billedSeconds ?? audioSeconds
-        let translationPerHour = provisional ? Self.translationPerHourWithProvisional : Self.translationPerHour
+        let base = provisional ? Self.translationPerHourWithProvisional : Self.translationPerHour
+        let translationPerHour = base * (fastTranslation ? Self.fastTranslationFactor : 1)
         dollars = seconds / 60 * Self.transcriptionPerMinute + seconds / 3_600 * translationPerHour
     }
 

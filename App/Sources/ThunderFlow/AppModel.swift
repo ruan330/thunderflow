@@ -143,6 +143,10 @@ final class AppModel {
     /// 連續幾次量到的音量都接近零；以及這一場到目前為止有沒有聽到過聲音。
     private var quietTicks = 0
     private var heardSound = false
+    /// 錄系統音訊、還沒收到過聲音時：別的程式從什麼時候開始持續出聲（沒有人在出聲時是 nil）。
+    private var othersPlayingSince: ContinuousClock.Instant?
+    /// 這一場已經提醒過收不到聲音了。
+    private var warnedSilence = false
     /// 錄音中經過的 tick 數（每 0.25 秒一次），用來每 10 秒檢查一次剩餘空間。
     private var ticks = 0
     private var warnedLowDisk = false
@@ -405,6 +409,8 @@ final class AppModel {
         silentTicks = 0
         quietTicks = 0
         heardSound = false
+        othersPlayingSince = nil
+        warnedSilence = false
         ticks = 0
         warnedLowDisk = false
         ticker = Task { [weak self] in
@@ -440,20 +446,44 @@ final class AppModel {
                 if self.silentTicks == 12 {
                     self.banner = "超過 3 秒沒有收到任何聲音。裝置可能被拔掉了，或是沒有權限。已經錄下的部分不受影響。"
                 }
-                // 裝置有在送資料，但全部是靜音：最常見的原因是沒有權限（系統只會給靜音，不會回報錯誤）
+                // 裝置有在送資料，但全部是靜音：沒有權限時系統只會給靜音，不會回報錯誤。
+                // 要不要提醒由 SilenceWarning 決定（ThunderUI，有測試）：系統音訊在沒有人播放時本來就是靜音
                 if recording.level > 0.000_5 {
                     self.heardSound = true
                     self.quietTicks = 0
                 } else if !recording.isPaused {
                     self.quietTicks += 1
                 }
-                if self.quietTicks == 24, !self.heardSound {
-                    self.banner =
-                        self.source == .system
-                        ? "開始 6 秒了，還沒有偵測到任何聲音。如果電腦正在播放聲音，請到「系統設定 → 隱私權與安全性」，在錄製系統音訊的項目裡允許 ThunderFlow，然後停止再重新開始。"
-                        : "開始 6 秒了，還沒有偵測到任何聲音。請確認選對了麥克風、沒有靜音，而且「系統設定 → 隱私權與安全性 → 麥克風」已經允許 ThunderFlow。"
+                guard !self.warnedSilence, !self.heardSound, !recording.isPaused else { continue }
+                // 系統音訊：每 2 秒在背景問一次別的程式有沒有在出聲（不需要權限，一次約幾毫秒）。
+                // 收到過聲音、或已經提醒過之後就不再問
+                if self.source == .system, self.ticks % 8 == 0 {
+                    let playing = await Task.detached(priority: .utility) { AudioDevices.isAnotherProcessPlaying() }.value
+                    guard self.recording === recording else { return }
+                    if playing == true {
+                        if self.othersPlayingSince == nil { self.othersPlayingSince = .now }
+                    } else {
+                        self.othersPlayingSince = nil
+                    }
+                }
+                let othersPlaying = self.othersPlayingSince.map { (ContinuousClock.now - $0) / .seconds(1) } ?? 0
+                if let warning = SilenceWarning.check(
+                    source: self.silenceSource, quietSeconds: Double(self.quietTicks) / 4, heardSound: self.heardSound,
+                    othersPlayingSeconds: othersPlaying)
+                {
+                    self.warnedSilence = true
+                    self.banner = warning.message
                 }
             }
+        }
+    }
+
+    /// 收不到聲音的提醒要看的來源種類。
+    private var silenceSource: SilenceWarning.Source {
+        switch source {
+        case .system: .systemAudio
+        case .microphone: .microphone
+        case .file: .file
         }
     }
 

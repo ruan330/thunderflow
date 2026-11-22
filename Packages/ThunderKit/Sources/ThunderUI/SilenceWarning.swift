@@ -28,9 +28,23 @@ public enum SilenceWarning: Sendable, Equatable {
     public static func check(
         source: Source, quietSeconds: Double, heardSound: Bool, othersPlayingSeconds: Double
     ) -> SilenceWarning? {
-        nil
+        guard !heardSound, quietSeconds >= minimumQuietSeconds else { return nil }
+        switch source {
+        case .file: return nil
+        case .microphone: return .microphone
+        case .systemAudio: return othersPlayingSeconds >= minimumOthersPlayingSeconds ? .systemAudio : nil
+        }
     }
 
     /// 橫幅的說明：發生了什麼、錄音有沒有受影響、該怎麼處理。
-    public var message: String { "" }
+    public var message: String {
+        switch self {
+        case .microphone:
+            "開始 6 秒了，還沒有偵測到任何聲音。請確認選對了麥克風、沒有靜音，而且「系統設定 → 隱私權與安全性 → 麥克風」已經允許 ThunderFlow。"
+        case .systemAudio:
+            "別的 App 正在播放聲音，ThunderFlow 收到的卻一直是靜音，通常是還沒有允許錄製系統音訊。"
+                + "請到「系統設定 → 隱私權與安全性」，在錄製系統音訊的項目裡允許 ThunderFlow，然後停止再重新開始。"
+                + "如果那個 App 只是開著、沒有真的出聲，可以不用理會。"
+        }
+    }
 }

@@ -111,6 +111,42 @@ public enum AudioDevices {
         }
     }
 
+    /// 除了這個程式以外，有沒有程式正在送聲音給輸出裝置（`kAudioProcessPropertyIsRunningOutput`，送的可能是靜音）。
+    /// 不需要任何權限。查不到時回傳 nil。
+    ///
+    /// 每個有音訊的程式都要問一次（實測 38 個程式約 6–8 ms）：不要在主執行緒上呼叫，也不要頻繁呼叫。
+    public static func isAnotherProcessPlaying() -> Bool? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyProcessObjectList, mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain)
+        let system = AudioObjectID(kAudioObjectSystemObject)
+        var size: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(system, &address, 0, nil, &size) == noErr else { return nil }
+        var processes = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
+        guard AudioObjectGetPropertyData(system, &address, 0, nil, &size, &processes) == noErr else { return nil }
+        // 錄系統音訊時，自己的 IOProc 也算在送聲音（交回去的是靜音）：用 PID 排除自己
+        let ownPID = getpid()
+        return processes.contains { process in
+            value(kAudioProcessPropertyIsRunningOutput, of: process, as: UInt32.self) == 1
+                && value(kAudioProcessPropertyPID, of: process, as: pid_t.self) != ownPID
+        }
+    }
+
+    /// 讀一個固定大小的屬性。讀不到時回傳 nil。
+    static func value<Value: BitwiseCopyable>(
+        _ selector: AudioObjectPropertySelector, of object: AudioObjectID, as type: Value.Type
+    ) -> Value? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+        var size = UInt32(MemoryLayout<Value>.size)
+        let raw = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Value>.size, alignment: MemoryLayout<Value>.alignment)
+        defer { raw.deallocate() }
+        guard AudioObjectGetPropertyData(object, &address, 0, nil, &size, raw) == noErr,
+            size == MemoryLayout<Value>.size
+        else { return nil }
+        return raw.load(as: Value.self)
+    }
+
     /// 系統預設的輸入或輸出裝置。
     static func defaultDevice(input: Bool) -> AudioDeviceID? {
         var address = AudioObjectPropertyAddress(

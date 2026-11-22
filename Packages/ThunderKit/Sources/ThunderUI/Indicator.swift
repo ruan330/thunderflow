@@ -84,6 +84,8 @@ extension Indicator {
         case .reconnecting?: Indicator(symbol: .boltOutline, tone: .attention, text: "翻譯重新連線中，錄音持續中")
         case .idle?: Indicator(symbol: .boltOutline, tone: .neutral, text: "翻譯待命")
         case .failed(let reason)?: Indicator(symbol: .boltSlash, tone: .danger, text: "翻譯已停止：\(reason)（錄音持續中）")
+        case .translationFailing(let reason)?:
+            Indicator(symbol: .boltSlash, tone: .attention, text: "翻譯失敗：\(reason)（英文字幕與錄音持續中）")
         }
     }
 

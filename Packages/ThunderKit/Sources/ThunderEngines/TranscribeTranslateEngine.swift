@@ -67,7 +67,7 @@ private final class EngineRun {
         case closed(connection: Int, TranscriptionLink.CloseReason)
         case progress(request: Int, String)
         case completed(request: Int, String)
-        case failed(request: Int)
+        case failed(request: Int, reason: String)
         case tick
     }
 
@@ -103,6 +103,11 @@ private final class EngineRun {
     private var audioEnd = AudioTime.zero
     private var linkFinished = false
     private var linkFailed = false
+    /// 轉錄連線最近一次的狀態（翻譯失敗或恢復時，只有連線是即時的才改狀態列）。
+    private var linkStatus: EngineStatus?
+    /// 文字模型連續失敗的次數，以及翻譯目前失敗的原因（nil：正常）。
+    private var consecutiveTextFailures = 0
+    private var translationProblem: String?
     private var flushed = false
     /// 進行中的那一段的段號（最近一筆增量文字所屬的段）。
     private var liveSegment: Int?
@@ -170,9 +175,11 @@ private final class EngineRun {
                 apply(planner.progress(request: request, text: text, at: time))
             case .completed(let request, let text):
                 requests[request] = nil
+                if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { textSucceeded() }
                 apply(planner.completed(request: request, text: text, at: time))
-            case .failed(let request):
+            case .failed(let request, let reason):
                 requests[request] = nil
+                textFailed(reason)
                 apply(planner.failed(request: request, at: time))
             case .tick:
                 break
@@ -218,7 +225,13 @@ private final class EngineRun {
             case .text(let text):
                 handle(segmenter.receive(text, at: now()), at: now())
             case .status(let status):
-                output.yield(.status(status))
+                linkStatus = status
+                // 連線恢復時，翻譯如果還在失敗，狀態列要繼續顯示翻譯失敗
+                if status == .live, let problem = translationProblem {
+                    output.yield(.status(.translationFailing(reason: problem)))
+                } else {
+                    output.yield(.status(status))
+                }
                 if case .failed = status { linkFailed = true }
             case .gap(let gap):
                 output.yield(.gap(gap))
@@ -336,6 +349,31 @@ private final class EngineRun {
         connection.socket.close()
     }
 
+    // MARK: 翻譯連續失敗
+
+    /// 文字模型連續失敗幾次就回報 `translationFailing`。偶爾一兩次交給備援與重試，不改變狀態。
+    private static let failureThreshold = 5
+
+    private func textFailed(_ reason: String) {
+        consecutiveTextFailures += 1
+        guard consecutiveTextFailures >= Self.failureThreshold, translationProblem == nil else { return }
+        translationProblem = reason
+        if linkStatus == .live { output.yield(.status(.translationFailing(reason: reason))) }
+    }
+
+    private func textSucceeded() {
+        consecutiveTextFailures = 0
+        guard translationProblem != nil else { return }
+        translationProblem = nil
+        if linkStatus == .live { output.yield(.status(.live)) }
+    }
+
+    /// 錯誤的說明（給狀態列看）。文字模型的錯誤不含憑證；其他錯誤用系統的說明。
+    private static func describe(_ error: any Error) -> String {
+        if let error = error as? TextModelError { return error.description }
+        return error.localizedDescription
+    }
+
     private func startRequest(_ request: Int, _ content: TextRequest) {
         let feed = feed
         let textModel = textModel
@@ -348,7 +386,7 @@ private final class EngineRun {
                 }
                 if !Task.isCancelled { feed.yield(.completed(request: request, total)) }
             } catch {
-                if !Task.isCancelled { feed.yield(.failed(request: request)) }
+                if !Task.isCancelled { feed.yield(.failed(request: request, reason: Self.describe(error))) }
             }
         }
     }

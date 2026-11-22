@@ -41,6 +41,9 @@ public enum EngineStatus: Sendable, Equatable {
     /// 一段時間沒有音訊（例如使用者暫停），引擎已主動收尾並關閉連線。
     case idle
     case failed(reason: String)
+    /// 轉錄照常（英文字幕與錄音持續），但翻譯連續失敗：文字模型一直回錯誤（例如模型名稱不對、Key 沒有權限、額度用完）。
+    /// `reason` 是最近一次的錯誤。翻譯恢復時回到 `live`。
+    case translationFailing(reason: String)
 }
 
 /// 音訊為什麼沒有被翻譯到。

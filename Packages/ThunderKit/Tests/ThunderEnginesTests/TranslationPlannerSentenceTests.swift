@@ -264,12 +264,13 @@ struct TranslationPlannerSentenceTests {
         var driver = SentenceDriver()
         driver.finish(0, "um so", .idle, at: 0)
         #expect(driver.started.count == 2)
-        driver.finish(1, "and", .flush, at: 1)
+        driver.finish(1, "and", .flush, at: 0.5)
         #expect(driver.started.count == 4)
         let long = Array(repeating: "word", count: 61).joined(separator: " ")
-        driver.finish(2, long, .tooLong, at: 2)
+        driver.finish(2, long, .tooLong, at: 1)
         #expect(driver.started.count == 6)
-        driver.finish(3, "short part", .tooLong, at: 3)
+        // 都在 3 秒內：還沒有輸出的請求不會先送出備援請求
+        driver.finish(3, "short part", .tooLong, at: 1.5)
         #expect(driver.started.count == 7, "還沒到 60 個字")
         #expect(driver.planner.openSentence == 3)
     }

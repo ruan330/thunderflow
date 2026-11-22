@@ -237,8 +237,13 @@ public final class RecordingSession: @unchecked Sendable {
     /// 放棄等待區，引擎沒取走的音訊記成 engineStopped 的缺口 →
     /// 寫入最後的 `session.json`（finalizing、錄音長度、計費秒數、完整性）→ 關閉日誌。
     /// 返回時 `isEngineRunning` 一定是 false。同時呼叫好幾次也只會做一次。
+    ///
+    /// - Parameters:
+    ///   - ringDroppedSamples: 收音端記下的 RingBuffer 溢位丟掉的樣本數（`integrity.ringDroppedSamples`）。
+    ///   - captureDiscontinuities: 擷取裝置回報樣本位置不連續的次數（`integrity.captureDiscontinuities`）。
+    ///   兩者和其他計數在同一次寫入，在交出場次的鎖之前。重複呼叫時以第一次帶入的為準。
     @discardableResult
-    public func finish() async throws -> SessionMeta {
+    public func finish(ringDroppedSamples: Int = 0, captureDiscontinuities: Int = 0) async throws -> SessionMeta {
         let task = control.withLock { state -> Task<SessionMeta, any Error> in
             if let existing = state.finishTask { return existing }
             state.finished = true

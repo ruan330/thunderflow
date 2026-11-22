@@ -43,7 +43,9 @@ struct LibraryView: View {
 
             if let item = model.sessions.first(where: { $0.id == model.selectedSession }) {
                 SessionDetailView(item: item)
-                    .id(item.directory.url)
+                    // 用場次的 id 識別，不用資料夾的位置：摘要做好之後自動命名會改資料夾的名稱，
+                    // 用位置識別的話整個詳細頁會重建，播放停掉、分頁與捲動的位置都回到原點
+                    .id(item.id)
                     .frame(minWidth: 480, maxHeight: .infinity)
             } else {
                 ContentUnavailableView("選一場錄音", systemImage: "doc.text.magnifyingglass")
@@ -81,11 +83,10 @@ struct SessionRow: View {
 
 /// 單場詳細頁：摘要與逐字稿兩個分頁，底部是播放器。點段落或章節的時間就跳到錄音的那個位置。
 struct SessionDetailView: View {
-    enum Tab: String, CaseIterable { case summary = "摘要", transcript = "逐字稿" }
-
     @Environment(AppModel.self) private var model
     let item: SessionLibrary.Item
-    @State private var tab = Tab.transcript
+    /// 分頁：只在第一次讀到內容時決定先看哪一頁（判斷在 ThunderUI，有測試）。
+    @State private var tabs = SessionDetailTabs()
     @State private var blocks: [TranscriptBlock] = []
     @State private var summary: SessionSummary?
     @State private var player = PlayerModel()
@@ -95,8 +96,8 @@ struct SessionDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
-            Picker("", selection: $tab) {
-                ForEach(Tab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            Picker("", selection: $tabs.selected) {
+                ForEach(SessionDetailTabs.Tab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -105,7 +106,7 @@ struct SessionDetailView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             Group {
-                switch tab {
+                switch tabs.selected {
                 case .summary: summaryTab
                 case .transcript: transcriptTab
                 }
@@ -118,19 +119,17 @@ struct SessionDetailView: View {
         .onDisappear { player.stop() }
     }
 
-    /// 這一場的內容有變（處理進度、摘要完成）就重新讀檔。
+    /// 這一場的內容有變（處理進度、摘要完成）或資料夾換了位置（自動命名）就重新讀檔。
     private var reloadKey: String {
-        "\(item.meta.completedSteps.count)-\(item.meta.oneLiner.count)-\(model.processing[item.id] ?? "")"
+        "\(item.meta.completedSteps.count)-\(item.meta.oneLiner.count)-\(model.processing[item.id] ?? "")-\(item.directory.url.path)"
     }
 
     private func load() {
         let directory = item.directory
         blocks = (try? TranscriptBlocks.read(directory.blocksURL)) ?? []
         summary = try? SessionSummary.read(directory.summaryDataURL)
-        if summary != nil, blocks.isEmpty == false, tab == .transcript, item.meta.oneLiner.isEmpty == false, !player.isPlaying {
-            // 有摘要時預設先看摘要
-            tab = .summary
-        }
+        // 有摘要時先看摘要，但只在第一次讀到內容時：之後摘要才做好，也不把正在讀逐字稿的人切走
+        tabs.contentLoaded(hasSummary: summary != nil)
         player.load(directory.recordingURL)
     }
 
@@ -398,11 +397,14 @@ final class PlayerModel {
     var rate: Float = 1 { didSet { player?.rate = rate } }
 
     @ObservationIgnored private var player: AVAudioPlayer?
-    @ObservationIgnored private var url: URL?
     @ObservationIgnored private var ticker: Task<Void, Never>?
 
+    /// 打開這一場的錄音檔（還沒有錄音檔時下次再試）。每一場有自己的播放器（詳細頁以場次識別）。
+    ///
+    /// 已經打開了就不再換：資料夾改名或搬移（例如摘要做好之後自動命名）時，打開的檔案跟著資料夾走，
+    /// 播放、跳轉、停止後再播都照常（實測），所以不重新打開，播放不會中斷，位置也不會回到開頭。
     func load(_ url: URL) {
-        guard self.url != url || player == nil else { return }
+        guard player == nil else { return }
         guard FileManager.default.fileExists(atPath: url.path), let player = try? AVAudioPlayer(contentsOf: url) else {
             isReady = false
             return
@@ -410,7 +412,6 @@ final class PlayerModel {
         player.enableRate = true
         player.prepareToPlay()
         self.player = player
-        self.url = url
         duration = player.duration
         isReady = true
     }

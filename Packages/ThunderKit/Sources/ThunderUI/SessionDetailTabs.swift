@@ -11,6 +11,8 @@ public struct SessionDetailTabs: Sendable, Equatable {
 
     /// 現在顯示的分頁。使用者切換分頁時直接改它。
     public var selected: Tab = .transcript
+    /// 已經讀到過內容了沒有：讀到過之後，分頁只由使用者切換。
+    private var decided = false
 
     public init() {}
 
@@ -18,7 +20,8 @@ public struct SessionDetailTabs: Sendable, Equatable {
     ///
     /// - Parameter hasSummary: 讀到的內容裡有沒有摘要。
     public mutating func contentLoaded(hasSummary: Bool) {
-        // 暫時照目前 App 的做法（每次讀到內容都切到摘要），測試會指出問題；實作時改掉
-        if hasSummary, selected == .transcript { selected = .summary }
+        guard !decided else { return }
+        decided = true
+        if hasSummary { selected = .summary }
     }
 }

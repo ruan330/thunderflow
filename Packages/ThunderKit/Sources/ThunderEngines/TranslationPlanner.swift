@@ -47,6 +47,9 @@ public struct TranslationPlanner: Sendable {
         /// （已經確定的段＋進行中的文字），請求帶畫面上已經有的暫定譯文，請模型盡量保留、只在後面接上新的部分。
         /// 一句說完才結束；送出的時機照 `provisionalWords`、`provisionalInterval`。
         public var sentenceProvisional: Bool = false
+        /// 整句的暫定譯文：每一句的第一個請求在這麼多字時就送，讓中文早一點出現；nil 時照 `provisionalWords`。
+        /// 之後的請求照 `provisionalWords`、`provisionalInterval`（HANDOVER.md P11：第一個字 1.05 → 0.77 秒，改寫只多一點）。
+        public var sentenceProvisionalFirstWords: Int?
         /// 場次資訊與關鍵詞：放進提示，讓專有名詞保留原文。
         public var title: String = ""
         public var event: String = ""
@@ -702,9 +705,14 @@ public struct TranslationPlanner: Sendable {
         if draft?.number != open.number { draft = Draft(number: open.number) }
         guard var current = draft, current.inFlight == nil else { return [] }
         let words = open.words + live.words
-        guard words - current.requestedWords >= Double(configuration.provisionalWords),
-            now - current.requestedAt >= configuration.provisionalInterval
-        else { return [] }
+        let due: Bool
+        if current.requestedAt == -.infinity, let first = configuration.sentenceProvisionalFirstWords {
+            due = words >= Double(first)
+        } else {
+            due = words - current.requestedWords >= Double(configuration.provisionalWords)
+                && now - current.requestedAt >= configuration.provisionalInterval
+        }
+        guard due else { return [] }
         let english = TextFlow.join(open.segments.compactMap { segmentEnglish[$0] } + [live.text])
         let request = nextRequest
         nextRequest += 1

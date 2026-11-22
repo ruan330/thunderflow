@@ -11,7 +11,9 @@ public struct OpenAITextModel: TextModel {
     private let session: URLSession
 
     /// - Parameter baseURL: API 的根網址，預設是 `https://api.openai.com/v1`。
-    public init(apiKey: String, baseURL: URL = URL(string: "https://api.openai.com/v1")!, session: URLSession = .shared) {
+    public init(
+        apiKey: String, baseURL: URL = URL(string: "https://api.openai.com/v1")!, session: URLSession = EngineNetwork.session
+    ) {
         self.apiKey = apiKey
         self.baseURL = baseURL
         self.session = session

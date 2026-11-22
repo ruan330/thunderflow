@@ -29,15 +29,13 @@ public protocol RealtimeConnector: Sendable {
 public struct URLSessionRealtimeConnector: RealtimeConnector {
     private let session: URLSession
 
-    public init(session: URLSession = .shared) {
+    public init(session: URLSession = EngineNetwork.session) {
         self.session = session
     }
 
     public func connect(to url: URL, headers: [String: String]) -> any RealtimeSocket {
-        var request = URLRequest(url: url)
-        for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
-        request.timeoutInterval = 30
-        let task = session.webSocketTask(with: request)
+        // 握手不要求壓縮（見 EngineNetwork.webSocketRequest）
+        let task = session.webSocketTask(with: EngineNetwork.webSocketRequest(url: url, headers: headers))
         // 完成事件會帶整段的文字，預設的 1 MB 上限不夠保險
         task.maximumMessageSize = 16 << 20
         task.resume()

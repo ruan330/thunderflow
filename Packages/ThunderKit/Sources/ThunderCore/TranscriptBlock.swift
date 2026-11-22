@@ -78,6 +78,9 @@ public enum TranscriptBlocks {
     /// - 沒有段號的紀錄（不分段的引擎、加入段號之前的日誌）：每一筆 `end` 為 true 的英文自成一段，
     ///   中文依出現的順序配對；段號從 0 開始依序編。
     /// - 沒有英文的段不進段落；有英文、沒有中文的段照樣進段落（中文留空），並計入 `untranslatedSegments`。
+    /// - **整句定稿**（帶 `sentenceStart` 的中文定稿，DESIGN.md 5.6.2 節）：放在這一句的最後一段，取代第 `sentenceStart` 段到
+    ///   這一段各自的定稿；這一句前面那幾段的中文留空，也不算沒翻到。同一段以最後一筆定稿為準。一句跨過段落的邊界時
+    ///   （例如中間按了暫停），整句的中文放在最後一段所在的段落。
     ///
     /// **段落**：依出現的順序，把相鄰的段合起來——
     /// - 段落滿 20 秒之後，在句尾（`.` `?` `!` `。` `？` `！`，後面可以跟著引號或括號）結束；
@@ -134,7 +137,7 @@ public enum TranscriptBlocks {
             let index = firstWordTimes.lastIndex { $0 <= mark } ?? 0
             blocks[index].marked = true
         }
-        return BuildResult(blocks: blocks, untranslatedSegments: journal.segments.count { $0.zh.isEmpty })
+        return BuildResult(blocks: blocks, untranslatedSegments: journal.segments.count { $0.zh.isEmpty && !$0.covered })
     }
 
     /// 讀取 `blocks.jsonl`：一行一個 JSON 物件。
@@ -168,6 +171,8 @@ extension TranscriptBlocks {
         var end: Double
         var en: String
         var zh: String
+        /// 被整句定稿涵蓋：中文在這一句最後一段的整句定稿裡，這一段的 `zh` 是空的但不算沒翻到。
+        var covered = false
     }
 
     /// 還在收集中的一段。
@@ -206,6 +211,8 @@ extension TranscriptBlocks {
         var unnumbered: [Int] = []
         var unnumberedIsOpen = false
         var translations: [Int: String] = [:]
+        /// 整句定稿：這一句最後一段的段號 → 這一句的第一段。同一段以最後一筆定稿為準，所以後來的一段定稿會取消它。
+        var sentenceStarts: [Int: Int] = [:]
         var unnumberedTranslations: [String] = []
 
         for entry in entries {
@@ -247,6 +254,7 @@ extension TranscriptBlocks {
                 guard text.kind == .segmentEnd else { break }
                 if let number = text.segment {
                     translations[number] = text.text
+                    sentenceStarts[number] = text.sentenceStart.flatMap { $0 < number ? $0 : nil }
                 } else {
                     unnumberedTranslations.append(text.text)
                 }
@@ -264,6 +272,10 @@ extension TranscriptBlocks {
         var ordinalByIndex: [Int: Int] = [:]
         for (ordinal, index) in unnumbered.enumerated() { ordinalByIndex[index] = ordinal }
 
+        // 被整句定稿涵蓋的段（這一句的最後一段之前的那幾段）：中文已經在整句定稿裡，自己的定稿不再採用
+        var covered: Set<Int> = []
+        for (last, first) in sentenceStarts { covered.formUnion(first..<last) }
+
         for (index, draft) in drafts.enumerated() {
             let en = TextFlow.singleLine(draft.finalText ?? draft.deltas)
             guard !en.isEmpty, let start = draft.firstTextAt else { continue }
@@ -271,7 +283,7 @@ extension TranscriptBlocks {
             let translation: String?
             if let explicit = draft.number {
                 number = explicit
-                translation = translations[explicit]
+                translation = covered.contains(explicit) ? nil : translations[explicit]
             } else {
                 let ordinal = ordinalByIndex[index] ?? 0
                 number = firstFreeNumber + ordinal
@@ -280,7 +292,7 @@ extension TranscriptBlocks {
             collected.segments.append(
                 Segment(
                     number: number, start: start, end: draft.lastTextAt, en: en,
-                    zh: TextFlow.singleLine(translation ?? "")))
+                    zh: TextFlow.singleLine(translation ?? ""), covered: draft.number.map(covered.contains) ?? false))
         }
         return collected
     }

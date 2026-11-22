@@ -154,6 +154,24 @@ struct CaptureRestartTests {
         #expect((recorded.first?.lostSeconds ?? 0) >= 0.2)
     }
 
+    @Test("停止之後裝置才有變化：不再重新開始收音，也不建立新的來源")
+    func noRestartAfterStop() async throws {
+        let tmp = try TemporaryDirectory()
+        defer { tmp.remove() }
+        let captures = FakeCaptures([
+            .init(rate: 16_000, name: "USB 麥克風", uid: "usb-mic"), .init(rate: 16_000, name: "MacBook Pro 麥克風", uid: "built-in"),
+        ])
+        let recording = makeRecording(tmp, captures)
+        try recording.start()
+        try await withDeadline(.seconds(30)) { try await recording.stop() }
+
+        #expect(throws: RecordingSessionError.alreadyFinished) { try recording.resumeCapture(reason: .deviceLost) }
+        recording.suspendCapture()
+
+        #expect(captures.made(1) == nil)
+        #expect(!recording.isCaptureInterrupted)
+    }
+
     @Test("收音端的計數跨過重新開始：callback 次數與裝置的不連續次數都加總，不連續次數寫進 session.json")
     func countsAcrossRestarts() async throws {
         let tmp = try TemporaryDirectory()

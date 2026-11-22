@@ -2,7 +2,7 @@
 
 PKG := Packages/ThunderKit
 
-.PHONY: build test test-tsan test-perf test-soak check app run measure-app
+.PHONY: build test test-tsan test-perf test-soak check app run measure-app measure-recording
 
 ## 編譯全部（含測試）
 build:
@@ -40,3 +40,7 @@ run: app
 ## 量測整個 App：啟動時間、閒置的 CPU 與記憶體、App 大小，和空白的 SwiftUI App 比較（約 3 分鐘，不花 API 費用）
 measure-app:
 	Scripts/measure-app.sh
+
+## 量測錄音與即時翻譯中的 CPU：用音檔跑一場、顯示視窗（約 1.5 分鐘，花費不到 US$0.02）。加 ARGS=--hidden 隱藏執行
+measure-recording:
+	Scripts/measure-recording.sh $(ARGS)

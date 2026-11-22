@@ -12,6 +12,8 @@ make test-perf   # 效能預算（release 模式）
 make test-soak   # 8 小時長跑（會寫出約 1 GB 的暫存檔）
 make app         # 打包成 build/ThunderFlow.app（ad-hoc 簽章）
 make run         # 打包之後開啟
+make measure-app        # 啟動、閒置、App 大小的預算（約 3 分鐘，不花 API 費用）
+make measure-recording  # 錄音中 CPU 的預算（會顯示視窗約 1 分鐘，花費不到 US$0.02；ARGS=--hidden 隱藏執行）
 ```
 
 所有邏輯都在 `Packages/ThunderKit`，用 `swift test` 就能驗證，不需要開 Xcode。

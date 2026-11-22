@@ -159,6 +159,14 @@ final class AppModel {
     private var othersPlayingSince: ContinuousClock.Instant?
     /// 這一場已經提醒過收不到聲音了。
     private var warnedSilence = false
+    /// 收音中斷之後接著錄（DESIGN.md 2.3 節第 9 條、5.4 節、D26）：電腦睡著了沒有、是不是正在重新開始收音、
+    /// 重新開始失敗（例如找不到裝置）時記下原因，下次裝置有變化再試；收音停了只自動重新開始一次，
+    /// 之後又停了就只提醒（例如沒有權限），不一直重來。
+    private var sleeping = false
+    private var restartingCapture = false
+    private var pendingRestart: GapReason?
+    private var stallRestartUsed = false
+    private var lastCallbackProgress = ContinuousClock.now
     /// 錄音中經過的 tick 數（每 0.25 秒一次），用來每 10 秒檢查一次剩餘空間。
     private var ticks = 0
     private var warnedLowDisk = false
@@ -215,9 +223,91 @@ final class AppModel {
             keyOverride = await Task.detached { Self.readKeyFromStandardInput() }.value
         }
         refreshDevices()
+        observeSleep()
         reloadLibrary()
         resumeUnfinished()
         SelfTest.runIfRequested(self)
+    }
+
+    /// 闔上螢幕睡眠：睡著之前停止收音、把收到的聲音錄完；醒來之後接著錄同一場，不論睡了多久（D26）。
+    private func observeSleep() {
+        let center = NSWorkspace.shared.notificationCenter
+        center.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.systemWillSleep() }
+        }
+        center.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.systemDidWake() }
+        }
+    }
+
+    private func systemWillSleep() {
+        sleeping = true
+        // 音檔來源（測試用）睡著時跟著暫停、醒來接著播，重新開始反而會從頭播：不動它
+        if case .file = source { return }
+        // 在這裡做完（停止裝置、把 RingBuffer 裡的聲音錄完只要幾毫秒），系統才睡
+        if let recording, isRecording { recording.suspendCapture() }
+    }
+
+    private func systemDidWake() {
+        sleeping = false
+        guard let recording, isRecording, recording.isCaptureInterrupted else { return }
+        restartCapture(.sleep)
+    }
+
+    /// 收音被打斷了：在背景重新開始收音，接著錄同一場，並說明發生了什麼。失敗時記下原因，裝置有變化再試。
+    private func restartCapture(_ reason: GapReason, since: ContinuousClock.Instant? = nil) {
+        guard let recording, isRecording, !restartingCapture else { return }
+        restartingCapture = true
+        Task { [weak self] in
+            let result = await Task.detached(priority: .userInitiated) { () -> Result<TimeInterval, any Error> in
+                Result { try recording.resumeCapture(reason: reason, since: since) }
+            }.value
+            guard let self else { return }
+            self.restartingCapture = false
+            guard self.recording === recording, self.isRecording else { return }
+            switch result {
+            case .success(let lost):
+                self.pendingRestart = nil
+                self.sourceDescription = recording.sourceDescription
+                self.silentTicks = 0
+                self.lastCallbackCount = recording.captureCallbackCount
+                self.lastCallbackProgress = .now
+                self.banner = Self.restartedMessage(reason, lostSeconds: lost, source: recording.sourceDescription)
+            case .failure:
+                self.pendingRestart = reason
+                self.banner = "收音中斷了，現在找不到可以收音的裝置。接上裝置之後會自動接著錄同一場；已經錄下的部分不受影響。"
+            }
+        }
+    }
+
+    private static func restartedMessage(_ reason: GapReason, lostSeconds: TimeInterval, source: String) -> String {
+        switch reason {
+        case .sleep: "電腦剛才睡眠了 \(Format.duration(lostSeconds))，醒來之後已經接著錄同一場（睡眠的時間沒有錄到）。"
+        case .deviceLost: "收音裝置不見了，已經改用「\(source)」接著錄同一場。"
+        case .outputChanged: "輸出裝置換了，已經用新的輸出裝置接著錄同一場的系統音訊。"
+        default: "收音停了一下，已經重新開始，接著錄同一場。"
+        }
+    }
+
+    /// 裝置有變化（接上、拔掉、換了預設的輸入或輸出裝置）：更新來源選單；錄音中依 CaptureWatch 判斷要不要重新開始收音。
+    private func devicesChanged(_ devices: [AudioInputDevice]) {
+        self.devices = devices
+        guard let recording, isRecording, !sleeping else { return }
+        if let pending = pendingRestart {
+            restartCapture(pending)
+            return
+        }
+        let source = captureSource
+        let deviceInUse = recording.captureDeviceUID
+        let inputUIDs = devices.map(\.uid)
+        Task { [weak self] in
+            // 系統音訊要知道現在的預設輸出裝置：會碰 Core Audio，在背景問
+            let output = source == .systemAudio ? await Task.detached { AudioDevices.defaultOutputUID() }.value : nil
+            guard let self, self.recording === recording else { return }
+            let snapshot = CaptureWatch.Snapshot(
+                source: source, deviceInUse: deviceInUse, inputUIDs: inputUIDs, defaultOutputUID: output)
+            if let reason = CaptureWatch.reason(snapshot) { self.restartCapture(reason) }
+        }
     }
 
     /// 重新列出收音裝置。在背景做：程式第一次碰 Core Audio 要等它初始化（實測約 70 ms），
@@ -232,7 +322,7 @@ final class AppModel {
             let watcher =
                 watches
                 ? AudioDeviceWatcher { devices in
-                    Task { @MainActor in self?.devices = devices }
+                    Task { @MainActor in self?.devicesChanged(devices) }
                 } : nil
             await MainActor.run {
                 guard let self else { return }
@@ -444,6 +534,9 @@ final class AppModel {
         heardSound = false
         othersPlayingSince = nil
         warnedSilence = false
+        pendingRestart = nil
+        stallRestartUsed = false
+        lastCallbackProgress = .now
         ticks = 0
         warnedLowDisk = false
         ticker = Task { [weak self] in
@@ -474,10 +567,27 @@ final class AppModel {
                 }
                 if case .file = self.source { continue }
                 let count = recording.captureCallbackCount
-                self.silentTicks = count == self.lastCallbackCount ? self.silentTicks + 1 : 0
+                if count == self.lastCallbackCount {
+                    self.silentTicks += 1
+                } else {
+                    self.silentTicks = 0
+                    self.stallRestartUsed = false
+                    self.lastCallbackProgress = .now
+                }
                 self.lastCallbackCount = count
-                if self.silentTicks == 12 {
-                    self.banner = "超過 3 秒沒有收到任何聲音。裝置可能被拔掉了，或是沒有權限。已經錄下的部分不受影響。"
+                // 收音停了（一直沒有 callback）：重新開始一次接著錄；又停了就只提醒（裝置或權限的問題），不一直重來
+                if !self.sleeping, !self.restartingCapture, !recording.isCaptureInterrupted,
+                    CaptureWatch.reason(
+                        CaptureWatch.Snapshot(
+                            source: self.captureSource, deviceInUse: recording.captureDeviceUID,
+                            secondsWithoutCallbacks: Double(self.silentTicks) / 4)) != nil
+                {
+                    if !self.stallRestartUsed {
+                        self.stallRestartUsed = true
+                        self.restartCapture(.captureStalled, since: self.lastCallbackProgress)
+                    } else if self.silentTicks == 12 {
+                        self.banner = "超過 3 秒沒有收到任何聲音。裝置可能被拔掉了，或是沒有權限。已經錄下的部分不受影響。"
+                    }
                 }
                 // 裝置有在送資料，但全部是靜音：沒有權限時系統只會給靜音，不會回報錯誤。
                 // 要不要提醒由 SilenceWarning 決定（ThunderUI，有測試）：系統音訊在沒有人播放時本來就是靜音

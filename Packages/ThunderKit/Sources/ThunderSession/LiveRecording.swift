@@ -183,7 +183,9 @@ public final class LiveRecording: @unchecked Sendable {
     ///   - since: 中斷從什麼時候開始（例如最後一次收到聲音的時間）。nil 時用 `suspendCapture()` 的時間，沒有就是現在。
     /// - Throws: 重新開始收音失敗（例如一個收音裝置都沒有）：場次照常，維持中斷中，之後可以再呼叫一次，或停止。
     ///   已經停止之後呼叫丟出 `RecordingSessionError.alreadyFinished`，不會再開始收音。
-    public func resumeCapture(reason: GapReason, since: ContinuousClock.Instant? = nil) throws {
+    /// - Returns: 沒有錄到的時間（秒，實際經過的時間），畫面用來說明。
+    @discardableResult
+    public func resumeCapture(reason: GapReason, since: ContinuousClock.Instant? = nil) throws -> TimeInterval {
         try operation.withLock {
             guard let session, !state.withLock({ $0.finished }) else { throw RecordingSessionError.alreadyFinished }
             let interruptedAt = since ?? state.withLock { $0.interruptedAt } ?? .now
@@ -207,7 +209,8 @@ public final class LiveRecording: @unchecked Sendable {
                 throw error
             }
             // 中斷之前的聲音都錄完了（stopCapture），在這裡記下中斷、開新的分段，再開始收新的聲音
-            session.recordInterruption(reason: reason, lostSeconds: (ContinuousClock.now - interruptedAt) / .seconds(1))
+            let lostSeconds = max(0, (ContinuousClock.now - interruptedAt) / .seconds(1))
+            session.recordInterruption(reason: reason, lostSeconds: lostSeconds)
             let pump = makePump(for: session, converter: converter)
             state.withLock { current in
                 current.pump = pump
@@ -215,6 +218,7 @@ public final class LiveRecording: @unchecked Sendable {
                 current.interruptedAt = nil
             }
             pump.start()
+            return lostSeconds
         }
     }
 

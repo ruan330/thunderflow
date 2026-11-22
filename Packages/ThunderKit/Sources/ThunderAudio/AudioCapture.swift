@@ -147,6 +147,11 @@ public enum AudioDevices {
         return raw.load(as: Value.self)
     }
 
+    /// 現在的預設輸出裝置的 UID（系統音訊的擷取以它為主裝置）。查不到時是 nil。會碰 Core Audio：不要在主執行緒上呼叫。
+    public static func defaultOutputUID() -> String? {
+        defaultDevice(input: false).flatMap { string(kAudioDevicePropertyDeviceUID, of: $0) }
+    }
+
     /// 系統預設的輸入或輸出裝置。
     static func defaultDevice(input: Bool) -> AudioDeviceID? {
         var address = AudioObjectPropertyAddress(

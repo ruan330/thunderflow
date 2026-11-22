@@ -122,11 +122,10 @@ public final class LiveRecording: @unchecked Sendable {
         capture.stop()
         pump?.stop()
         guard let session else { throw RecordingSessionError.alreadyFinished }
-        var meta = try await session.finish()
-        meta.integrity.ringDroppedSamples = ring.droppedSampleCount
-        meta.integrity.captureDiscontinuities = capture.mixer.discontinuityCount
-        try directory.saveMeta(meta)
-        return meta
+        // 收音已經停了，收音端的計數不會再變：交給場次，和其他計數一起在交出場次的鎖之前寫進 session.json。
+        // 交出鎖之後就不能再寫：另一個程式的結束處理可能已經拿到鎖，會蓋掉它的紀錄
+        return try await session.finish(
+            ringDroppedSamples: ring.droppedSampleCount, captureDiscontinuities: capture.mixer.discontinuityCount)
     }
 }
 

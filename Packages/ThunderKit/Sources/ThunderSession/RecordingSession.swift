@@ -248,8 +248,13 @@ public final class RecordingSession: @unchecked Sendable {
             if let existing = state.finishTask { return existing }
             state.finished = true
             let eventTask = state.eventTask
+            let capture = (ringDroppedSamples: ringDroppedSamples, discontinuities: captureDiscontinuities)
             // 不跟著呼叫端被取消：結束的步驟一旦開始就要做完
-            let task = Task { [self] in try await performFinish(eventTask: eventTask) }
+            let task = Task { [self] in
+                try await performFinish(
+                    eventTask: eventTask, ringDroppedSamples: capture.ringDroppedSamples,
+                    captureDiscontinuities: capture.discontinuities)
+            }
             state.finishTask = task
             return task
         }
@@ -351,7 +356,9 @@ public final class RecordingSession: @unchecked Sendable {
 
     // MARK: 結束
 
-    private func performFinish(eventTask: Task<Void, Never>?) async throws -> SessionMeta {
+    private func performFinish(
+        eventTask: Task<Void, Never>?, ringDroppedSamples: Int, captureDiscontinuities: Int
+    ) async throws -> SessionMeta {
         // 最後才交出場次的鎖，結束處理（也可能在另一個程式裡）才接得手。
         // 失敗時也交出：這時 `session.json` 還停在 recording，交給當機復原處理
         defer { lock.release() }
@@ -384,7 +391,10 @@ public final class RecordingSession: @unchecked Sendable {
         meta.state = .finalizing
         meta.durationSeconds = durationSeconds
         meta.billedAudioSeconds = totals.billedAudioSeconds
+        // 完整性計數一次寫齊（包括收音端的），在交出鎖之前：交出之後別的程式就可能開始改寫 session.json
         meta.integrity = IntegrityReport(
+            ringDroppedSamples: ringDroppedSamples,
+            captureDiscontinuities: captureDiscontinuities,
             untranslatedSeconds: Double(gapFrames) / Double(config.engineSampleRate) + totals.engineReportedGapSeconds,
             unrecordedSeconds: unrecordedSeconds)
         try directory.saveMeta(meta)

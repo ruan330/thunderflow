@@ -57,19 +57,16 @@ struct LiveView: View {
 ///
 /// 主要位置固定在最右邊、寬度不變：「開始錄音」在錄音中變成「暫停」（暫停時是「繼續」）。「停止」只出現在它左邊，
 /// 不會出現在主要位置，所以剛按下開始時手快多點一下，最多是暫停。狀態剛換的 0.5 秒內不接受點擊（`PressGuard`）；
-/// 0.3 秒內就開始錄音時不顯示「準備中」，按鈕維持按下的樣子，直接變成錄音中（`DelayedIndicator`）。
+/// 0.3 秒內就開始錄音時不顯示「準備中」，按鈕維持按下的樣子，直接變成錄音中（`DelayedIndicator`；計時在 `AppModel`，狀態列共用同一個）。
 /// 位置的判斷都在 `TransportSlots`。
 private struct TransportControls: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pressGuard = PressGuard()
-    @State private var waiting = DelayedIndicator()
-    /// 上一次重畫的時間。「準備中」該出現時更新它，畫面就會在那時重畫一次。
-    @State private var now = ContinuousClock.now
 
     var body: some View {
         let phase = model.recorderPhase
-        let slots = TransportSlots(phase: phase, preparingVisible: waiting.isVisible(at: now))
+        let slots = TransportSlots(phase: phase, preparingVisible: model.preparingVisible)
         HStack(spacing: 8) {
             if slots.showsStop {
                 stopButton
@@ -81,15 +78,8 @@ private struct TransportControls: View {
             }
             .animation(Theme.standard, value: slots.main)
         }
-        .onChange(of: phase) { _, phase in phaseChanged(to: phase) }
-        .onAppear {
-            // 換頁回來時剛好在等：從現在起算
-            if phase == .starting || phase == .stopping {
-                waiting.begin(at: .now)
-                now = .now
-            }
-        }
-        .task(id: waiting.revealsAt) { await redraw(at: waiting.revealsAt) }
+        // 狀態一換，防連點的 0.5 秒就從現在重新起算
+        .onChange(of: phase) { _, _ in pressGuard.stateChanged(at: .now) }
     }
 
     @ViewBuilder private func mainSlot(_ main: TransportSlots.Main, phase: RecorderPhase) -> some View {
@@ -163,24 +153,6 @@ private struct TransportControls: View {
         guard pressGuard.accepts(at: .now) else { return }
         action()
     }
-
-    private func phaseChanged(to phase: RecorderPhase) {
-        let instant = ContinuousClock.now
-        pressGuard.stateChanged(at: instant)
-        if phase == .starting || phase == .stopping {
-            waiting.begin(at: instant)
-        } else {
-            waiting.end()
-        }
-        now = instant
-    }
-
-    /// 「準備中」出現的時間到了：重畫一次。等待提前結束時，這個工作會被取消。
-    private func redraw(at instant: ContinuousClock.Instant?) async {
-        guard let instant else { return }
-        do { try await Task.sleep(until: instant, clock: .continuous) } catch { return }
-        now = .now
-    }
 }
 
 /// 主要位置的內容：用看不見的「開始錄音」撐出固定的大小，換成任何內容寬度都不變。
@@ -207,7 +179,8 @@ private struct StatusStrip: View {
         let recording = model.isRecording
         HStack(spacing: 14) {
             HStack(spacing: 8) {
-                IndicatorView(.recorder(model.recorderPhase))
+                // 和開始／停止的按鈕同時換：按鈕還沒顯示「準備中」時，這裡也還是尚未開始
+                IndicatorView(.recorder(model.recorderPhase, preparingVisible: model.preparingVisible))
                 if recording { ElapsedTime() }
             }
             .fixedSize()
@@ -394,17 +367,16 @@ struct CaptionsView: View {
         let showsProvisional = model.settings.showsProvisional
         let marked = model.markedLines
         if lines.isEmpty, liveEnglish.isEmpty {
+            // 依錄音的階段說明：按下開始之後就不再叫使用者按開始（判斷在 ThunderUI，有測試）
+            let placeholder = CaptionsPlaceholder(phase: model.recorderPhase)
             ContentUnavailableView {
                 Label {
-                    Text("按下「開始錄音」")
+                    Text(placeholder.title)
                 } icon: {
-                    BoltShape()
-                        .fill(Theme.bolt)
-                        .aspectRatio(BoltShape.aspectRatio, contentMode: .fit)
-                        .frame(height: 44)
+                    PlaceholderSymbol(symbol: placeholder.symbol)
                 }
             } description: {
-                Text("講者說英文時，這裡會即時出現英文逐字稿與台灣繁體中文翻譯。")
+                Text(placeholder.message)
             }
             // 佔滿字幕區：否則整頁會被垂直置中，標題列跑到畫面中間
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -631,5 +603,24 @@ struct BannerView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
         .background(Theme.ink1)
+    }
+}
+
+/// 字幕區空白時的大符號（DESIGN.md 4.10.4）：閃電用 App 圖示的形狀；暫停用系統的暫停符號，灰色（暫停不是可以按的東西，不用綠色）。
+private struct PlaceholderSymbol: View {
+    let symbol: IndicatorSymbol
+
+    var body: some View {
+        if symbol == .pause {
+            Image(systemName: "pause.fill")
+                .font(.system(size: 34))
+                .foregroundStyle(.secondary)
+                .frame(height: 44)
+        } else {
+            BoltShape()
+                .fill(Theme.bolt)
+                .aspectRatio(BoltShape.aspectRatio, contentMode: .fit)
+                .frame(height: 44)
+        }
     }
 }

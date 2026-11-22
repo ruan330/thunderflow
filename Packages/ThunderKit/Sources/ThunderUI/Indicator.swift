@@ -67,6 +67,14 @@ extension Indicator {
         }
     }
 
+    /// 狀態列上的錄音狀態，和開始／停止的按鈕（`TransportSlots`）同時換（DESIGN.md 4.10.4）：
+    /// 開始中、延遲顯示的「準備中」還沒出現時，仍顯示尚未開始。0.3 秒內就開始錄音時，直接從尚未開始變成錄音中。
+    ///
+    /// - Parameter preparingVisible: 延遲顯示的「準備中」是不是已經出現（`DelayedIndicator.isVisible(at:)`）。只在開始中有作用。
+    public static func recorder(_ phase: RecorderPhase, preparingVisible: Bool) -> Indicator {
+        phase == .starting && !preparingVisible ? recorder(.idle) : recorder(phase)
+    }
+
     /// 翻譯的狀態（`LiveCaptionModel.engineStatus`）。和錄音分開顯示：翻譯斷線或停止時，錄音仍然持續。
     /// 引擎還沒回報任何狀態（nil）時當成連線中。
     public static func engine(_ status: EngineStatus?) -> Indicator {

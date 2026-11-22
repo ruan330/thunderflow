@@ -211,6 +211,25 @@ struct TranslationPlannerDraftTests {
         #expect(driver.complete(a.id, "一二三", at: 0.8).isEmpty)
     }
 
+    @Test("每一句的第一個暫定譯文可以提早送（sentenceProvisionalFirstWords 個字就送）；之後照每多 3 個字、至少隔 1 秒")
+    func earlyFirstRequest() throws {
+        var driver = DraftDriver { $0.sentenceProvisionalFirstWords = 2 }
+        driver.pending("One", segment: 0, at: 0)
+        #expect(driver.draftRequests.isEmpty)
+        driver.pending("One two", segment: 0, at: 0.3)
+        let first = try #require(driver.draftRequests.first, "2 個字就送出這一句的第一個暫定譯文")
+        driver.complete(first.id, "一二", at: 0.8)
+        driver.pending("One two three four", segment: 0, at: 1.4)
+        #expect(driver.draftRequests.count == 1, "之後要多 3 個字")
+        driver.pending("One two three four five", segment: 0, at: 1.5)
+        #expect(driver.draftRequests.count == 2)
+
+        // 下一句的第一個也一樣提早
+        driver.finish(0, "One two three four five.", .sentenceEnd, at: 2)
+        driver.pending("Six seven", segment: 1, at: 2.5)
+        #expect(driver.draftRequests.last?.content.input.hasSuffix("這一句目前聽到的部分：\nSix seven") == true)
+    }
+
     @Test("沒有開暫定譯文時，整句的暫定譯文也不送")
     func respectsProvisionalSwitch() {
         var driver = DraftDriver { $0.provisional = false }

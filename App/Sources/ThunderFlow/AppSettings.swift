@@ -54,7 +54,8 @@ final class AppSettings {
         liveTextModel = defaults.string(forKey: "liveTextModel") ?? "gpt-6-luna"
         postTextModel = defaults.string(forKey: "postTextModel") ?? "gpt-6-luna"
         baseURL = defaults.string(forKey: "baseURL") ?? "https://api.openai.com/v1"
-        showsProvisional = defaults.object(forKey: "showsProvisional") as? Bool ?? true
+        // 預設不顯示暫定譯文：字一直變比晚一點出現更干擾閱讀（HANDOVER.md P10 的實驗）
+        showsProvisional = defaults.object(forKey: "showsProvisional") as? Bool ?? false
         autoSummary = defaults.object(forKey: "autoSummary") as? Bool ?? true
         keywords = defaults.string(forKey: "keywords") ?? ""
         fontSize = defaults.object(forKey: "fontSize") as? Double ?? 22
@@ -125,7 +126,8 @@ enum Format {
 
     /// 預估費用：轉錄每分鐘 0.017 美元，加上翻譯（實測每小時約 0.03–0.12 美元）。
     static func cost(audioSeconds: Double, provisional: Bool) -> String {
-        let dollars = audioSeconds / 60 * 0.017 + audioSeconds / 3_600 * (provisional ? 0.12 : 0.03)
+        // 轉錄每分鐘 0.017；翻譯每小時：各段的定稿約 0.03、整句定稿約 0.05，暫定譯文再加約 0.09（DESIGN.md 9.7 節）
+        let dollars = audioSeconds / 60 * 0.017 + audioSeconds / 3_600 * (provisional ? 0.17 : 0.08)
         return String(format: "約 $%.2f", dollars)
     }
 }

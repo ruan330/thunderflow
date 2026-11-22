@@ -219,6 +219,8 @@ final class AppModel {
         configuration.link.settings.prompt = Self.prompt(title: title, event: event, speaker: speaker)
         configuration.translation.model = settings.liveTextModel
         configuration.translation.provisional = settings.showsProvisional
+        // 一句說完就整句重翻，取代這一句各段的定稿（DESIGN.md 5.6.2 節）
+        configuration.translation.sentences = true
         configuration.translation.title = title
         configuration.translation.event = event
         configuration.translation.speaker = speaker

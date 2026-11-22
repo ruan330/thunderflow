@@ -339,7 +339,8 @@ struct CaptionsView: View {
                     CaptionZone(
                         style: CaptionZoneStyle(
                             title: "中文",
-                            options: CaptionZoneOptions(language: .chinese, showsProvisional: showsProvisional, showsFlags: true),
+                            options: CaptionZoneOptions(
+                                language: .chinese, showsProvisional: showsProvisional, showsFlags: true, hidesFinalPeriod: true),
                             fontSize: size, lineSpacing: size * 0.25)
                     )
                     .frame(minHeight: 120)

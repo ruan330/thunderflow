@@ -262,30 +262,31 @@ final class FloatingCaptions: NSObject, NSWindowDelegate {
     }
 }
 
-/// 浮動視窗的內容：最新的兩段中文（加上正在說的那一段的暫定譯文）與一行英文。
+/// 浮動視窗的內容：最新的兩段中文與一段英文，和主視窗的字幕區一樣（同一句合成一段、句尾不顯示「。」）。
 struct FloatingCaptionsView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         let board = model.captions.board
-        // 只複製最後兩行出來：一直拿著整份字幕的話，下一次更新時整份字幕都要複製一次（見 LiveCaptionModel.flush）
-        let recent = Array(board.lines.suffix(2))
         let mode = model.settings.displayMode
         let showsProvisional = model.settings.showsProvisional
+        // 只算最後幾段：一直拿著整份字幕的話，下一次更新時整份字幕都要複製一次（見 LiveCaptionModel.flush）
+        let chinese = CaptionZoneSync.lastParagraphs(
+            board: board, marked: [],
+            options: CaptionZoneOptions(language: .chinese, showsProvisional: showsProvisional, showsFlags: false, hidesFinalPeriod: true),
+            count: 2)
+        let english = CaptionZoneSync.lastParagraphs(
+            board: board, marked: [],
+            options: CaptionZoneOptions(language: .english, showsProvisional: showsProvisional, showsFlags: false), count: 1
+        ).first
         VStack(alignment: .leading, spacing: 6) {
             if mode != .english {
-                ForEach(recent) { line in
-                    let text = line.chinese.isEmpty ? (showsProvisional ? line.provisional : "") : line.chinese
-                    Text(text.isEmpty ? line.english : text)
-                        .foregroundStyle(line.chinese.isEmpty ? .secondary : .primary)
-                }
-                if showsProvisional, !board.liveChinese.isEmpty {
-                    Text(board.liveChinese).foregroundStyle(.secondary)
+                ForEach(Array(chinese.enumerated()), id: \.offset) { _, paragraph in
+                    Text(paragraph.text).foregroundStyle(paragraph.kind == .settled ? .primary : .secondary)
                 }
             }
-            if mode != .chinese {
-                let english = board.liveEnglish.isEmpty ? (board.lines.last?.english ?? "") : board.liveEnglish
-                Text(english.trimmingCharacters(in: .whitespaces))
+            if mode != .chinese, let english {
+                Text(english.text)
                     .font(.system(size: 17))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -440,34 +441,38 @@ enum SelfTest {
     /// 正在說的那一段（英文與它的暫定譯文）。顯示模式用啟動參數 `-displayMode chinese|english|bilingual` 指定：
     /// 啟動參數只影響這一次執行，不會改到使用者的設定。改動字幕區的外觀之後，用它比對改之前與改之後的圖。
     static func previewCaptions(_ model: AppModel, to prefix: String) {
-        func source(_ text: String, _ segment: Int, ended: Bool = true) -> CaptionEvent {
-            .source(CaptionText(text: text, kind: ended ? .segmentEnd : .delta, at: .zero, segment: segment))
-        }
-        func provisional(_ text: String, _ segment: Int) -> CaptionEvent {
-            .provisional(CaptionText(text: text, kind: .delta, at: .zero, segment: segment))
+        // 整句模式（DESIGN.md 5.6.2 節）：英文帶句子的編號，整句定稿涵蓋這一句的段
+        func source(_ text: String, _ segment: Int, sentence: Int, ended: Bool = true) -> CaptionEvent {
+            .source(CaptionText(text: text, kind: ended ? .segmentEnd : .delta, at: .zero, segment: segment, sentence: sentence))
         }
         func final(_ text: String, _ segment: Int) -> CaptionEvent {
             .translation(CaptionText(text: text, kind: .segmentEnd, at: .zero, segment: segment))
         }
+        func sentenceFinal(_ text: String, sentence: Int, first: Int, last: Int) -> CaptionEvent {
+            .translation(CaptionText(text: text, kind: .segmentEnd, at: .zero, segment: last, sentence: sentence, sentenceStart: first))
+        }
         let events: [CaptionEvent] = [
-            source("Today I want to talk about how we are making it easier to build production-ready agents.", 0),
-            final("今天我想談談，我們如何讓打造可上線的代理程式變得更容易。", 0),
-            source("Amazon Bedrock AgentCore gives you three core components: a runtime, a gateway, and memory.", 1),
-            final("Amazon Bedrock AgentCore 提供三個核心元件：執行環境、閘道與記憶。", 1),
-            source("Let me show you a quick demo.", 2),
-            source("Each agent runs in its own isolated session, so one customer's data never leaks into another's.", 3),
-            // 第 3 段的定稿先到：第 2 段就是沒翻到
-            final("每個代理程式都在自己獨立的工作階段裡執行，所以一位客戶的資料絕對不會流到另一位客戶那裡。", 3),
-            source("And you only pay for the compute you actually use.", 4),
-            provisional("而且你只需要為", 4),
-            source("That is the key point.", 5),
-            source(" With AgentCore Runtime, each session runs in its own isolated", 6, ended: false),
-            provisional("使用 AgentCore Runtime 時，每個工作階段……", 6),
+            source("Today I want to talk about", 0, sentence: 0),
+            final("今天我想談談", 0),
+            source("how we are making it easier to build production-ready agents.", 1, sentence: 0),
+            sentenceFinal("今天我想談談，我們如何讓打造可上線的代理程式變得更容易。", sentence: 0, first: 0, last: 1),
+            source("Amazon Bedrock AgentCore gives you three core components: a runtime, a gateway, and memory.", 2, sentence: 1),
+            sentenceFinal("Amazon Bedrock AgentCore 提供三個核心元件：執行環境、閘道與記憶。", sentence: 1, first: 2, last: 2),
+            source("Let me show you a quick demo.", 3, sentence: 2),
+            // 第 2 句沒有任何定稿：下一句的整句定稿到了，它就是沒翻到
+            source("Each agent runs in its own isolated session,", 4, sentence: 3),
+            final("每個代理程式都在自己獨立的工作階段裡執行，", 4),
+            source("so one customer's data never leaks into another's.", 5, sentence: 3),
+            sentenceFinal("每個代理程式都在自己獨立的工作階段裡執行，所以一位客戶的資料絕對不會流到另一位客戶那裡。", sentence: 3, first: 4, last: 5),
+            // 正在說的這一句：前一段的定稿先出（灰字），正在說的英文接在後面
+            source("And you only pay for", 6, sentence: 4),
+            final("而且你只需要支付", 6),
+            source(" the compute you actually use", 7, sentence: 4, ended: false),
         ]
         Task {
             for event in events { model.captions.receive(event) }
             model.captions.flush()
-            model.previewMarks([1, 4])
+            model.previewMarks([2, 5])
             try? await Task.sleep(for: .milliseconds(800))
             snapshot(to: prefix + ".png")
             print("selfTest: captions done")

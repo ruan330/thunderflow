@@ -32,7 +32,7 @@ default:
                                   [--chunk-ms 200] [--speed 1] [--loop-minutes N] [--hold-minutes N]
               把音檔串流到純轉錄的連線（gpt-live-transcribe），錄下所有事件與時間（會產生 API 費用）。
               加 --no-audio（可搭配 --session-json）只送設定、不送音訊，用來試哪些設定會被接受（免費）。
-          thunderbench live <音檔.wav> [--seconds N] [--keywords <一行一個的檔案>] [--title <標題>] [--no-provisional] [--delay low] [--quiet]
+          thunderbench live <音檔.wav> [--seconds N] [--keywords <一行一個的檔案>] [--title <標題>] [--no-provisional] [--sentences] [--sentence-provisional] [--provisional-words 3] [--provisional-interval 1] [--provisional-first-words 2] [--delay low] [--quiet]
                             [--sentences] [--events <事件.jsonl>]
               用正式的引擎（TranscribeTranslateEngine）以即時速度處理音檔，印出每個字幕事件與時間（會產生 API 費用）。
               --sentences 用整句模式（和 App 一樣）。--events 把每個事件（含英文的增量）寫成一行 JSON，給分析腳本用。

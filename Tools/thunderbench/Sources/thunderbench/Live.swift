@@ -6,7 +6,7 @@ import ThunderEngines
 ///
 /// 用來在接上麥克風與畫面之前，確認整個引擎（轉錄連線、停頓偵測、切段、翻譯）對真正的服務是通的。
 func live(_ arguments: Arguments) async throws {
-    guard arguments.positional.count >= 2 else { fail("用法：thunderbench live <音檔.wav> [--seconds N] [--events <事件.jsonl>]") }
+    guard arguments.positional.count >= 2 else { fail("用法：thunderbench live <音檔.wav> [--seconds N] [--events <事件.jsonl>] [--sentences] [--sentence-provisional]") }
     let audio = try WavAudio.read(URL(fileURLWithPath: arguments.positional[1]))
     guard audio.sampleRate == 24_000 else { fail("音檔必須是 24 kHz（目前 \(audio.sampleRate)）") }
     let seconds = min(arguments.double("seconds", default: audio.duration), audio.duration)
@@ -16,6 +16,13 @@ func live(_ arguments: Arguments) async throws {
     configuration.link.settings.delay = arguments.string("delay", default: "low")
     configuration.translation.provisional = !arguments.flags.contains("no-provisional")
     configuration.translation.sentences = arguments.flags.contains("sentences")
+    // 整句的暫定譯文（DESIGN.md 5.6.3 節）：和 App 相同的設定是 --sentences --sentence-provisional
+    configuration.translation.sentenceProvisional = arguments.flags.contains("sentence-provisional")
+    configuration.translation.provisionalWords = Int(arguments.double("provisional-words", default: 3))
+    configuration.translation.provisionalInterval = arguments.double("provisional-interval", default: 1)
+    if let first = arguments.options["provisional-first-words"].flatMap(Int.init) {
+        configuration.translation.sentenceProvisionalFirstWords = first
+    }
     if let path = arguments.options["keywords"] {
         let keywords = try String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8)
             .split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }

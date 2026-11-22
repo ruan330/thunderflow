@@ -71,11 +71,17 @@ public struct TranslationPlanner: Sendable {
     }
 
     private enum Purpose: Equatable {
-        case final(segment: Int)
+        case final(Job)
         case provisional(segment: Int)
     }
 
-    /// 一段的定稿。
+    /// 一個定稿的工作：一段的定稿，或一整句的定稿（整句模式）。
+    private enum Job: Equatable {
+        case segment(Int)
+        case sentence(Int)
+    }
+
+    /// 一段（或一整句）的定稿。
     private struct Final {
         var english: String
         var context: [String]
@@ -92,6 +98,36 @@ public struct TranslationPlanner: Sendable {
         var outcome: Outcome?
         /// 定稿已經送出過（或已經放棄）。之後如果重新翻譯，新的結果直接再送一次。
         var emitted = false
+        /// 整句模式、一段的定稿：這一段是第幾句的最後一段。它自己的定稿只留著當整句失敗時的備用，不送出。
+        var closes: Int?
+        /// 整句模式、一整句的定稿：涵蓋哪幾段、帶什麼前文。
+        var span: Span?
+    }
+
+    /// 一整句涵蓋的段與它的前文。
+    private struct Span {
+        var first: Int
+        var last: Int
+        var context: [Recent]
+        /// 這一句的最後一段還在佇列裡：整句定稿依段的順序在那個位置送出。
+        /// false（最後一段自己的定稿已經送出了）時，一有結果就直接送出。
+        var viaQueue: Bool
+    }
+
+    /// 最近說完的一句：英文，以及翻好之後的中文。下一句的請求帶它當前文。
+    private struct Recent {
+        var number: Int
+        var english: String
+        var chinese: String?
+    }
+
+    /// 正在說的那一句。
+    private struct OpenSentence {
+        var number = 0
+        var segments: [Int] = []
+        var words = 0.0
+        /// 最近一次有新的字（一段確定、補上標點，或進行中的那一段變長）的時間。
+        var lastActivityAt: TimeInterval?
     }
 
     /// 進行中的這一段（暫定譯文）。
@@ -120,33 +156,49 @@ public struct TranslationPlanner: Sendable {
     private var history: [(segment: Int, text: String)] = []
     private var live = Live()
 
+    // 整句模式
+    /// 每一句的定稿，依句子的編號。送出之後還留一陣子：晚到的尾巴可能要重翻。
+    private var sentenceFinals: [Int: Final] = [:]
+    private var open = OpenSentence()
+    /// 最近說完的幾句，給下一句當前文。
+    private var recent: [Recent] = []
+    /// 最近幾句的段：屬於第幾句、英文、自己的定稿（整句失敗時接起來當備用）。
+    private var segmentSentence: [Int: Int] = [:]
+    private var segmentEnglish: [Int: String] = [:]
+    private var segmentChinese: [Int: String] = [:]
+
     public init(configuration: Configuration = Configuration()) {
         self.configuration = configuration
     }
 
     /// 是否還有定稿在等結果。收尾時要等它變成 false。
     public var hasPendingFinals: Bool {
-        finals.values.contains { $0.outcome == nil }
+        finals.values.contains { $0.outcome == nil } || sentenceFinals.values.contains { $0.outcome == nil }
     }
 
     /// 下一個需要呼叫 `advance(to:)` 的時間；沒有就是 nil。
     public var nextDeadline: TimeInterval? {
         var deadlines: [TimeInterval] = []
-        for final in finals.values where final.outcome == nil {
+        for final in Array(finals.values) + Array(sentenceFinals.values) where final.outcome == nil {
             deadlines.append(final.startedAt + configuration.giveUpAfter)
             if !final.hedged, !final.gotOutput { deadlines.append(final.startedAt + configuration.hedgeAfter) }
         }
         if let inFlight = live.inFlight { deadlines.append(inFlight.startedAt + configuration.provisionalTimeout) }
+        if configuration.sentences, !open.segments.isEmpty, let activity = open.lastActivityAt {
+            deadlines.append(activity + configuration.sentenceIdle)
+        }
         return deadlines.min()
     }
 
     // MARK: 輸入
 
     /// 整句模式：正在說的那一句的編號，下一段英文屬於這一句。
-    public var openSentence: Int { 0 }
+    public var openSentence: Int { open.number }
 
     /// 整句模式：第 `segment` 段屬於第幾句。不是整句模式，或是很久以前的段時是 nil。
-    public func sentence(of segment: Int) -> Int? { nil }
+    public func sentence(of segment: Int) -> Int? {
+        configuration.sentences ? segmentSentence[segment] : nil
+    }
 
     /// 第 `segment` 段的英文確定了。`reason` 是切段的原因：整句模式用它判斷一句是不是說完了。
     public mutating func segmentFinished(_ segment: Int, text: String, reason: Segmenter.Reason? = nil, at now: TimeInterval)
@@ -161,42 +213,77 @@ public struct TranslationPlanner: Sendable {
         if history.count > configuration.contextSegments + 1 { history.removeFirst(history.count - configuration.contextSegments - 1) }
         finals[segment] = Final(english: text, context: context, startedAt: now)
         queue.append(segment)
-        effects += startAttempt(for: segment)
+        effects += startAttempt(for: .segment(segment))
+        guard configuration.sentences else { return effects }
+
+        segmentSentence[segment] = open.number
+        segmentEnglish[segment] = text
+        open.segments.append(segment)
+        open.words += Words.count(text)
+        open.lastActivityAt = now
+        // 一句在這一段結束：句號；講者停太久或收尾；或一句已經太長
+        let ends = reason == .sentenceEnd || reason == .idle || reason == .flush || TextFlow.endsSentence(text)
+            || open.words >= Double(configuration.sentenceWordLimit)
+        if ends { effects += closeSentence(at: now) }
         return effects
     }
 
     /// 第 `segment` 段（最近確定的那一段）補上了晚到的標點。段的定稿不用重翻；整句模式時，補上的如果是句號，這一句就在這一段結束。
     public mutating func segmentAmended(_ segment: Int, text: String, at now: TimeInterval) -> [Effect] {
-        advance(to: now)
+        var effects = advance(to: now)
+        guard configuration.sentences else { return effects }
+        if segmentEnglish[segment] != nil { segmentEnglish[segment] = text }
+        if open.segments.last == segment {
+            open.lastActivityAt = now
+            if TextFlow.endsSentence(text) { effects += closeSentence(at: now) }
+        }
+        return effects
     }
 
     /// 收尾（音訊結束或暫停）：整句模式時，正在說的那一句當成說完了。
     public mutating func flush(at now: TimeInterval) -> [Effect] {
-        advance(to: now)
+        var effects = advance(to: now)
+        if configuration.sentences { effects += closeSentence(at: now) }
+        return effects
     }
 
     /// 第 `segment` 段（最近確定的那一段）併入了晚到的尾巴，`text` 是併入之後整段的英文：重新翻譯。
+    /// 整句模式時，晚到的尾巴是一句的結尾：這一句在這一段結束；這一句已經結束的，整句重翻（已經送出的翻完再送一次）。
     public mutating func segmentExtended(_ segment: Int, text: String, at now: TimeInterval) -> [Effect] {
         var effects = advance(to: now)
         // 尾巴原本算在下一段，那一段現在重新開始
         effects += endProvisional()
         if let index = history.lastIndex(where: { $0.segment == segment }) { history[index].text = text }
-        guard var final = finals[segment] else {
+        if configuration.sentences, segmentEnglish[segment] != nil { segmentEnglish[segment] = text }
+        if var final = finals[segment] {
+            for request in final.inFlight.sorted() {
+                effects.append(.cancel(request: request))
+                requests[request] = nil
+            }
+            final = Final(english: text, context: final.context, startedAt: now, emitted: final.emitted, closes: final.closes)
+            finals[segment] = final
+            effects += startAttempt(for: .segment(segment))
+        } else if configuration.sentences, segmentSentence[segment] != nil {
+            // 這一段自己的定稿早就送出了：重翻的結果只留著當整句的備用
+            finals[segment] = Final(english: text, context: [], startedAt: now, emitted: true)
+            effects += startAttempt(for: .segment(segment))
+        } else {
             return effects + segmentFinished(segment, text: text, at: now)
         }
-        for request in final.inFlight.sorted() {
-            effects.append(.cancel(request: request))
-            requests[request] = nil
+        guard configuration.sentences else { return effects }
+        if let number = coveringSentence(segment) {
+            effects += retranslateSentence(number, at: now)
+        } else if open.segments.last == segment {
+            open.lastActivityAt = now
+            effects += closeSentence(at: now)
         }
-        final = Final(english: text, context: final.context, startedAt: now, emitted: final.emitted)
-        finals[segment] = final
-        effects += startAttempt(for: segment)
         return effects
     }
 
     /// 進行中的第 `segment` 段目前的英文（還沒確定）。每次文字變長就呼叫。
     public mutating func pendingText(_ text: String, segment: Int, at now: TimeInterval) -> [Effect] {
         var effects = advance(to: now)
+        if configuration.sentences { open.lastActivityAt = now }
         guard configuration.provisional else { return effects }
         if live.segment != segment {
             effects += endProvisional()
@@ -214,8 +301,8 @@ public struct TranslationPlanner: Sendable {
         let output = Self.cleaned(text)
         guard !output.isEmpty, let purpose = requests[request] else { return effects }
         switch purpose {
-        case .final(let segment):
-            finals[segment]?.gotOutput = true
+        case .final(let job):
+            self[job]?.gotOutput = true
         case .provisional(let segment):
             // 這一段的第一個暫定譯文邊收邊送；之後的版本等完整回來才取代，免得畫面上的字先縮短再變長
             if segment == live.segment, !live.shown, output != live.emitted {
@@ -232,12 +319,12 @@ public struct TranslationPlanner: Sendable {
         guard let purpose = requests.removeValue(forKey: request) else { return effects }
         let output = Self.cleaned(text)
         switch purpose {
-        case .final(let segment):
-            guard var final = finals[segment], final.outcome == nil else { break }
+        case .final(let job):
+            guard var final = self[job], final.outcome == nil else { break }
             final.inFlight.remove(request)
-            finals[segment] = final
+            self[job] = final
             if output.isEmpty {
-                effects += attemptEnded(for: segment, at: now)
+                effects += attemptEnded(for: job, at: now)
             } else if ChineseScript.containsSimplified(output), !final.strict {
                 // 出現簡體字：重試一次，這一次明確要求只用繁體字
                 for other in final.inFlight.sorted() {
@@ -247,10 +334,10 @@ public struct TranslationPlanner: Sendable {
                 final.inFlight = []
                 final.strict = true
                 final.fallback = output
-                finals[segment] = final
-                effects += startAttempt(for: segment)
+                self[job] = final
+                effects += startAttempt(for: job)
             } else {
-                effects += resolve(segment, .translated(output))
+                effects += resolve(job, .translated(output))
             }
         case .provisional(let segment):
             guard live.inFlight?.request == request else { break }
@@ -274,26 +361,33 @@ public struct TranslationPlanner: Sendable {
         var effects = advance(to: now)
         guard let purpose = requests.removeValue(forKey: request) else { return effects }
         switch purpose {
-        case .final(let segment):
-            finals[segment]?.inFlight.remove(request)
-            effects += attemptEnded(for: segment, at: now)
+        case .final(let job):
+            self[job]?.inFlight.remove(request)
+            effects += attemptEnded(for: job, at: now)
         case .provisional:
             if live.inFlight?.request == request { live.inFlight = nil }
         }
         return effects
     }
 
-    /// 時間前進到 `now`：處理到期的事（備援請求、放棄、暫定譯文逾時）。
+    /// 時間前進到 `now`：處理到期的事（備援請求、放棄、講者停下來的那一句、暫定譯文逾時）。
     public mutating func advance(to now: TimeInterval) -> [Effect] {
         var effects: [Effect] = []
-        for segment in finals.keys.sorted() {
-            guard let final = finals[segment], final.outcome == nil else { continue }
+        let jobs = finals.keys.sorted().map(Job.segment) + sentenceFinals.keys.sorted().map(Job.sentence)
+        for job in jobs {
+            guard let final = self[job], final.outcome == nil else { continue }
             if now >= final.startedAt + configuration.giveUpAfter {
-                effects += resolve(segment, final.fallback.map { .translated($0) } ?? .failed)
+                effects += resolve(job, final.fallback.map { .translated($0) } ?? .failed)
             } else if !final.hedged, !final.gotOutput, now >= final.startedAt + configuration.hedgeAfter {
-                finals[segment]?.hedged = true
-                if final.attempts < configuration.maximumAttempts { effects += startAttempt(for: segment) }
+                self[job]?.hedged = true
+                if final.attempts < configuration.maximumAttempts { effects += startAttempt(for: job) }
             }
+        }
+        if configuration.sentences, !open.segments.isEmpty, let activity = open.lastActivityAt,
+            now >= activity + configuration.sentenceIdle
+        {
+            // 講者停下來了：正在說的那一句當成說完了
+            effects += closeSentence(at: now)
         }
         if let inFlight = live.inFlight, now >= inFlight.startedAt + configuration.provisionalTimeout {
             effects.append(.cancel(request: inFlight.request))
@@ -306,28 +400,48 @@ public struct TranslationPlanner: Sendable {
 
     // MARK: 定稿
 
-    private mutating func startAttempt(for segment: Int) -> [Effect] {
-        guard var final = finals[segment] else { return [] }
+    private subscript(job: Job) -> Final? {
+        get {
+            switch job {
+            case .segment(let segment): finals[segment]
+            case .sentence(let number): sentenceFinals[number]
+            }
+        }
+        set {
+            switch job {
+            case .segment(let segment): finals[segment] = newValue
+            case .sentence(let number): sentenceFinals[number] = newValue
+            }
+        }
+    }
+
+    private mutating func startAttempt(for job: Job) -> [Effect] {
+        guard var final = self[job] else { return [] }
         let request = nextRequest
         nextRequest += 1
         final.inFlight.insert(request)
         final.attempts += 1
-        finals[segment] = final
-        requests[request] = .final(segment: segment)
-        return [.start(request: request, makeRequest(text: final.english, context: final.context, isFinal: true, strict: final.strict))]
+        self[job] = final
+        requests[request] = .final(job)
+        let content =
+            switch job {
+            case .segment: makeRequest(text: final.english, context: final.context, isFinal: true, strict: final.strict)
+            case .sentence: makeSentenceRequest(english: final.english, context: currentContext(final.span), strict: final.strict)
+            }
+        return [.start(request: request, content)]
     }
 
     /// 一個請求沒有結果（失敗或輸出是空的）：還有別的請求在跑就等它；否則在期限內重試，不然就放棄。
-    private mutating func attemptEnded(for segment: Int, at now: TimeInterval) -> [Effect] {
-        guard let final = finals[segment], final.outcome == nil, final.inFlight.isEmpty else { return [] }
+    private mutating func attemptEnded(for job: Job, at now: TimeInterval) -> [Effect] {
+        guard let final = self[job], final.outcome == nil, final.inFlight.isEmpty else { return [] }
         if final.attempts < configuration.maximumAttempts, now < final.startedAt + configuration.giveUpAfter {
-            return startAttempt(for: segment)
+            return startAttempt(for: job)
         }
-        return resolve(segment, final.fallback.map { .translated($0) } ?? .failed)
+        return resolve(job, final.fallback.map { .translated($0) } ?? .failed)
     }
 
-    private mutating func resolve(_ segment: Int, _ outcome: Outcome) -> [Effect] {
-        guard var final = finals[segment] else { return [] }
+    private mutating func resolve(_ job: Job, _ outcome: Outcome) -> [Effect] {
+        guard var final = self[job] else { return [] }
         var effects: [Effect] = []
         for request in final.inFlight.sorted() {
             effects.append(.cancel(request: request))
@@ -336,25 +450,161 @@ public struct TranslationPlanner: Sendable {
         final.inFlight = []
         final.outcome = outcome
         let reissue = final.emitted
-        finals[segment] = final
-        if reissue {
-            // 重新翻譯的結果：這一段已經輪過了，直接再送一次
-            if case .translated(let text) = outcome { effects.append(.translation(segment: segment, text: text)) }
-        } else {
-            effects += flushQueue()
+        self[job] = final
+        switch job {
+        case .segment(let segment):
+            if configuration.sentences, case .translated(let text) = outcome { segmentChinese[segment] = text }
+            if reissue {
+                // 重新翻譯的結果：這一段已經輪過了，直接再送一次（被一整句涵蓋的段不送：整句定稿會重送）
+                if case .translated(let text) = outcome, coveringSentence(segment) == nil {
+                    effects.append(.translation(segment: segment, text: text))
+                }
+            } else {
+                effects += flushQueue()
+            }
+        case .sentence(let number):
+            if case .translated(let text) = outcome, let index = recent.lastIndex(where: { $0.number == number }) {
+                recent[index].chinese = text
+            }
+            if reissue || final.span?.viaQueue == false {
+                effects += emitSentence(number, replacing: reissue)
+            } else {
+                effects += flushQueue()
+            }
         }
         return effects
     }
 
     /// 依順序送出已經有結果的定稿，遇到還在等的就停。
+    ///
+    /// 整句模式：一句已經有結果時，整句定稿取代這一句還在佇列裡的段；
+    /// 還沒有結果時，這一句前面的段照常送出自己的定稿，最後一段等整句定稿。
     private mutating func flushQueue() -> [Effect] {
         var effects: [Effect] = []
-        while let segment = queue.first, let final = finals[segment], let outcome = final.outcome {
+        while let segment = queue.first, let final = finals[segment] {
+            if let number = coveringSentence(segment), let sentence = sentenceFinals[number], let span = sentence.span,
+                span.viaQueue, let outcome = sentence.outcome
+            {
+                // 整句失敗時要用各段自己的定稿接起來：等它們都有結果
+                if outcome == .failed, queue.prefix(while: { $0 <= span.last }).contains(where: { finals[$0]?.outcome == nil }) {
+                    break
+                }
+                effects += emitSentence(number, replacing: false)
+                while let first = queue.first, first <= span.last {
+                    finals[first]?.emitted = true
+                    queue.removeFirst()
+                }
+                continue
+            }
+            // 一句的最後一段：等整句定稿
+            if final.closes != nil { break }
+            guard let outcome = final.outcome else { break }
             if case .translated(let text) = outcome { effects.append(.translation(segment: segment, text: text)) }
             finals[segment]?.emitted = true
             queue.removeFirst()
         }
         return effects
+    }
+
+    // MARK: 整句
+
+    /// 正在說的那一句說完了：送出整句的請求，下一段開始新的一句。沒有正在說的句子時什麼都不做。
+    private mutating func closeSentence(at now: TimeInterval) -> [Effect] {
+        guard let first = open.segments.first, let last = open.segments.last else { return [] }
+        let number = open.number
+        let english = open.segments.compactMap { segmentEnglish[$0] }.joined(separator: " ")
+        let context = Array(recent.suffix(configuration.sentenceContext))
+        recent.append(Recent(number: number, english: english))
+        if recent.count > configuration.sentenceContext { recent.removeFirst(recent.count - configuration.sentenceContext) }
+        // 最後一段自己的定稿還沒送出：只留著備用，整句定稿依段的順序在它的位置送出
+        let viaQueue = finals[last].map { !$0.emitted } ?? false
+        if viaQueue { finals[last]?.closes = number }
+        sentenceFinals[number] = Final(
+            english: english, context: [], startedAt: now,
+            span: Span(first: first, last: last, context: context, viaQueue: viaQueue))
+        open = OpenSentence(number: number + 1)
+        forgetOldSentences()
+        return startAttempt(for: .sentence(number))
+    }
+
+    /// 已經結束的第 `number` 句又有變動（併入晚到的尾巴）：用新的英文重翻整句。已經送出的，翻完再送一次。
+    private mutating func retranslateSentence(_ number: Int, at now: TimeInterval) -> [Effect] {
+        guard let final = sentenceFinals[number], let span = final.span else { return [] }
+        var effects: [Effect] = []
+        for request in final.inFlight.sorted() {
+            effects.append(.cancel(request: request))
+            requests[request] = nil
+        }
+        let english = (span.first...span.last).compactMap { segmentEnglish[$0] }.joined(separator: " ")
+        sentenceFinals[number] = Final(english: english, context: [], startedAt: now, emitted: final.emitted, span: span)
+        return effects + startAttempt(for: .sentence(number))
+    }
+
+    /// 送出第 `number` 句的整句定稿。整句失敗時改用各段自己的定稿接起來；
+    /// 重新翻譯（`replacing`）失敗時什麼都不送，畫面上原本的整句定稿比各段接起來的好。
+    private mutating func emitSentence(_ number: Int, replacing: Bool) -> [Effect] {
+        guard let final = sentenceFinals[number], let span = final.span, let outcome = final.outcome else { return [] }
+        var effects: [Effect] = []
+        switch outcome {
+        case .translated(let text):
+            effects += supersedeSegments(span)
+            effects.append(.sentence(number: number, first: span.first, last: span.last, text: text))
+        case .failed:
+            let backup = TextFlow.join((span.first...span.last).compactMap { segmentChinese[$0] })
+            if !replacing, !backup.isEmpty {
+                effects.append(.sentence(number: number, first: span.first, last: span.last, text: backup))
+            }
+        }
+        sentenceFinals[number]?.emitted = true
+        return effects
+    }
+
+    /// 整句定稿到了：這一句各段還沒回來的請求不用再等。
+    private mutating func supersedeSegments(_ span: Span) -> [Effect] {
+        var effects: [Effect] = []
+        for segment in span.first...span.last {
+            guard var final = finals[segment] else { continue }
+            for request in final.inFlight.sorted() {
+                effects.append(.cancel(request: request))
+                requests[request] = nil
+            }
+            final.inFlight = []
+            if final.outcome == nil { final.outcome = .failed }
+            final.emitted = true
+            finals[segment] = final
+        }
+        return effects
+    }
+
+    /// 第 `segment` 段屬於一句已經結束的句子時，那一句的編號。
+    private func coveringSentence(_ segment: Int) -> Int? {
+        guard configuration.sentences, let number = segmentSentence[segment], number < open.number,
+            sentenceFinals[number] != nil
+        else { return nil }
+        return number
+    }
+
+    /// 整句的請求帶的前文：說完的時候記下的那幾句，中文用目前已經翻好的。
+    private func currentContext(_ span: Span?) -> [Recent] {
+        (span?.context ?? []).map { item in
+            var item = item
+            if let latest = recent.last(where: { $0.number == item.number })?.chinese { item.chinese = latest }
+            return item
+        }
+    }
+
+    /// 很久以前、已經送出的句子不會再變動：只留最近幾句的紀錄（晚到的尾巴只會併進最近的一段）。
+    private mutating func forgetOldSentences() {
+        let keep = open.number - 3
+        for (number, final) in sentenceFinals where number < keep && final.emitted && final.outcome != nil {
+            sentenceFinals[number] = nil
+        }
+        let oldest = sentenceFinals.keys.min() ?? open.number
+        for (segment, number) in segmentSentence where number < oldest {
+            segmentSentence[segment] = nil
+            segmentEnglish[segment] = nil
+            segmentChinese[segment] = nil
+        }
     }
 
     // MARK: 暫定譯文
@@ -401,27 +651,47 @@ public struct TranslationPlanner: Sendable {
             reasoningEffort: "none")
     }
 
-    private func instructions(isFinal: Bool, strict: Bool) -> String {
+    /// 整句的請求：前文是最近幾句的英文與已經翻好的中文，最後是這一句的英文。
+    private func makeSentenceRequest(english: String, context: [Recent], strict: Bool) -> TextRequest {
+        var parts: [String] = []
+        if !context.isEmpty {
+            let lines = context.map { item in item.chinese.map { "英：\(item.english)\n中：\($0)" } ?? "英：\(item.english)" }
+            parts.append("前文（只供參考，不要翻譯）：\n" + lines.joined(separator: "\n"))
+        }
+        parts.append("這一句：\n" + english)
+        return TextRequest(
+            model: configuration.model,
+            instructions: sentenceInstructions(strict: strict),
+            input: parts.joined(separator: "\n\n"),
+            maxOutputTokens: 400,
+            reasoningEffort: "none")
+    }
+
+    /// 整句的提示：譯成通順的中文、去掉口語的贅字、和前文的中文接得上（HANDOVER.md P10 的實驗）。
+    private func sentenceInstructions(strict: Bool) -> String {
+        var lines = [
+            "你是演講、課程與會議的即時字幕譯者。把使用者給的「這一句」英文翻成台灣繁體中文，供現場觀眾閱讀。",
+            "規則：",
+            "1. 譯成通順、自然的中文句子：依中文的語序重新組織，不要照英文的順序逐字翻。",
+            "2. 這是現場的口語：去掉 uh、um、you know、I mean，以及當口頭禪用的 right、like、so，還有重複的字和說到一半改口的部分，只留下講者要表達的意思。",
+            "3. 「前文」是剛才的英文和已經顯示給觀眾的中文：用語與稱呼要和前文的中文一致，接得上前文，但不要重複前文已經翻過的內容。",
+            "4. " + Self.taiwanTerms,
+            "5. " + Self.keepNames,
+            "6. " + Self.subtitleStyle,
+            "7. 只輸出這一句的譯文，不要加任何說明。",
+        ]
+        if strict { lines.append("8. 只能使用繁體字，不可以出現任何簡體字。") }
+        return (lines + sessionLines()).joined(separator: "\n")
+    }
+
+    private static let taiwanTerms = "使用台灣的用語與技術詞彙（例如：推論、伺服器、資料、軟體、預設、端點、可用區域、無伺服器、記憶體、權杖或 token）。"
+    private static let keepNames =
+        "產品名稱與專有名詞保留英文原文，不要翻譯也不要拆開（例如 Amazon Bedrock、AgentCore、Graviton5、microVM、S3 Vectors、CloudWatch）。"
+    private static let subtitleStyle = "數字用阿拉伯數字。語氣自然、精簡，像字幕。"
+
+    /// 場次資訊與關鍵詞（段的請求與整句的請求都帶）。
+    private func sessionLines() -> [String] {
         var lines: [String] = []
-        if isFinal {
-            lines.append("你是演講、課程與會議的即時字幕譯者。把使用者給的「這一段」英文翻成台灣繁體中文，供現場觀眾閱讀。")
-        } else {
-            lines.append("你是演講、課程與會議的即時字幕譯者。講者還沒說完，使用者給的是「目前聽到的部分」。把它翻成台灣繁體中文，供現場觀眾先看。")
-        }
-        lines.append("規則：")
-        lines.append("1. 使用台灣的用語與技術詞彙（例如：推論、伺服器、資料、軟體、預設、端點、可用區域、無伺服器、記憶體、權杖或 token）。")
-        lines.append("2. 產品名稱與專有名詞保留英文原文，不要翻譯也不要拆開（例如 Amazon Bedrock、AgentCore、Graviton5、microVM、S3 Vectors、CloudWatch）。")
-        lines.append("3. 數字用阿拉伯數字。語氣自然、精簡，像字幕。")
-        if isFinal {
-            lines.append("4. 這一段可能只是半句話：照聽到的內容翻譯，不要自行補完，也不要重複前文。")
-            lines.append("5. 只輸出這一段的譯文，不要加任何說明。")
-        } else {
-            lines.append("4. 只翻譯已經聽到的內容，不要猜測或補完後面還沒說的部分，結尾不要加句號。")
-            lines.append("5. 只輸出譯文，不要重複前文，不要加任何說明。")
-        }
-        if strict {
-            lines.append("6. 只能使用繁體字，不可以出現任何簡體字。")
-        }
         var info: [String] = []
         if !configuration.title.isEmpty { info.append("標題：\(configuration.title)") }
         if !configuration.event.isEmpty { info.append("活動：\(configuration.event)") }
@@ -432,7 +702,31 @@ public struct TranslationPlanner: Sendable {
             // 提示不宜無限長：最多帶 200 個
             lines.append("以下名稱出現時保留英文原文：" + keywords.prefix(200).joined(separator: "、"))
         }
-        return lines.joined(separator: "\n")
+        return lines
+    }
+
+    private func instructions(isFinal: Bool, strict: Bool) -> String {
+        var lines: [String] = []
+        if isFinal {
+            lines.append("你是演講、課程與會議的即時字幕譯者。把使用者給的「這一段」英文翻成台灣繁體中文，供現場觀眾閱讀。")
+        } else {
+            lines.append("你是演講、課程與會議的即時字幕譯者。講者還沒說完，使用者給的是「目前聽到的部分」。把它翻成台灣繁體中文，供現場觀眾先看。")
+        }
+        lines.append("規則：")
+        lines.append("1. " + Self.taiwanTerms)
+        lines.append("2. " + Self.keepNames)
+        lines.append("3. " + Self.subtitleStyle)
+        if isFinal {
+            lines.append("4. 這一段可能只是半句話：照聽到的內容翻譯，不要自行補完，也不要重複前文。")
+            lines.append("5. 只輸出這一段的譯文，不要加任何說明。")
+        } else {
+            lines.append("4. 只翻譯已經聽到的內容，不要猜測或補完後面還沒說的部分，結尾不要加句號。")
+            lines.append("5. 只輸出譯文，不要重複前文，不要加任何說明。")
+        }
+        if strict {
+            lines.append("6. 只能使用繁體字，不可以出現任何簡體字。")
+        }
+        return (lines + sessionLines()).joined(separator: "\n")
     }
 
     /// 去掉頭尾的空白與換行。

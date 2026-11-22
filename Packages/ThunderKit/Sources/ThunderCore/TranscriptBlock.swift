@@ -315,19 +315,7 @@ extension TranscriptBlocks {
         }
     }
 
-    private static let sentenceTerminators: Set<Character> = [".", "?", "!", "。", "？", "！"]
-    /// 跟在句尾標點後面、仍然屬於同一句的引號與括號。
-    private static let sentenceClosers: Set<Character> = [
-        "\"", "'", "”", "’", ")", "]", "}", "」", "』", "）", "】", "》",
-    ]
-
-    private static func endsSentence(_ text: String) -> Bool {
-        var remaining = Substring(text)
-        while let last = remaining.last, sentenceClosers.contains(last) || last.isWhitespace {
-            remaining.removeLast()
-        }
-        return remaining.last.map(sentenceTerminators.contains) ?? false
-    }
+    private static func endsSentence(_ text: String) -> Bool { TextFlow.endsSentence(text) }
 }
 
 /// 把一個段落排成 `blocks.jsonl` 的一行（含結尾的換行）。

@@ -539,7 +539,8 @@ RingBuffer：
 - **系統音訊的輸出裝置改變時**（接上或拔掉耳機、AirPods 連上或斷開）：用新的預設輸出裝置重新建立擷取，接著錄同一場，在日誌記下中斷，並顯示提示。
 - **權限**：Info.plist 中設定 `NSMicrophoneUsageDescription` 與 `NSAudioCaptureUsageDescription`。
   - 系統音訊還沒有授權時（第一次使用，或開發版重新打包之後），開始收音會**立刻失敗**（Core Audio 錯誤 268451843），同時 macOS 跳出授權視窗，不等使用者回答。這時再開始一次，會等到使用者回答才回來。App 顯示的說明請使用者按「允許」再按一次開始（`AudioCaptureError.systemAudioNotStarted`）。首次啟動引導（4.2 節）做好之後，授權會在第一次錄音之前完成。
-- **取樣率變更**：監聽裝置的取樣率。一旦變更，就結束目前分段，以新的取樣率開新分段。
+- **取樣率變更**：錄音中途換了裝置、取樣率不同時，在 Pump 的執行緒上轉成這一場開始時的取樣率（`SampleRateConverter`），錄音檔、音訊時間與送給引擎的音訊都不變（原本設計以新的取樣率開新分段，但不同取樣率的分段會讓合併錄音與音訊時間出錯）。
+- **實作**（2026-11-22，還沒有實機試過）：`LiveRecording.suspendCapture()`／`resumeCapture(reason:since:)` 用同一個來源重新開始收音（麥克風改用系統預設的，系統音訊用新的預設輸出），記下中斷、開新分段。要不要重新開始由 `CaptureWatch` 判斷：麥克風不在裝置清單裡（`deviceLost`）、系統音訊的預設輸出換了（`outputChanged`）、3 秒沒有 callback（`captureStalled`，只自動重新開始一次，再停住就顯示提示）。睡眠由 `NSWorkspace` 的 `willSleep`／`didWake` 通知處理。重新開始失敗時顯示提示，下一次裝置變化時再試。目前只有橫幅，還沒有系統通知（要先決定什麼時候取得通知的權限）；逐字稿還沒有標示中斷。
 - **防止睡眠**：錄音中呼叫 `ProcessInfo.beginActivity(.idleSystemSleepDisabled)`。不過闔上螢幕仍然會睡眠，所以：
   - 收到 `willSleep` 時，先把目前的 CAF 分段寫完。
   - 喚醒後，不論睡了多久，都自動開新分段、重新連線引擎，接著錄同一場。睡眠的時間不補靜音（那段時間硬體沒有在收音），在日誌記下中斷與睡了多久，逐字稿在中斷處標示。
@@ -918,6 +919,7 @@ v0.2 的首選是 `gpt-realtime-translate`：引擎自己斷句、自己翻譯�
 {"k":"src","t":14,"x":"so each session stays isolated.","end":true,"seg":5,"sen":2}   整句模式：英文帶句子的編號
 {"k":"tr","t":15,"x":"所以每個工作階段都彼此隔離。","end":true,"seg":5,"sen":2,"first":4}   整句定稿：第 2 句（第 4–5 段）
 {"k":"gap","from":30,"to":42.5,"why":"network"}       沒有字幕的音訊（network／backpressure／engineStopped）
+{"k":"gap","from":120,"to":120,"why":"sleep","lost":845.25}  錄音中斷：長度 0 的缺口，why 是 sleep／deviceLost／outputChanged／captureStalled，lost 是沒有錄到的實際秒數（只增不改，schemaVersion 維持 1；舊的讀取端把 why 當成 unknown）
 {"k":"mark","t":95}                              重點標記
 {"k":"pause","t":120}                            暫停
 {"k":"resume","t":120}                           繼續

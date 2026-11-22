@@ -30,10 +30,10 @@ public enum FloatingCaptionsStyle {
         return min(max(stored, opacityRange.lowerBound), opacityRange.upperBound)
     }
 
-    /// 打開字幕視窗時的高度（點）。
+    /// 打開字幕視窗時的高度（點）：中文 26 點時 170（兩段中文與一段英文），照比例跟著字級變，
+    /// 字大了不會被擠成一行、後面變成「…」。之後使用者可以自己調整視窗的大小。
     public static func initialHeight(chineseFontSize: Double) -> Double {
-        // 暫時照目前的做法（固定 170），測試會指出問題；實作時改掉
-        170
+        (170 * chineseFontSize / 26).rounded()
     }
 
     /// 浮動視窗的字級：跟著字幕的字級（設定頁與即時翻譯頁的「顯示」），取整數點。

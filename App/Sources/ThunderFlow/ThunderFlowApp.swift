@@ -353,9 +353,13 @@ final class FloatingCaptions: NSObject, NSWindowDelegate {
             panel.close()
             return
         }
+        // 高度跟著字級：兩段中文與一段英文放得下（規則在 ThunderUI，有測試）
+        let sizes = FloatingCaptionsStyle.fontSizes(
+            captionFontSize: model.settings.fontSize, englishOnly: model.settings.displayMode == .english)
+        let height = FloatingCaptionsStyle.initialHeight(chineseFontSize: sizes.chinese)
         // 背景由內容自己畫（不透明度可以調，只有背景跟著變、字不會變淡）：視窗本身與標題列都是透明的
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 900, height: 170),
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: height),
             styleMask: [.nonactivatingPanel, .titled, .resizable, .closable, .fullSizeContentView],
             backing: .buffered, defer: false)
         panel.title = "ThunderFlow 字幕"

@@ -16,12 +16,21 @@ public struct CaptionText: Sendable, Equatable {
     /// 段號：一段英文和它的中文（定稿與暫定譯文）用同一個號碼，從 0 開始、只增不減。
     /// 不分段的引擎，以及加入段號之前寫下的日誌，這個值是 nil。
     public var segment: Int?
+    /// 句子的編號（整句模式，DESIGN.md 5.6.2 節）：從 0 開始、只增不減，一句可能包含好幾段。
+    /// 英文（增量與確定）帶的是這一段屬於第幾句，給畫面把同一句的段合成一個段落；整句定稿帶的是它翻的那一句。
+    /// 不是整句模式時是 nil。
+    public var sentence: Int?
+    /// 只用在中文定稿：不是 nil 時，這是一整句的定稿，涵蓋第 `sentenceStart` 段到第 `segment` 段（這一句的最後一段），
+    /// 取代這幾段各自的定稿。nil 表示只是一段的定稿。
+    public var sentenceStart: Int?
 
-    public init(text: String, kind: TextKind, at: AudioTime, segment: Int? = nil) {
+    public init(text: String, kind: TextKind, at: AudioTime, segment: Int? = nil, sentence: Int? = nil, sentenceStart: Int? = nil) {
         self.text = text
         self.kind = kind
         self.at = at
         self.segment = segment
+        self.sentence = sentence
+        self.sentenceStart = sentenceStart
     }
 }
 

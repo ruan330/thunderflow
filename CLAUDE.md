@@ -50,7 +50,7 @@ App 有隱藏的自我檢查：用音檔跑完一整場並把畫面存成圖檔�
 S=<暫存資料夾>; mkdir -p $S; mkfifo -m 600 $S/key
 security find-generic-password -a "$USER" -s thunderflow-openai-dev -w > $S/key &
 open -W -n -g -j build/ThunderFlow.app --stdin $S/key --stdout $S/out --args -ApplePersistenceIgnoreState YES -apiKeyFromStdin YES \
-  -selfTestFile Benchmarks/data/keynote.wav -selfTestSeconds 30 -selfTestSnapshot $S/shot -selfTestQuit YES \
+  -selfTestFile "$PWD/Benchmarks/data/keynote.wav" -selfTestSeconds 30 -selfTestSnapshot $S/shot -selfTestQuit YES \
   -workingPath $S/working -libraryPath $S/lib
 ```
 

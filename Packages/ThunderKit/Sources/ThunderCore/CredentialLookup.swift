@@ -48,3 +48,32 @@ extension CredentialLookup: CustomStringConvertible, CustomDebugStringConvertibl
 
     public var debugDescription: String { description }
 }
+
+/// 讀過一次的 API Key 留在記憶體裡（Key 仍然只存在鑰匙圈，不寫進任何檔案，DESIGN.md 第 6 節）。
+///
+/// 按下開始時不必每次都讀鑰匙圈：讀的時間算在「按下開始到開始收音」裡，ad-hoc 簽章的版本每次重新編譯之後
+/// 第一次讀還會跳出授權視窗。設定頁存入或刪除 Key 時 `invalidate()`，下次重新讀。
+public struct CredentialCache: Sendable {
+    /// 開始讀鑰匙圈之前拿的號碼牌：讀完連同結果交給 `remember`，讀的途中作廢過就不記。
+    public struct Ticket: Sendable, Equatable {
+        fileprivate let generation: Int
+    }
+
+    private var stored: String?
+    private var generation = 0
+
+    public init() {}
+
+    /// 記住的 Key；還沒讀過或已經作廢時是 nil。
+    public var key: String? { stored }
+
+    public var ticket: Ticket { Ticket(generation: generation) }
+
+    /// 記住讀到的 Key。
+    public mutating func remember(_ lookup: CredentialLookup, ticket: Ticket) {
+        if case .found(let key) = lookup { stored = key }
+    }
+
+    /// 設定頁存入或刪除了 Key：忘掉記住的值。
+    public mutating func invalidate() {}
+}

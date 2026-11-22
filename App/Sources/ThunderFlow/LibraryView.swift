@@ -51,8 +51,12 @@ struct LibraryView: View {
                             item: item, progress: model.processing[item.id], failed: model.finalizationFailures[item.id] != nil)
                             .tag(item.id)
                             .contextMenu {
-                                // 處理中不能刪除、不能重新產生摘要（判斷在 ThunderUI，有測試）
-                                let actions = SessionActions(progress: model.processing[item.id])
+                                // 處理中不能刪除、不能重新產生摘要；處理失敗的可以重試（判斷在 ThunderUI，有測試）
+                                let actions = model.actions(for: item)
+                                if actions.showsRetry {
+                                    Button("重試") { model.retryFinalization(item) }
+                                        .disabled(!actions.canRetry)
+                                }
                                 Button("在 Finder 中顯示") { NSWorkspace.shared.activateFileViewerSelecting([item.directory.url]) }
                                 Button("重新產生摘要") { model.regenerateSummary(item) }
                                     .disabled(!actions.canRegenerateSummary)
@@ -180,8 +184,8 @@ struct SessionDetailView: View {
         player.load(directory.recordingURL)
     }
 
-    /// 處理中不能刪除、不能重新產生摘要（判斷在 ThunderUI，有測試）。
-    private var actions: SessionActions { SessionActions(progress: model.processing[item.id]) }
+    /// 處理中不能刪除、不能重新產生摘要；處理失敗的可以重試（判斷在 ThunderUI，有測試）。
+    private var actions: SessionActions { model.actions(for: item) }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -190,6 +194,11 @@ struct SessionDetailView: View {
                 Spacer()
                 Button("在 Finder 中顯示") { NSWorkspace.shared.activateFileViewerSelecting([item.directory.url]) }
                 Menu {
+                    if actions.showsRetry {
+                        Button("重試") { model.retryFinalization(item) }
+                            .disabled(!actions.canRetry)
+                        Divider()
+                    }
                     Button("重新產生摘要") { model.regenerateSummary(item) }
                         .disabled(!actions.canRegenerateSummary)
                     Button("複製全文（雙語）") {
@@ -212,11 +221,17 @@ struct SessionDetailView: View {
             if let progress = model.processing[item.id] {
                 Label(progress, systemImage: "hourglass").font(.callout).foregroundStyle(.secondary)
             } else if let failure = model.finalizationFailures[item.id] {
-                Label(
-                    "結束處理沒有完成：\(failure)。錄音還在這一場的資料夾裡（在 Finder 中顯示），下次開啟 App 時會再試一次。",
-                    systemImage: "exclamationmark.triangle"
-                )
-                .font(.callout).foregroundStyle(.orange)
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Label(
+                        "結束處理沒有完成：\(failure)。錄音還在這一場的資料夾裡（在 Finder 中顯示）；可以重試，下次開啟 App 時也會再試一次。",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .foregroundStyle(.orange)
+                    Button("重試") { model.retryFinalization(item) }
+                        .disabled(!actions.canRetry)
+                        .fixedSize()
+                }
+                .font(.callout)
             }
         }
         .padding(.horizontal, 20)

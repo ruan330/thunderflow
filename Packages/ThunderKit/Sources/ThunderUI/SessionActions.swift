@@ -4,9 +4,9 @@ public struct SessionActions: Sendable, Equatable {
     public let canDelete: Bool
     /// 能不能重新產生摘要。處理中不行：同一場同時只能有一個處理（`SessionLock`），按下去只會失敗。
     public let canRegenerateSummary: Bool
-    /// 要不要顯示「重試」。
+    /// 要不要顯示「重試」（再做一次結束處理）：只有結束處理失敗的場次才有。
     public let showsRetry: Bool
-    /// 「重試」能不能按。
+    /// 「重試」能不能按：失敗而且現在沒有在處理。重試中不能再按，同一場不會同時跑兩個結束處理。
     public let canRetry: Bool
 
     /// - Parameters:
@@ -16,8 +16,7 @@ public struct SessionActions: Sendable, Equatable {
         let idle = progress == nil
         canDelete = idle
         canRegenerateSummary = idle
-        // 暫時照目前的做法（沒有重試），測試會指出問題；實作時改掉
-        showsRetry = false
-        canRetry = false
+        showsRetry = failed
+        canRetry = failed && idle
     }
 }

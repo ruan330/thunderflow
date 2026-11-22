@@ -729,7 +729,7 @@ final class AppModel {
                 // 失敗的場次留在工作目錄：清單上標「處理失敗」，詳細頁說明原因
                 self.finalizationFailures[id] = failure
                 if let failure, !resumed {
-                    self.banner = "這一場的結束處理沒有完成：\(failure)。錄音還在，下次開啟 App 時會再試一次。"
+                    self.banner = "這一場的結束處理沒有完成：\(failure)。錄音還在：可以在「過去錄音」裡按「重試」，下次開啟 App 時也會再試一次。"
                 }
                 self.reloadLibrary()
             }
@@ -787,6 +787,18 @@ final class AppModel {
         guard SessionActions(progress: processing[item.id]).canRegenerateSummary else { return }
         processing[item.id] = "產生摘要中"
         Task { await runRegeneration(item) }
+    }
+
+    /// 這一場能做哪些操作（判斷在 ThunderUI，有測試）。
+    func actions(for item: SessionLibrary.Item) -> SessionActions {
+        SessionActions(progress: processing[item.id], failed: finalizationFailures[item.id] != nil)
+    }
+
+    /// 「重試」：結束處理失敗的場次再做一次結束處理，不用等下次開啟 App。
+    /// 和其他結束處理一樣：處理中（包括重試中）不能再按，也不能刪除；再失敗時跳出橫幅說明原因。
+    func retryFinalization(_ item: SessionLibrary.Item) {
+        guard actions(for: item).canRetry else { return }
+        finalize(item.directory, id: item.id, showWhenReady: false)
     }
 
     private func runRegeneration(_ item: SessionLibrary.Item) async {

@@ -839,8 +839,10 @@ public struct TranslationPlanner: Sendable {
             "5. " + Self.keepNames,
             "6. " + Self.subtitleStyle,
             "7. 只輸出這一句的譯文，不要加任何說明。",
+            // 盲測（HANDOVER.md P11）：加上這一條之後，裁判模型 2 比 1 偏好，像是不再自己加上原文沒有的主詞
+            "8. 不要加入原文沒有的資訊（例如原文沒有的主詞、名詞或結論）；不確定的地方照原文翻。",
         ]
-        if strict { lines.append("8. 只能使用繁體字，不可以出現任何簡體字。") }
+        if strict { lines.append("9. 只能使用繁體字，不可以出現任何簡體字。") }
         return (lines + sessionLines()).joined(separator: "\n")
     }
 

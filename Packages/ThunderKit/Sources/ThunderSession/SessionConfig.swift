@@ -20,6 +20,8 @@ public struct SessionConfig: Sendable {
 
     /// 引擎的名稱，記錄在 `session.json`。
     public var engineName: String
+    /// 開始時有沒有開暫定譯文，記在 `session.json`（估算費用用）。nil 時不記。
+    public var provisionalTranslation: Bool? = nil
     public var engine: EngineConfig
     /// 送給引擎的取樣率。
     public var engineSampleRate: Int

@@ -96,6 +96,8 @@ public struct SessionMeta: Sendable, Equatable, Codable {
     public var failedSteps: [String]
     /// 摘要的一句話總結，給清單頁顯示。還沒有摘要時是空字串。
     public var oneLiner: String
+    /// 這一場開始時有沒有開暫定譯文（估算翻譯的費用用）。nil：還沒有這個欄位時的場次，不知道。
+    public var provisionalTranslation: Bool? = nil
 
     public init(
         id: UUID = UUID(),

@@ -40,6 +40,7 @@ public struct TranscriptBlock: Sendable, Equatable, Codable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case id, start, en, zh, segments, marked
+        case interruptionsBefore = "before", interruptionsAfter = "after"
     }
 
     public init(from decoder: any Decoder) throws {
@@ -50,7 +51,22 @@ public struct TranscriptBlock: Sendable, Equatable, Codable, Identifiable {
             en: try container.decode(String.self, forKey: .en),
             zh: try container.decodeIfPresent(String.self, forKey: .zh) ?? "",
             segments: try container.decodeIfPresent([Int].self, forKey: .segments) ?? [],
-            marked: try container.decodeIfPresent(Bool.self, forKey: .marked) ?? false)
+            marked: try container.decodeIfPresent(Bool.self, forKey: .marked) ?? false,
+            interruptionsBefore: try container.decodeIfPresent([TranscriptInterruption].self, forKey: .interruptionsBefore) ?? [],
+            interruptionsAfter: try container.decodeIfPresent([TranscriptInterruption].self, forKey: .interruptionsAfter) ?? [])
+    }
+
+    /// 沒有錄音中斷時不寫 `before`、`after`，和以前一模一樣。
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(start, forKey: .start)
+        try container.encode(en, forKey: .en)
+        try container.encode(zh, forKey: .zh)
+        try container.encode(segments, forKey: .segments)
+        try container.encode(marked, forKey: .marked)
+        if !interruptionsBefore.isEmpty { try container.encode(interruptionsBefore, forKey: .interruptionsBefore) }
+        if !interruptionsAfter.isEmpty { try container.encode(interruptionsAfter, forKey: .interruptionsAfter) }
     }
 }
 
@@ -95,7 +111,7 @@ public enum TranscriptBlocks {
     /// - 段落滿 20 秒之後，在句尾（`.` `?` `!` `。` `？` `！`，後面可以跟著引號或括號）結束；
     /// - 段落滿 20 秒之後，下一段在 2 秒以上的停頓之後才開始，也結束；
     /// - 加上下一段會超過 60 秒時，先結束；
-    /// - 使用者暫停一定結束當時的段落。
+    /// - 使用者暫停一定結束當時的段落；錄音中斷（日誌裡原因是 sleep、deviceLost、outputChanged、captureStalled 的缺口）也是。
     ///
     /// 段落的長度從它第一個字出現的時間算到最後一個字出現的時間。一段的第一個字是它第一筆紀錄的時間，
     /// 最後一個字是它最後一筆增量文字的時間（沒有增量文字時是第一筆 `end` 的時間；補標點的時間不算）。
@@ -108,6 +124,9 @@ public enum TranscriptBlocks {
     /// 點擊跳轉時寧可早一點開始），四捨五入到毫秒，不小於 0，也不會比前一個段落早。
     ///
     /// **重點標記**：標在「標記當下，第一個字已經出現的最後一個段落」；比所有段落都早的標記算在第一個段落。
+    ///
+    /// **錄音中斷**：記在中斷之後的第一個段落的 `interruptionsBefore`；之後沒有任何段落時，記在最後一個段落的
+    /// `interruptionsAfter`。一個段落都沒有時不記。一般的缺口（網路、跟不上、引擎停了）不影響段落。
     public static func build(from entries: [JournalEntry]) -> BuildResult {
         let journal = collect(entries)
         var blocks: [TranscriptBlock] = []
@@ -129,7 +148,9 @@ public enum TranscriptBlocks {
 
         for segment in journal.segments {
             if let first = current.first, let last = current.last {
-                let paused = journal.pauses.contains { last.start <= $0 && $0 < segment.start }
+                let paused =
+                    journal.pauses.contains { last.start <= $0 && $0 < segment.start }
+                    || journal.interruptions.contains { last.start <= $0.at && $0.at < segment.start }
                 let tooLong = segment.end - first.start > maximumDuration
                 let afterSilence =
                     segment.start - last.end >= silenceThreshold && last.end - first.start >= minimumDuration
@@ -145,6 +166,13 @@ public enum TranscriptBlocks {
         for mark in journal.marks where !blocks.isEmpty {
             let index = firstWordTimes.lastIndex { $0 <= mark } ?? 0
             blocks[index].marked = true
+        }
+        for interruption in journal.interruptions where !blocks.isEmpty {
+            if let index = firstWordTimes.firstIndex(where: { $0 >= interruption.at }) {
+                blocks[index].interruptionsBefore.append(interruption)
+            } else {
+                blocks[blocks.count - 1].interruptionsAfter.append(interruption)
+            }
         }
         return BuildResult(blocks: blocks, untranslatedSegments: journal.segments.count { $0.zh.isEmpty && !$0.covered })
     }
@@ -209,6 +237,8 @@ extension TranscriptBlocks {
         var segments: [Segment] = []
         var pauses: [Double] = []
         var marks: [Double] = []
+        /// 錄音中斷，依音訊時間排序（時間相同時照日誌的順序）。
+        var interruptions: [TranscriptInterruption] = []
     }
 
     private static func collect(_ entries: [JournalEntry]) -> Collected {
@@ -271,10 +301,18 @@ extension TranscriptBlocks {
                 collected.marks.append(time.seconds)
             case .paused(let time):
                 collected.pauses.append(time.seconds)
-            case .gap, .resumed:
+            case .gap(let gap):
+                if gap.isInterruption {
+                    collected.interruptions.append(
+                        TranscriptInterruption(at: gap.from.seconds, reason: gap.reason, lostSeconds: gap.lostSeconds))
+                }
+            case .resumed:
                 break
             }
         }
+        collected.interruptions = collected.interruptions.enumerated()
+            .sorted { $0.element.at != $1.element.at ? $0.element.at < $1.element.at : $0.offset < $1.offset }
+            .map(\.element)
 
         // 沒有段號的段接在最大的段號後面依序編號，不會和有段號的段撞號
         let firstFreeNumber = (indexByNumber.keys.max() ?? -1) + 1
@@ -345,7 +383,26 @@ private enum BlockLine {
         line.append(contentsOf: block.segments.map(String.init).joined(separator: ",").utf8)
         line.append(contentsOf: #"],"marked":"#.utf8)
         line.append(contentsOf: (block.marked ? "true" : "false").utf8)
+        // 錄音中斷：沒有時省略，和以前一模一樣
+        appendInterruptions(block.interruptionsBefore, key: "before", to: &line)
+        appendInterruptions(block.interruptionsAfter, key: "after", to: &line)
         line.append(contentsOf: "}\n".utf8)
+    }
+
+    private static func appendInterruptions(_ interruptions: [TranscriptInterruption], key: String, to line: inout [UInt8]) {
+        guard !interruptions.isEmpty else { return }
+        line.append(contentsOf: ",\"\(key)\":[".utf8)
+        for (index, interruption) in interruptions.enumerated() {
+            if index > 0 { line.append(UInt8(ascii: ",")) }
+            line.append(contentsOf: #"{"at":"#.utf8)
+            line.append(contentsOf: number(interruption.at).utf8)
+            line.append(contentsOf: #","why":"#.utf8)
+            appendString(interruption.reason.rawValue, to: &line)
+            line.append(contentsOf: #","lost":"#.utf8)
+            line.append(contentsOf: number(interruption.lostSeconds).utf8)
+            line.append(UInt8(ascii: "}"))
+        }
+        line.append(UInt8(ascii: "]"))
     }
 
     /// 整數值寫成整數（`34` 而不是 `34.0`），其他寫成能精確讀回的最短十進位表示；不是有限的數字寫成 0。
@@ -379,7 +436,7 @@ private enum BlockLine {
 }
 
 /// 逐字稿裡的一次錄音中斷（DESIGN.md 5.4 節）：日誌裡原因是 sleep、deviceLost、outputChanged、captureStalled 的缺口。
-public struct TranscriptInterruption: Sendable, Equatable {
+public struct TranscriptInterruption: Sendable, Equatable, Codable {
     /// 中斷的音訊時間（秒）。
     public var at: Double
     public var reason: GapReason
@@ -393,5 +450,46 @@ public struct TranscriptInterruption: Sendable, Equatable {
     }
 
     /// 逐字稿裡的標示，例如「〔錄音中斷：電腦睡眠，約 14 分鐘沒有錄到〕」。
-    public var label: String { "" }
+    public var label: String {
+        "〔錄音中斷：\(Self.describe(reason))，\(Self.describe(lostSeconds: lostSeconds))沒有錄到〕"
+    }
+
+    private static func describe(_ reason: GapReason) -> String {
+        switch reason {
+        case .sleep: "電腦睡眠"
+        case .deviceLost: "收音裝置不見了"
+        case .outputChanged: "輸出裝置換了"
+        case .captureStalled: "收音停了"
+        case .network, .backpressure, .engineStopped, .unknown: "原因不明"
+        }
+    }
+
+    /// 大約多久：不到 1 秒；約 N 秒；約 N 分鐘；約 H 小時（M 分鐘）。
+    private static func describe(lostSeconds: Double) -> String {
+        guard lostSeconds >= 1 else { return "不到 1 秒" }
+        if lostSeconds < 59.5 { return "約 \(Int(lostSeconds.rounded())) 秒" }
+        let minutes = Int((lostSeconds / 60).rounded())
+        if minutes < 60 { return "約 \(minutes) 分鐘" }
+        let (hours, rest) = (minutes / 60, minutes % 60)
+        return rest == 0 ? "約 \(hours) 小時" : "約 \(hours) 小時 \(rest) 分鐘"
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case at, reason = "why", lostSeconds = "lost"
+    }
+
+    /// 讀到不認識的原因當成 unknown。
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        at = try container.decode(Double.self, forKey: .at)
+        reason = GapReason(rawValue: try container.decode(String.self, forKey: .reason)) ?? .unknown
+        lostSeconds = try container.decodeIfPresent(Double.self, forKey: .lostSeconds) ?? 0
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(at, forKey: .at)
+        try container.encode(reason.rawValue, forKey: .reason)
+        try container.encode(lostSeconds, forKey: .lostSeconds)
+    }
 }

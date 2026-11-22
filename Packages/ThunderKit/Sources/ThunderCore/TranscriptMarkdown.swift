@@ -17,13 +17,16 @@ import Foundation
 /// - 第二行是開始時間（`timeZone` 的當地時間）、錄音長度與音訊來源，以「 · 」分隔；沒有來源說明時省略那一項。
 /// - 每個段落是一個 `### HH:MM:SS` 的小標題（有重點標記時後面加上「 ⚑」）、英文、空一行、中文；
 ///   沒有中文的段落只有英文。段落之間空一行。
+/// - 錄音中斷（睡眠、裝置不見……）在中斷的位置自成一行，例如「〔錄音中斷：電腦睡眠，約 14 分鐘沒有錄到〕」，前後空一行。
 /// - 檔案以一個換行結尾；沒有任何段落時只有前兩行。
 public enum TranscriptMarkdown {
     public static func render(meta: SessionMeta, blocks: [TranscriptBlock], timeZone: TimeZone = .current) -> String {
         var text = SessionHeader.render(title: meta.displayTitle, meta: meta, timeZone: timeZone)
         for block in blocks {
+            for interruption in block.interruptionsBefore { text += "\n\(interruption.label)\n" }
             text += "\n### \(Timecode.clock(block.start))\(block.marked ? " ⚑" : "")\n\(block.en)\n"
             if !block.zh.isEmpty { text += "\n\(block.zh)\n" }
+            for interruption in block.interruptionsAfter { text += "\n\(interruption.label)\n" }
         }
         return text
     }

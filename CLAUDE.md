@@ -67,6 +67,7 @@ open -W -n -g -j build/ThunderFlow.app --stdout $S/out --args -ApplePersistenceI
 ```
 
 最後一行的 `ratio` 是收到的音訊長度除以實際經過的時間：沒有任何 App 出聲時也要接近 1。重新打包之後第一次執行會跳出「錄製系統音訊」的授權視窗，要請負責人按「允許」。用真的系統音訊跑一整場（會連線、花費很少）：把上面自我檢查的 `-selfTestFile …` 換成 `-selfTestSource system`（麥克風是 `-selfTestSource microphone`）。
+改動字幕區的外觀之後，用 `-selfTestCaptions $S/captions -displayMode chinese`（或 `english`、`bilingual`）把一組固定的字幕畫成 `$S/captions.png`，和改之前的圖比對：不錄音、不連線、不需要 Key，顯示模式只從啟動參數讀，不會改到使用者的設定。
 加上 `-reportPerf YES` 會在每一場印出 `perf.startToCapture.ms`（按下開始到第一個樣本）與 `perf.mainThreadHitch.ms`（錄音中主執行緒最長的卡頓）。隱藏執行時畫面不會真的畫，卡頓要在看得到的視窗量。
 實驗報告在 `Benchmarks/results/`，錄下來的 API 事件在 `Benchmarks/fixtures/`（給引擎測試重播）。
 

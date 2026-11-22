@@ -55,7 +55,8 @@ final class AppSettings {
         postTextModel = defaults.string(forKey: "postTextModel") ?? "gpt-6-luna"
         baseURL = defaults.string(forKey: "baseURL") ?? "https://api.openai.com/v1"
         // 預設不顯示暫定譯文：字一直變比晚一點出現更干擾閱讀（HANDOVER.md P10 的實驗）
-        showsProvisional = defaults.object(forKey: "showsProvisional") as? Bool ?? false
+        // 暫定譯文預設開啟（D33）：整句的暫定譯文邊說邊出、幾乎只往後接，比等整句定稿好讀
+        showsProvisional = defaults.object(forKey: "showsProvisional") as? Bool ?? true
         autoSummary = defaults.object(forKey: "autoSummary") as? Bool ?? true
         keywords = defaults.string(forKey: "keywords") ?? ""
         fontSize = defaults.object(forKey: "fontSize") as? Double ?? 22
@@ -124,10 +125,10 @@ enum Format {
             + date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
     }
 
-    /// 預估費用：轉錄每分鐘 0.017 美元，加上翻譯（實測每小時約 0.03–0.12 美元）。
+    /// 預估費用：轉錄每分鐘 0.017 美元，加上翻譯（實測每小時約 0.08 美元；開暫定譯文約 0.27 美元）。
     static func cost(audioSeconds: Double, provisional: Bool) -> String {
-        // 轉錄每分鐘 0.017；翻譯每小時：各段的定稿約 0.03、整句定稿約 0.05，暫定譯文再加約 0.09（DESIGN.md 9.7 節）
-        let dollars = audioSeconds / 60 * 0.017 + audioSeconds / 3_600 * (provisional ? 0.17 : 0.08)
+        // 轉錄每分鐘 0.017；翻譯每小時：各段的定稿約 0.03、整句定稿約 0.05，整句的暫定譯文再加約 0.19（DESIGN.md 9.7 節）
+        let dollars = audioSeconds / 60 * 0.017 + audioSeconds / 3_600 * (provisional ? 0.27 : 0.08)
         return String(format: "約 $%.2f", dollars)
     }
 }

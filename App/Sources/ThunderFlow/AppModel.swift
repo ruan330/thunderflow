@@ -221,6 +221,9 @@ final class AppModel {
         configuration.translation.provisional = settings.showsProvisional
         // 一句說完就整句重翻，取代這一句各段的定稿（DESIGN.md 5.6.2 節）
         configuration.translation.sentences = true
+        // 整句的暫定譯文（D33）：每一句 2 個字就送第一個，之後每多 3 個字、至少隔 1 秒
+        configuration.translation.sentenceProvisional = true
+        configuration.translation.sentenceProvisionalFirstWords = 2
         configuration.translation.title = title
         configuration.translation.event = event
         configuration.translation.speaker = speaker

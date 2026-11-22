@@ -45,6 +45,10 @@ public struct CaptionBoard: Sendable, Equatable {
 
     /// 字幕改過幾版：每一次改到 `lines`（新增一行，或改到已經有的行）就加一。正在說的那一段改變不算。
     public private(set) var revision = 0
+    /// 整句的暫定譯文（DESIGN.md 5.6.3 節）：正在說的那一句目前聽到的部分的譯文。整句定稿到了就清掉。
+    public private(set) var draft: Draft?
+    /// 最近一句有整句定稿的句子：比它早的句子的暫定譯文是晚到的，不採用。
+    private var lastFinishedSentence: Int?
     /// 這一份字幕的識別：複製的是同一份，清空重來（`CaptionBoard()`）的是另一份。
     public let identity = UUID()
     /// 最近幾版各自最前面改到的是哪一行（`firstChangedLine(since:)` 用）。只留最近的，太舊的丟掉。
@@ -57,12 +61,25 @@ public struct CaptionBoard: Sendable, Equatable {
         var line: Int
     }
 
+    /// 第 `sentence` 句（從第 `first` 段開始）的整句暫定譯文。
+    public struct Draft: Equatable, Sendable {
+        public var sentence: Int
+        public var first: Int
+        public var text: String
+
+        public init(sentence: Int, first: Int, text: String) {
+            self.sentence = sentence
+            self.first = first
+            self.text = text
+        }
+    }
+
     public init() {}
 
     public static func == (lhs: CaptionBoard, rhs: CaptionBoard) -> Bool {
         lhs.lines == rhs.lines && lhs.liveSegment == rhs.liveSegment && lhs.liveEnglish == rhs.liveEnglish
             && lhs.liveChinese == rhs.liveChinese && lhs.liveChineseSegment == rhs.liveChineseSegment
-            && lhs.liveSentence == rhs.liveSentence
+            && lhs.liveSentence == rhs.liveSentence && lhs.draft == rhs.draft
     }
 
     /// 從 `revision` 那一版到現在，最前面改到（或新增）的是第幾行；沒有改到任何一行時是 nil。
@@ -100,6 +117,10 @@ public struct CaptionBoard: Sendable, Equatable {
                 finishSource(text)
             }
         case .provisional(let text):
+            if let sentence = text.sentence, let first = text.sentenceStart {
+                applyDraft(Draft(sentence: sentence, first: first, text: text.text))
+                return
+            }
             guard let segment = text.segment else { return }
             if let index = index(of: segment) {
                 // 這一段的英文已經確定：暫定譯文只在定稿到之前有用
@@ -139,6 +160,7 @@ public struct CaptionBoard: Sendable, Equatable {
 
     /// 引擎結束了：還沒有中文的段不會再有定稿。整句模式時，還沒有整句定稿的句子用各段的定稿接起來當成整句定稿。
     public mutating func engineEnded() {
+        draft = nil
         var first: Int?
         var start = 0
         while start < lines.count {
@@ -204,6 +226,10 @@ public struct CaptionBoard: Sendable, Equatable {
 
     /// 整句定稿：第 `first` 段到第 `last` 段是同一句，整句的中文放在最後一段，這幾段都算有定稿。
     private mutating func finishSentence(_ text: CaptionText, first: Int, last: Int) {
+        if let sentence = text.sentence {
+            lastFinishedSentence = max(lastFinishedSentence ?? sentence, sentence)
+            if let draft, draft.sentence <= sentence { self.draft = nil }
+        }
         guard let end = index(of: last) else { return }
         var start = end
         while start > 0, lines[start - 1].id >= first { start -= 1 }
@@ -225,6 +251,14 @@ public struct CaptionBoard: Sendable, Equatable {
     }
 
     /// 記一版：這一版從第 `line` 行開始有改變。
+    /// 整句的暫定譯文：正在說的那一句的，取代上一次的；已經有整句定稿的句子的不採用。
+    private mutating func applyDraft(_ next: Draft) {
+        if let finished = lastFinishedSentence, next.sentence <= finished { return }
+        guard draft != next else { return }
+        draft = next
+        changed(from: lines.firstIndex { $0.sentence == next.sentence } ?? lines.count)
+    }
+
     private mutating func changed(from line: Int) {
         revision += 1
         changes.append(Change(revision: revision, line: line))

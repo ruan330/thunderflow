@@ -43,6 +43,10 @@ public struct TranslationPlanner: Sendable {
         public var sentenceWordLimit: Int = 60
         /// 一句的最後一段確定之後，這麼久都沒有新的字，就把這一句當成說完了。
         public var sentenceIdle: TimeInterval = 2.5
+        /// 整句的暫定譯文（DESIGN.md 5.6.3 節）：整句模式、有暫定譯文時，暫定譯文翻的是「這一句目前聽到的部分」
+        /// （已經確定的段＋進行中的文字），請求帶畫面上已經有的暫定譯文，請模型盡量保留、只在後面接上新的部分。
+        /// 一句說完才結束；送出的時機照 `provisionalWords`、`provisionalInterval`。
+        public var sentenceProvisional: Bool = false
         /// 場次資訊與關鍵詞：放進提示，讓專有名詞保留原文。
         public var title: String = ""
         public var event: String = ""
@@ -63,6 +67,8 @@ public struct TranslationPlanner: Sendable {
         case provisional(segment: Int, text: String)
         /// 整句模式：第 `number` 句（第 `first` 段到第 `last` 段）的整句定稿，取代這幾段各自的定稿。
         case sentence(number: Int, first: Int, last: Int, text: String)
+        /// 整句的暫定譯文：第 `number` 句（從第 `first` 段開始）目前聽到的部分的譯文（整句取代上一次的）。
+        case sentenceProvisional(number: Int, first: Int, text: String)
     }
 
     private enum Outcome: Equatable {
@@ -73,6 +79,7 @@ public struct TranslationPlanner: Sendable {
     private enum Purpose: Equatable {
         case final(Job)
         case provisional(segment: Int)
+        case draft(sentence: Int)
     }
 
     /// 一個定稿的工作：一段的定稿，或一整句的定稿（整句模式）。
@@ -130,6 +137,17 @@ public struct TranslationPlanner: Sendable {
         var lastActivityAt: TimeInterval?
     }
 
+    /// 整句的暫定譯文：正在說的那一句。
+    private struct Draft {
+        var number: Int
+        /// 畫面上的暫定譯文（最近一次送出的）。
+        var shown = ""
+        /// 上一次請求送出時這一句的字數與時間。
+        var requestedWords = 0.0
+        var requestedAt = -Double.infinity
+        var inFlight: (request: Int, startedAt: TimeInterval)?
+    }
+
     /// 進行中的這一段（暫定譯文）。
     private struct Live {
         var segment: Int?
@@ -166,6 +184,9 @@ public struct TranslationPlanner: Sendable {
     private var segmentSentence: [Int: Int] = [:]
     private var segmentEnglish: [Int: String] = [:]
     private var segmentChinese: [Int: String] = [:]
+    /// 整句的暫定譯文（正在說的那一句）。
+    private var draft: Draft?
+    private var drafts: Bool { configuration.sentences && configuration.provisional && configuration.sentenceProvisional }
 
     public init(configuration: Configuration = Configuration()) {
         self.configuration = configuration
@@ -184,6 +205,7 @@ public struct TranslationPlanner: Sendable {
             if !final.hedged, !final.gotOutput { deadlines.append(final.startedAt + configuration.hedgeAfter) }
         }
         if let inFlight = live.inFlight { deadlines.append(inFlight.startedAt + configuration.provisionalTimeout) }
+        if let inFlight = draft?.inFlight { deadlines.append(inFlight.startedAt + configuration.provisionalTimeout) }
         if configuration.sentences, !open.segments.isEmpty, let activity = open.lastActivityAt {
             deadlines.append(activity + configuration.sentenceIdle)
         }
@@ -244,6 +266,7 @@ public struct TranslationPlanner: Sendable {
     public mutating func flush(at now: TimeInterval) -> [Effect] {
         var effects = advance(to: now)
         if configuration.sentences { effects += closeSentence(at: now) }
+        effects += endDraft()
         return effects
     }
 
@@ -285,6 +308,12 @@ public struct TranslationPlanner: Sendable {
         var effects = advance(to: now)
         if configuration.sentences { open.lastActivityAt = now }
         guard configuration.provisional else { return effects }
+        if drafts {
+            live.segment = segment
+            live.text = text
+            live.words = Words.count(text)
+            return effects + startDraftIfDue(at: now)
+        }
         if live.segment != segment {
             effects += endProvisional()
             live.segment = segment
@@ -309,6 +338,15 @@ public struct TranslationPlanner: Sendable {
                 live.emitted = output
                 effects.append(.provisional(segment: segment, text: output))
             }
+        case .draft(let number):
+            // 收到的字接得上畫面上的字（以它開頭、而且更長）就先送出；接不上的等完整回來再整個換掉
+            guard var current = draft, current.number == number, current.inFlight?.request == request,
+                output.count > current.shown.count, output.hasPrefix(current.shown), !ChineseScript.containsSimplified(output),
+                let first = draftFirstSegment
+            else { break }
+            current.shown = output
+            draft = current
+            effects.append(.sentenceProvisional(number: number, first: first, text: output))
         }
         return effects
     }
@@ -352,6 +390,15 @@ public struct TranslationPlanner: Sendable {
                 }
                 effects += startProvisionalIfDue(at: now)
             }
+        case .draft(let number):
+            guard var current = draft, current.number == number, current.inFlight?.request == request else { break }
+            current.inFlight = nil
+            if !output.isEmpty, output != current.shown, !ChineseScript.containsSimplified(output), let first = draftFirstSegment {
+                current.shown = output
+                effects.append(.sentenceProvisional(number: number, first: first, text: output))
+            }
+            draft = current
+            effects += startDraftIfDue(at: now)
         }
         return effects
     }
@@ -366,6 +413,8 @@ public struct TranslationPlanner: Sendable {
             effects += attemptEnded(for: job, at: now)
         case .provisional:
             if live.inFlight?.request == request { live.inFlight = nil }
+        case .draft:
+            if draft?.inFlight?.request == request { draft?.inFlight = nil }
         }
         return effects
     }
@@ -394,6 +443,12 @@ public struct TranslationPlanner: Sendable {
             requests[inFlight.request] = nil
             live.inFlight = nil
             effects += startProvisionalIfDue(at: now)
+        }
+        if let inFlight = draft?.inFlight, now >= inFlight.startedAt + configuration.provisionalTimeout {
+            effects.append(.cancel(request: inFlight.request))
+            requests[inFlight.request] = nil
+            draft?.inFlight = nil
+            effects += startDraftIfDue(at: now)
         }
         return effects
     }
@@ -511,6 +566,7 @@ public struct TranslationPlanner: Sendable {
     /// 正在說的那一句說完了：送出整句的請求，下一段開始新的一句。沒有正在說的句子時什麼都不做。
     private mutating func closeSentence(at now: TimeInterval) -> [Effect] {
         guard let first = open.segments.first, let last = open.segments.last else { return [] }
+        let ended = endDraft()
         let number = open.number
         let english = open.segments.compactMap { segmentEnglish[$0] }.joined(separator: " ")
         let context = Array(recent.suffix(configuration.sentenceContext))
@@ -524,7 +580,7 @@ public struct TranslationPlanner: Sendable {
             span: Span(first: first, last: last, context: context, viaQueue: viaQueue))
         open = OpenSentence(number: number + 1)
         forgetOldSentences()
-        return startAttempt(for: .sentence(number))
+        return ended + startAttempt(for: .sentence(number))
     }
 
     /// 已經結束的第 `number` 句又有變動（併入晚到的尾巴）：用新的英文重翻整句。已經送出的，翻完再送一次。
@@ -635,6 +691,41 @@ public struct TranslationPlanner: Sendable {
         return effects
     }
 
+    // MARK: 整句的暫定譯文
+
+    /// 正在說的那一句的第一段：已經確定的段，或還沒有確定的段時是進行中的這一段。
+    private var draftFirstSegment: Int? { open.segments.first ?? live.segment }
+
+    /// 這一句每多 `provisionalWords` 個字、而且距離上一次至少 `provisionalInterval`，就把這一句目前聽到的部分送去翻譯。
+    private mutating func startDraftIfDue(at now: TimeInterval) -> [Effect] {
+        guard drafts, draftFirstSegment != nil else { return [] }
+        if draft?.number != open.number { draft = Draft(number: open.number) }
+        guard var current = draft, current.inFlight == nil else { return [] }
+        let words = open.words + live.words
+        guard words - current.requestedWords >= Double(configuration.provisionalWords),
+            now - current.requestedAt >= configuration.provisionalInterval
+        else { return [] }
+        let english = TextFlow.join(open.segments.compactMap { segmentEnglish[$0] } + [live.text])
+        let request = nextRequest
+        nextRequest += 1
+        requests[request] = .draft(sentence: current.number)
+        current.inFlight = (request, now)
+        current.requestedWords = words
+        current.requestedAt = now
+        draft = current
+        let context = Array(recent.suffix(configuration.sentenceContext))
+        return [.start(request: request, makeDraftRequest(english: english, context: context, shown: current.shown))]
+    }
+
+    /// 一句說完（或收尾）：取消還沒回來的整句暫定譯文。
+    private mutating func endDraft() -> [Effect] {
+        guard let current = draft else { return [] }
+        draft = nil
+        guard let inFlight = current.inFlight else { return [] }
+        requests[inFlight.request] = nil
+        return [.cancel(request: inFlight.request)]
+    }
+
     // MARK: 請求的內容
 
     private func makeRequest(text: String, context: [String], isFinal: Bool, strict: Bool) -> TextRequest {
@@ -665,6 +756,40 @@ public struct TranslationPlanner: Sendable {
             input: parts.joined(separator: "\n\n"),
             maxOutputTokens: 400,
             reasoningEffort: "none")
+    }
+
+    /// 整句的暫定譯文的請求：前文（最近幾句的英文與中文）、畫面上的暫定譯文、這一句目前聽到的部分。
+    private func makeDraftRequest(english: String, context: [Recent], shown: String) -> TextRequest {
+        var parts: [String] = []
+        if !context.isEmpty {
+            let lines = context.map { item in item.chinese.map { "英：\(item.english)\n中：\($0)" } ?? "英：\(item.english)" }
+            parts.append("前文（只供參考，不要翻譯）：\n" + lines.joined(separator: "\n"))
+        }
+        if !shown.isEmpty { parts.append("畫面上的暫定譯文：\n" + shown) }
+        parts.append("這一句目前聽到的部分：\n" + english)
+        return TextRequest(
+            model: configuration.model,
+            instructions: draftInstructions(),
+            input: parts.joined(separator: "\n\n"),
+            maxOutputTokens: 400,
+            reasoningEffort: "none")
+    }
+
+    /// 整句的暫定譯文的提示（HANDOVER.md P11 的實驗：保留畫面上的字，翻錯或接不通順時才改）。
+    private func draftInstructions() -> String {
+        let lines = [
+            "你是演講、課程與會議的即時字幕譯者。講者這一句還沒說完，使用者給的是「這一句目前聽到的部分」。把它翻成台灣繁體中文，供現場觀眾先看。",
+            "規則：",
+            "1. 譯成通順、自然的中文：依中文的語序組織，但只翻已經聽到的內容，不要猜測或補完還沒說的部分。",
+            "2. 這是現場的口語：去掉 uh、um、you know、I mean，以及當口頭禪用的 right、like、so，還有重複的字和說到一半改口的部分，只留下講者要表達的意思。",
+            "3. 「前文」是剛才的英文和已經顯示給觀眾的中文：用語與稱呼要和前文的中文一致，但不要重複前文已經翻過的內容。",
+            "4. " + Self.taiwanTerms,
+            "5. " + Self.keepNames,
+            "6. " + Self.subtitleStyle,
+            "7. 結尾不要加句號。只輸出譯文，不要加任何說明。",
+            "8. 「畫面上的暫定譯文」是觀眾正在看的這一句的譯文。請盡量一字不改地以它開頭，只在後面接上新聽到的部分；但如果它翻錯了，或照著它接下去會不通順，就修改它。",
+        ]
+        return (lines + sessionLines()).joined(separator: "\n")
     }
 
     /// 整句的提示：譯成通順的中文、去掉口語的贅字、和前文的中文接得上（HANDOVER.md P10 的實驗）。

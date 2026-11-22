@@ -279,6 +279,13 @@ private final class EngineRun {
                 output.yield(.translation(CaptionText(text: text, kind: .segmentEnd, at: audioEnd, segment: segment)))
             case .provisional(let segment, let text):
                 output.yield(.provisional(CaptionText(text: text, kind: .delta, at: audioEnd, segment: segment)))
+            case .sentenceProvisional(let number, let first, let text):
+                // 整句的暫定譯文：帶句子的編號與這一句的第一段，字幕區把它當成這一句的灰字
+                output.yield(
+                    .provisional(
+                        CaptionText(
+                            text: text, kind: .delta, at: audioEnd, segment: liveSegment ?? first, sentence: number,
+                            sentenceStart: first)))
             case .sentence(let number, let first, let last, let text):
                 output.yield(
                     .translation(

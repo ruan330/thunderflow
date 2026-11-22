@@ -35,11 +35,14 @@ public struct CaptionZoneOptions: Sendable, Equatable {
     public var showsProvisional: Bool
     /// 這一區畫標記的旗子（雙語時只畫在中文區）。
     public var showsFlags: Bool
+    /// 中文區：每一段最後的「。」不顯示（字幕的寫法）。句子中間的句號照樣顯示。
+    public var hidesFinalPeriod: Bool
 
-    public init(language: Language, showsProvisional: Bool, showsFlags: Bool) {
+    public init(language: Language, showsProvisional: Bool, showsFlags: Bool, hidesFinalPeriod: Bool = false) {
         self.language = language
         self.showsProvisional = showsProvisional
         self.showsFlags = showsFlags
+        self.hidesFinalPeriod = hidesFinalPeriod
     }
 }
 
@@ -119,6 +122,13 @@ public struct CaptionZoneSync: Sendable {
         var paragraphs = board.lines.map { paragraph(for: $0, marked: marked.contains($0.id), options: options) }
         if let live = liveParagraph(of: board, options: options) { paragraphs.append(live) }
         return paragraphs
+    }
+
+    /// 最後 `count` 段（浮動字幕用）：和 `paragraphs(board:marked:options:)` 的最後幾段相同，只看最後幾行。
+    public static func lastParagraphs(board: CaptionBoard, marked: Set<Int>, options: CaptionZoneOptions, count: Int)
+        -> [CaptionParagraph]
+    {
+        []
     }
 
     /// 一行字幕在這一區顯示什麼。

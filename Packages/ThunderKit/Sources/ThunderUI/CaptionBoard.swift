@@ -23,6 +23,12 @@ public struct CaptionBoard: Sendable, Equatable {
         public var untranslated: Bool
         /// 這一段確定時的音訊時間。
         public var at: AudioTime
+        /// 整句模式：這一段屬於第幾句（同一句的段在畫面上合成一個段落）。不是整句模式時是 nil。
+        public var sentence: Int? = nil
+        /// 這一句的整句定稿：只放在這一句的最後一段，其他段是空字串。
+        public var sentenceChinese = ""
+        /// 這一段屬於一句已經有整句定稿的句子：中文在整句定稿裡，自己沒有定稿也不算沒翻到。
+        public var coveredBySentence = false
     }
 
     public private(set) var lines: [Line] = []
@@ -32,6 +38,8 @@ public struct CaptionBoard: Sendable, Equatable {
     public private(set) var liveEnglish = ""
     /// 正在說的那一段目前的暫定譯文。
     public private(set) var liveChinese = ""
+    /// 整句模式：正在說的那一段屬於第幾句。
+    public private(set) var liveSentence: Int?
     /// 暫定譯文屬於哪一段。
     private var liveChineseSegment: Int?
 

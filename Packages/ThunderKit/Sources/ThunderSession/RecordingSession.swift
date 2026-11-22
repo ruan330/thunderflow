@@ -234,6 +234,18 @@ public final class RecordingSession: @unchecked Sendable {
         setPaused(false)
     }
 
+    /// 收音中斷之後接著錄（DESIGN.md 5.4 節）：在目前的音訊時間記一筆中斷（長度 0 的缺口，帶原因與沒有錄到的時間），
+    /// 並結束目前的錄音分段，之後的聲音寫進新的分段。錄音不補靜音。結束之後呼叫不做任何事。
+    ///
+    /// 中斷之前收到的聲音要已經全部送進 `process`，中斷的位置才對。
+    public func recordInterruption(reason: GapReason, lostSeconds: TimeInterval) {
+        path.withLock { state in
+            guard !state.finished else { return }
+            try? recorder.beginNewSegment()
+            try? journal.append(.gap(.interruption(at: audioTime, lostSeconds: max(0, lostSeconds), reason: reason)))
+        }
+    }
+
     /// 在目前的音訊時間加上一個重點標記。結束之後呼叫不做任何事。
     public func mark() {
         control.withLock { state in

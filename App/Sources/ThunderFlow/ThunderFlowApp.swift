@@ -7,6 +7,8 @@ import ThunderUI
 @main
 struct ThunderFlowApp: App {
     @State private var model = AppModel()
+    /// 結束 App 時先處理錄音中的那一場（`QuitDecision`）。
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     init() {
         // `ThunderFlow --version`：印出版本就結束。打包腳本用它確認簽章之後的程式能執行。
@@ -27,6 +29,8 @@ struct ThunderFlowApp: App {
             RootView()
                 .environment(model)
                 .frame(minWidth: 900, minHeight: 600)
+                // 結束 App 時要看錄音的階段（AppDelegate.applicationShouldTerminate）
+                .onAppear { appDelegate.model = model }
         }
         .defaultSize(width: 1_100, height: 720)
         .commands {
@@ -34,6 +38,78 @@ struct ThunderFlowApp: App {
             CommandGroup(replacing: .newItem) {}
             RecordingMenu(model: model)
         }
+    }
+}
+
+/// 結束 App（⌘Q、選單的「結束 ThunderFlow」、Dock）或系統要登出、重新開機、關機時，先處理錄音中的那一場
+/// （判斷在 ThunderUI 的 `QuitDecision`，有測試；D26：錄音只由使用者結束）。
+///
+/// - 使用者結束：先問「錄音中。要停止錄音並結束 ThunderFlow 嗎？」，按「停止並結束」才停止錄音、結束。
+/// - 系統要登出、重新開機或關機：不問，先把這一場停好（最多等引擎把最後幾段翻完）再告訴系統可以結束。
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    /// App 的狀態。主視窗出現時設定。
+    weak var model: AppModel?
+    /// 系統要登出、重新開機或關機（`NSWorkspace.willPowerOffNotification`）。登出被別的 App 取消時不會改回來：
+    /// 之後在這次執行裡結束 App 不會再問，但錄音一樣會先停好。
+    private var poweringOff = false
+    /// 已經為了結束把錄音停好了：再結束一次時直接結束，不再看錄音的階段。
+    private var stoppedForQuit = false
+
+    override init() {
+        super.init()
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self, selector: #selector(willPowerOff(_:)), name: NSWorkspace.willPowerOffNotification, object: nil)
+    }
+
+    @objc private func willPowerOff(_ notification: Notification) {
+        poweringOff = true
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let model, !stoppedForQuit else { return .terminateNow }
+        switch QuitDecision(phase: model.recorderPhase, systemPoweringOff: poweringOff) {
+        case .now:
+            return .terminateNow
+        case .ask:
+            guard confirmStopAndQuit() else { return .terminateCancel }
+            return stopThenQuit(model)
+        case .stopFirst:
+            return stopThenQuit(model)
+        }
+    }
+
+    /// 「錄音中。要停止錄音並結束 ThunderFlow 嗎？」［停止並結束］［取消］（Esc 是取消）。
+    private func confirmStopAndQuit() -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "錄音中。要停止錄音並結束 ThunderFlow 嗎？"
+        alert.informativeText = "已經錄下的部分都會保存。合併錄音、逐字稿與摘要會在下次開啟 ThunderFlow 時接著處理。"
+        alert.addButton(withTitle: "停止並結束")
+        let cancel = alert.addButton(withTitle: "取消")
+        cancel.keyEquivalent = "\u{1b}"
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    /// 先把錄音停好（有時限），再結束。
+    ///
+    /// - 系統要登出或關機：回 `terminateLater`，停好之後再告訴系統可以結束（回 `terminateCancel` 會擋住登出）。
+    /// - 使用者自己結束：這一次先不結束，停好之後再結束一次（那時直接結束）。不用 `terminateLater`：
+    ///   它在等待時跑一層巢狀的 run loop，`terminate` 是從主執行緒上的工作裡呼叫的話，停止錄音的工作
+    ///   （也在主執行緒上）排不進來，會一直等下去（隱藏執行的實測）。
+    private func stopThenQuit(_ model: AppModel) -> NSApplication.TerminateReply {
+        if poweringOff {
+            Task {
+                await model.stopForQuit()
+                NSApp.reply(toApplicationShouldTerminate: true)
+            }
+            return .terminateLater
+        }
+        Task {
+            await model.stopForQuit()
+            stoppedForQuit = true
+            NSApp.terminate(nil)
+        }
+        return .terminateCancel
     }
 }
 

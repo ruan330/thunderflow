@@ -384,6 +384,23 @@ final class AppModel {
         }
     }
 
+    /// 結束 App 之前把錄音停好（`QuitDecision`：使用者按了「停止並結束」，或系統要登出、關機）。
+    ///
+    /// 開始中先等它開始（最多 10 秒：可能在等鑰匙圈或權限的視窗），錄音中與暫停時停止，收尾中等它停完。
+    /// 停止最多等引擎把最後幾段翻完（`LiveRecording.Options.engineDrainTimeout`），所以結束不會卡住。
+    /// 這一場的結束處理（合併錄音、搬進 Library、摘要）在 App 結束時中斷，下次開啟 App 時接著做。
+    func stopForQuit() async {
+        let deadline = ContinuousClock.now + .seconds(10)
+        while liveState == .starting, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        if isRecording { await stop(showingResult: false) }
+        // 別的地方先按了停止：等它停完（停止本身有時限，這裡再加一道上限）
+        while liveState == .stopping, ContinuousClock.now < deadline + .seconds(20) {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+    }
+
     func togglePause() {
         // 只有錄音中與暫停時（判斷在 ThunderUI，有測試）。收尾中按下去會把狀態改回錄音中，
         // 停止鈕再出現，同一場就可能被停止、做兩次結束處理

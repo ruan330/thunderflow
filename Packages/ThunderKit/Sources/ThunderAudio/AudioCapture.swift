@@ -11,6 +11,40 @@ public struct AudioInputDevice: Sendable, Equatable, Identifiable {
     public var sampleRate: Double
     public var channels: Int
     public var isDefault: Bool
+
+    public init(id: AudioDeviceID, uid: String, name: String, sampleRate: Double, channels: Int, isDefault: Bool) {
+        self.id = id
+        self.uid = uid
+        self.name = name
+        self.sampleRate = sampleRate
+        self.channels = channels
+        self.isDefault = isDefault
+    }
+}
+
+/// 開始收音時選定的麥克風（DESIGN.md 5.4 節）。選法是純函式，不碰 Core Audio，有測試。
+public struct MicrophoneChoice: Sendable, Equatable {
+    /// 要用的裝置。
+    public var device: AudioInputDevice
+    /// 指定的裝置找不到、改用系統預設的輸入裝置時，是原本指定的 UID；其他時候是 nil。
+    public var missingUID: String?
+
+    public init(device: AudioInputDevice, missingUID: String? = nil) {
+        self.device = device
+        self.missingUID = missingUID
+    }
+
+    /// 依指定的 UID 從裝置清單選出要用的裝置：
+    /// - 沒有指定（nil 或空字串）：系統預設的輸入裝置；清單裡沒有標記為預設的，就用第一個。
+    /// - 指定的還在：用它。
+    /// - 指定的不在了（拔掉、iPhone 拿起來解鎖）：改用系統預設的輸入裝置照樣開始，記下原本指定的 UID。
+    /// - 一個可以收音的裝置都沒有：nil。
+    public static func choose(uid: String?, from devices: [AudioInputDevice]) -> MicrophoneChoice? {
+        nil
+    }
+
+    /// 改用了別的裝置時給使用者的說明：說這一場用了哪一個裝置。照指定的（或本來就用預設的）時是 nil。
+    public var notice: String? { nil }
 }
 
 /// 收音的來源。

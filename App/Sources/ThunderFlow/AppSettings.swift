@@ -97,11 +97,13 @@ final class AppSettings {
 }
 
 /// API Key 的存取。service 名稱是 Bundle ID（DESIGN.md 第 6 節）。
+/// 鑰匙圈可能跳出授權視窗、等使用者回答：這三個呼叫都不要放在主執行緒上。
 enum Credentials {
     static let store = KeychainStore(service: Bundle.main.bundleIdentifier ?? "io.github.ruan330.thunderflow")
     static let account = "openai-api-key"
 
-    static func load() -> String? { (try? store.read(account: account)) ?? nil }
+    /// 讀出 Key 並分類：讀到、沒有、使用者沒有允許、其他錯誤。
+    static func lookup() -> CredentialLookup { store.lookup(account: account) }
     static func save(_ key: String) throws { try store.save(key, account: account) }
     static func delete() throws { try store.delete(account: account) }
 }

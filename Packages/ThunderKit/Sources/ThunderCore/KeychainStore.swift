@@ -30,7 +30,13 @@ public enum KeychainOutcome: Sendable, Equatable {
     case failed(OSStatus)
 
     public init(status: OSStatus) {
-        self = .failed(status)
+        switch status {
+        case errSecSuccess: self = .success
+        case errSecItemNotFound: self = .notFound
+        // 按了拒絕（errSecAuthFailed）、按了取消（errSecUserCanceled）、現在不能跳出授權視窗（errSecInteractionNotAllowed）
+        case errSecAuthFailed, errSecUserCanceled, errSecInteractionNotAllowed: self = .denied
+        default: self = .failed(status)
+        }
     }
 }
 
@@ -42,6 +48,12 @@ public struct KeychainStore: Sendable, Equatable {
 
     public init(service: String) {
         self.service = service
+    }
+
+    /// 讀出存著的值並分類：讀到、沒有、使用者沒有允許、其他錯誤。
+    /// 鑰匙圈可能跳出授權視窗、等使用者回答，所以不要在主執行緒上呼叫。
+    public func lookup(account: String) -> CredentialLookup {
+        CredentialLookup { try read(account: account) }
     }
 
     /// 讀出存著的值；沒有這個項目時回傳 nil。

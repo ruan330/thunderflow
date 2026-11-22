@@ -10,6 +10,8 @@ struct SettingsView: View {
     @State private var keyStatus = ""
     @State private var revealsKey = false
     @State private var isTesting = false
+    /// 正在存入或刪除 Key（鑰匙圈可能正跳出授權視窗等使用者回答）：這時不能再按。
+    @State private var isWorking = false
 
     var body: some View {
         @Bindable var settings = model.settings
@@ -30,9 +32,10 @@ struct SettingsView: View {
                     Button(revealsKey ? "隱藏" : "顯示") { revealsKey.toggle() }
                 }
                 HStack {
-                    Button("儲存") { saveKey() }.disabled(keyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    Button(isTesting ? "測試中…" : "測試") { Task { await testKey() } }.disabled(isTesting)
-                    Button("刪除", role: .destructive) { deleteKey() }.disabled(!settings.hasKey)
+                    Button("儲存") { Task { await saveKey() } }
+                        .disabled(keyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isWorking)
+                    Button(isTesting ? "測試中…" : "測試") { Task { await testKey() } }.disabled(isTesting || isWorking)
+                    Button("刪除", role: .destructive) { Task { await deleteKey() } }.disabled(!settings.hasKey || isWorking)
                     Spacer()
                     Text(keyStatus.isEmpty ? (settings.hasKey ? "鑰匙圈裡已經有 Key" : "還沒有 Key") : keyStatus)
                         .foregroundStyle(.secondary)
@@ -85,40 +88,70 @@ struct SettingsView: View {
         .navigationTitle("設定")
     }
 
-    private func saveKey() {
+    // 鑰匙圈的呼叫可能跳出授權視窗、等使用者回答，所以都在背景做，畫面不會卡住。
+
+    private func saveKey() async {
         let key = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        do {
-            try Credentials.save(key)
+        isWorking = true
+        defer { isWorking = false }
+        let result = await Task.detached(priority: .userInitiated) { Result { try Credentials.save(key) } }.value
+        switch result {
+        case .success:
             model.settings.hasKey = true
             keyDraft = ""
             keyStatus = "已儲存"
             model.banner = nil
             // 存進鑰匙圈的結果在畫面上看不到：用提示說出來
             model.notify(.saved, "已儲存 Key")
-        } catch {
-            keyStatus = "存不進鑰匙圈：\(error)"
+        case .failure(let error):
+            keyStatus =
+                Self.isDenied(error) ? "鑰匙圈沒有允許，所以 Key 沒有存進去。再按一次「儲存」，在鑰匙圈的視窗按「允許」。" : "存不進鑰匙圈：\(error)"
         }
     }
 
-    private func deleteKey() {
-        do {
-            try Credentials.delete()
+    private func deleteKey() async {
+        isWorking = true
+        defer { isWorking = false }
+        let result = await Task.detached(priority: .userInitiated) { Result { try Credentials.delete() } }.value
+        switch result {
+        case .success:
             model.settings.hasKey = false
             keyStatus = "已刪除"
-        } catch {
-            keyStatus = "刪除失敗：\(error)"
+        case .failure(let error):
+            keyStatus = Self.isDenied(error) ? "鑰匙圈沒有允許，所以 Key 沒有刪除。" : "刪除失敗：\(error)"
         }
+    }
+
+    /// 使用者在鑰匙圈的授權視窗按了拒絕或取消（或現在不能跳出視窗）：Key 沒有動，不是壞掉了。
+    private static func isDenied(_ error: any Error) -> Bool {
+        (error as? KeychainError)?.outcome == .denied
     }
 
     /// 測試 Key：呼叫免費的 `GET /models`。測的是輸入框裡的 Key；沒有輸入就測已經存好的那一把。
     private func testKey() async {
         let draft = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let key = draft.isEmpty ? Credentials.load() : draft, !key.isEmpty else {
-            keyStatus = "還沒有 Key"
-            return
-        }
         isTesting = true
         defer { isTesting = false }
+        let key: String
+        if !draft.isEmpty {
+            key = draft
+        } else {
+            switch await model.loadKey() {
+            case .found(let stored):
+                key = stored
+                model.settings.hasKey = true
+            case .missing:
+                model.settings.hasKey = false
+                keyStatus = "還沒有 Key"
+                return
+            case .denied:
+                keyStatus = "鑰匙圈沒有允許讀取 Key。再按一次「測試」，在鑰匙圈的視窗按「允許」。"
+                return
+            case .failed(let error):
+                keyStatus = "讀不到鑰匙圈裡的 Key：\(error)"
+                return
+            }
+        }
         var request = URLRequest(url: model.settings.textBaseURL.appendingPathComponent("models"))
         request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15

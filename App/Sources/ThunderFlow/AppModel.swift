@@ -189,11 +189,24 @@ final class AppModel {
         // 先佔住狀態：等鑰匙圈或麥克風權限的時候再按一次開始，不會建立第二場
         liveState = .starting
         banner = nil
-        guard let key = await loadKey(), !key.isEmpty else {
+        let key: String
+        switch await loadKey() {
+        case .found(let found):
+            key = found
+        case .missing:
             liveState = .idle
             settings.hasKey = false
             banner = "還沒有設定 OpenAI API Key。請到「設定」貼上你的 Key，再回來按開始。"
             page = .settings
+            return
+        case .denied:
+            // Key 還在鑰匙圈裡，只是這次沒有拿到：不說「還沒有設定」，也不跳到設定頁
+            liveState = .idle
+            banner = "鑰匙圈沒有允許 ThunderFlow 讀取 API Key，所以沒有開始錄音。Key 還在鑰匙圈裡：再按一次「開始錄音」，在鑰匙圈的視窗輸入這台 Mac 的登入密碼，然後按「永遠允許」。"
+            return
+        case .failed(let error):
+            liveState = .idle
+            banner = "讀不到鑰匙圈裡的 API Key（\(error)），所以沒有開始錄音。"
             return
         }
         settings.hasKey = true
@@ -402,10 +415,11 @@ final class AppModel {
 
     // MARK: API Key
 
-    /// 讀 API Key。鑰匙圈可能跳出授權視窗、等使用者回答，所以不在主執行緒上讀，畫面不會卡住。
-    private func loadKey() async -> String? {
-        if let keyOverride { return keyOverride }
-        return await Task.detached(priority: .userInitiated) { Credentials.load() }.value
+    /// 讀 API Key 並分類（讀到、沒有、使用者沒有允許、其他錯誤）。
+    /// 鑰匙圈可能跳出授權視窗、等使用者回答，所以不在主執行緒上讀，畫面不會卡住。
+    func loadKey() async -> CredentialLookup {
+        if let keyOverride { return .found(keyOverride) }
+        return await Task.detached(priority: .userInitiated) { Credentials.lookup() }.value
     }
 
     /// 自動測試用：從標準輸入讀 Key（`open --stdin <FIFO>` 加上啟動參數 `-apiKeyFromStdin YES`）。
@@ -423,7 +437,7 @@ final class AppModel {
         var options = FinalizationOptions(libraryRoot: settings.libraryRoot)
         options.summarize = settings.autoSummary
         options.summaryModel = settings.postTextModel
-        if needsModel, keyOverride != nil || settings.hasKey, let key = await loadKey(), !key.isEmpty {
+        if needsModel, keyOverride != nil || settings.hasKey, case .found(let key) = await loadKey() {
             options.textModel = OpenAITextModel(apiKey: key, baseURL: settings.textBaseURL)
         }
         return SessionFinalizer(options: options)

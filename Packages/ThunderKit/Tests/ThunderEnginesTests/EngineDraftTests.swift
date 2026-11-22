@@ -4,7 +4,7 @@ import ThunderCore
 import ThunderEngines
 import ThunderTestKit
 
-/// 整句的暫定譯文（DESIGN.md 5.6.3 節）：重播錄下的 keynote，文字模型照劇本回答。
+/// 整句的暫定譯文（DESIGN.md 5.6.2 節）：重播錄下的 keynote，文字模型照劇本回答。
 /// 暫定譯文以帶句子編號與這一句第一段的 `.provisional` 送出；整句定稿送出之後，那一句不再有暫定譯文。
 @Suite("轉錄＋翻譯引擎：整句的暫定譯文")
 struct EngineDraftTests {

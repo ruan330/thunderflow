@@ -45,7 +45,7 @@ public struct CaptionBoard: Sendable, Equatable {
 
     /// 字幕改過幾版：每一次改到 `lines`（新增一行，或改到已經有的行）就加一。正在說的那一段改變不算。
     public private(set) var revision = 0
-    /// 整句的暫定譯文（DESIGN.md 5.6.3 節）：正在說的那一句目前聽到的部分的譯文。整句定稿到了就清掉。
+    /// 整句的暫定譯文（DESIGN.md 5.6.2 節）：正在說的那一句目前聽到的部分的譯文。整句定稿到了就清掉。
     public private(set) var draft: Draft?
     /// 最近一句有整句定稿的句子：比它早的句子的暫定譯文是晚到的，不採用。
     private var lastFinishedSentence: Int?

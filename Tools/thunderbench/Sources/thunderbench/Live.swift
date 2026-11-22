@@ -16,7 +16,7 @@ func live(_ arguments: Arguments) async throws {
     configuration.link.settings.delay = arguments.string("delay", default: "low")
     configuration.translation.provisional = !arguments.flags.contains("no-provisional")
     configuration.translation.sentences = arguments.flags.contains("sentences")
-    // 整句的暫定譯文（DESIGN.md 5.6.3 節）：和 App 相同的設定是 --sentences --sentence-provisional
+    // 整句的暫定譯文（DESIGN.md 5.6.2 節）：和 App 相同的設定是 --sentences --sentence-provisional
     configuration.translation.sentenceProvisional = arguments.flags.contains("sentence-provisional")
     configuration.translation.provisionalWords = Int(arguments.double("provisional-words", default: 3))
     configuration.translation.provisionalInterval = arguments.double("provisional-interval", default: 1)

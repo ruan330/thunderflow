@@ -3,7 +3,7 @@ import Testing
 import ThunderCore
 import ThunderUI
 
-// 整句的暫定譯文（DESIGN.md 4.3、5.6.3 節）：正在說的那一句，中文顯示「這一句目前聽到的部分」的整句暫定譯文（灰字），
+// 整句的暫定譯文（DESIGN.md 4.3、5.6.2 節）：正在說的那一句，中文顯示「這一句目前聽到的部分」的整句暫定譯文（灰字），
 // 取代各段自己的定稿與逐段的暫定譯文；整句定稿到了換成白字。關掉暫定譯文時照舊顯示各段的定稿。
 
 private func delta(_ text: String, _ segment: Int, sentence: Int) -> CaptionEvent {

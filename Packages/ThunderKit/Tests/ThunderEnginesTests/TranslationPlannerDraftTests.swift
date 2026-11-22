@@ -3,7 +3,7 @@ import Testing
 import ThunderCore
 import ThunderEngines
 
-/// 整句的暫定譯文（DESIGN.md 5.6.3 節）：整句模式時，暫定譯文翻的是「這一句目前聽到的部分」（已經確定的段＋進行中的文字），
+/// 整句的暫定譯文（DESIGN.md 5.6.2 節）：整句模式時，暫定譯文翻的是「這一句目前聽到的部分」（已經確定的段＋進行中的文字），
 /// 並把畫面上已經有的暫定譯文放進請求，請模型保留、只在後面接上新的部分。一句說完才結束，整句定稿照舊取代它。
 private struct DraftDriver {
     var planner: TranslationPlanner
@@ -228,6 +228,41 @@ struct TranslationPlannerDraftTests {
         driver.finish(0, "One two three four five.", .sentenceEnd, at: 2)
         driver.pending("Six seven", segment: 1, at: 2.5)
         #expect(driver.draftRequests.last?.content.input.hasSuffix("這一句目前聽到的部分：\nSix seven") == true)
+    }
+
+    @Test("前文裡還沒翻好的句子不放進暫定譯文的請求（模型會把它也翻進這一句）；翻好之後才帶上")
+    func contextOnlyTranslated() throws {
+        var driver = DraftDriver()
+        driver.finish(0, "So this model has no memory.", .sentenceEnd, at: 0)
+        let sentenceRequest = try #require(driver.requests.last)
+        driver.pending("In order", segment: 1, at: 0.3)
+        driver.pending("In order to create", segment: 1, at: 0.4)
+        let early = try #require(driver.draftRequests.last)
+        #expect(!early.content.input.contains("So this model has no memory."), "上一句的整句定稿還沒回來：不帶它的英文")
+        #expect(!early.content.input.contains("前文"))
+
+        driver.complete(sentenceRequest.id, "這個模型沒有記憶。", at: 0.9)
+        driver.complete(early.id, "為了營造", at: 1.0)
+        driver.pending("In order to create the illusion of", segment: 1, at: 1.6)
+        let later = try #require(driver.draftRequests.last)
+        #expect(later.id != early.id)
+        #expect(later.content.input.contains("英：So this model has no memory.\n中：這個模型沒有記憶。"), "翻好之後帶上")
+    }
+
+    @Test("暫定譯文出現原文沒有的英文字（模型的雜訊）時不採用；原文裡有的名稱照常")
+    func rejectsStrayEnglish() throws {
+        var driver = DraftDriver { $0.keywords = ["AgentCore"] }
+        driver.pending("I worked at Microsoft on", segment: 0, at: 0)
+        let a = try #require(driver.draftRequests.last)
+        #expect(driver.progress(a.id, "我曾在 Microsoft", at: 0.2) == [.sentenceProvisional(number: 0, first: 0, text: "我曾在 Microsoft")])
+        #expect(driver.complete(a.id, "我曾在 Microsoft 負責，無 guess end. Need render", at: 0.5).isEmpty, "不採用有雜訊的版本")
+
+        driver.pending("I worked at Microsoft on AgentCore and then", segment: 0, at: 1.2)
+        let b = try #require(driver.draftRequests.last)
+        #expect(b.content.input.contains("畫面上的暫定譯文：\n我曾在 Microsoft"), "畫面上仍然是上一個好的版本")
+        #expect(
+            driver.complete(b.id, "我曾在 Microsoft 負責 AgentCore", at: 1.6)
+                == [.sentenceProvisional(number: 0, first: 0, text: "我曾在 Microsoft 負責 AgentCore")])
     }
 
     @Test("沒有開暫定譯文時，整句的暫定譯文也不送")

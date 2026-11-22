@@ -49,17 +49,18 @@ App 有隱藏的自我檢查：用音檔跑完一整場並把畫面存成圖檔�
 ```sh
 S=<暫存資料夾>; mkdir -p $S; mkfifo -m 600 $S/key
 security find-generic-password -a "$USER" -s thunderflow-openai-dev -w > $S/key &
-open -W -n -g -j build/ThunderFlow.app --stdin $S/key --stdout $S/out --args -apiKeyFromStdin YES \
+open -W -n -g -j build/ThunderFlow.app --stdin $S/key --stdout $S/out --args -ApplePersistenceIgnoreState YES -apiKeyFromStdin YES \
   -selfTestFile Benchmarks/data/keynote.wav -selfTestSeconds 30 -selfTestSnapshot $S/shot -selfTestQuit YES \
   -workingPath $S/working -libraryPath $S/lib
 ```
 
 `Benchmarks/data/` 的音檔由 `thunderbench synth` 產生（不進 git）。這些參數只從啟動參數讀，不要用 `defaults write` 寫進去。
+`-ApplePersistenceIgnoreState YES` 讓測試用的實例不恢復上次的視窗狀態：沒有它時，視窗可能不出現，自我檢查就永遠不會開始，也沒有任何輸出。
 
 實機檢查系統音訊的擷取（改動擷取之後要跑；不連線、不需要 Key、不建立場次）：
 
 ```sh
-open -W -n -g -j build/ThunderFlow.app --stdout $S/out --args -diagnoseCapture YES -diagnoseSeconds 12 -selfTestQuit YES \
+open -W -n -g -j build/ThunderFlow.app --stdout $S/out --args -ApplePersistenceIgnoreState YES -diagnoseCapture YES -diagnoseSeconds 12 -selfTestQuit YES \
   -workingPath $S/working -libraryPath $S/lib
 ```
 

@@ -43,6 +43,7 @@ public struct OpenAITextModel: TextModel {
         ]
         if let limit = request.maxOutputTokens { body["max_output_tokens"] = limit }
         if let effort = request.reasoningEffort { body["reasoning"] = ["effort": effort] }
+        if let tier = request.serviceTier { body["service_tier"] = tier }
         if let schema = request.schema {
             guard let object = try? JSONSerialization.jsonObject(with: Data(schema.json.utf8)) as? [String: Any] else {
                 throw TextModelError.invalidResponse("結構化輸出的 schema 不是合法的 JSON 物件")

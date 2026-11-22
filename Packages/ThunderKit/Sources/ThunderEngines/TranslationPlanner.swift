@@ -50,6 +50,8 @@ public struct TranslationPlanner: Sendable {
         /// 整句的暫定譯文：每一句的第一個請求在這麼多字時就送，讓中文早一點出現；nil 時照 `provisionalWords`。
         /// 之後的請求照 `provisionalWords`、`provisionalInterval`（HANDOVER.md P11：第一個字 1.05 → 0.77 秒，改寫只多一點）。
         public var sentenceProvisionalFirstWords: Int?
+        /// OpenAI 的處理等級（`priority`：每個請求快約 0.14 秒、單價較高；HANDOVER.md P11）。nil 表示預設，App 預設不用。
+        public var serviceTier: String?
         /// 場次資訊與關鍵詞：放進提示，讓專有名詞保留原文。
         public var title: String = ""
         public var event: String = ""
@@ -769,7 +771,8 @@ public struct TranslationPlanner: Sendable {
             instructions: instructions(isFinal: isFinal, strict: strict),
             input: parts.joined(separator: "\n\n"),
             maxOutputTokens: 400,
-            reasoningEffort: "none")
+            reasoningEffort: "none",
+            serviceTier: configuration.serviceTier)
     }
 
     /// 整句的請求：前文是最近幾句的英文與已經翻好的中文，最後是這一句的英文。
@@ -785,7 +788,8 @@ public struct TranslationPlanner: Sendable {
             instructions: sentenceInstructions(strict: strict),
             input: parts.joined(separator: "\n\n"),
             maxOutputTokens: 400,
-            reasoningEffort: "none")
+            reasoningEffort: "none",
+            serviceTier: configuration.serviceTier)
     }
 
     /// 整句的暫定譯文的請求：前文（最近幾句的英文與中文）、畫面上的暫定譯文、這一句目前聽到的部分。
@@ -802,7 +806,8 @@ public struct TranslationPlanner: Sendable {
             instructions: draftInstructions(),
             input: parts.joined(separator: "\n\n"),
             maxOutputTokens: 400,
-            reasoningEffort: "none")
+            reasoningEffort: "none",
+            serviceTier: configuration.serviceTier)
     }
 
     /// 整句的暫定譯文的提示（HANDOVER.md P11 的實驗：保留畫面上的字，翻錯或接不通順時才改）。

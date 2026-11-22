@@ -14,6 +14,8 @@ public struct TextRequest: Sendable, Equatable {
     public var reasoningEffort: String?
     /// 要求模型照這份 JSON Schema 輸出（結構化輸出）；nil 表示一般文字。
     public var schema: TextSchema?
+    /// OpenAI 的處理等級（例如 `priority`：較快、單價較高）；nil 表示預設。
+    public var serviceTier: String?
 
     public init(
         model: String,
@@ -21,7 +23,8 @@ public struct TextRequest: Sendable, Equatable {
         input: String,
         maxOutputTokens: Int? = nil,
         reasoningEffort: String? = "none",
-        schema: TextSchema? = nil
+        schema: TextSchema? = nil,
+        serviceTier: String? = nil
     ) {
         self.model = model
         self.instructions = instructions
@@ -29,6 +32,7 @@ public struct TextRequest: Sendable, Equatable {
         self.maxOutputTokens = maxOutputTokens
         self.reasoningEffort = reasoningEffort
         self.schema = schema
+        self.serviceTier = serviceTier
     }
 }
 

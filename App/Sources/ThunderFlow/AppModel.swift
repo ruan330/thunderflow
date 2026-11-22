@@ -49,6 +49,8 @@ final class AppModel {
     var sessionKeywords = ""
     var source: SourceChoice
     var devices: [AudioInputDevice] = []
+    /// 裝置有變化（接上、拔掉）就更新 `devices`。第一次列出裝置時建立（`refreshDevices()`）。
+    @ObservationIgnored private var deviceWatcher: AudioDeviceWatcher?
     var sourceDescription = ""
     /// 這一場標記過重點的字幕行（段號）：那一行顯示黃色旗子。
     private(set) var markedLines: Set<Int> = []
@@ -204,10 +206,23 @@ final class AppModel {
 
     /// 重新列出收音裝置。在背景做：程式第一次碰 Core Audio 要等它初始化（實測約 70 ms），
     /// 放在主執行緒上會讓剛出現的畫面卡住（DESIGN.md 9.8 節：第一個畫面前後不在主執行緒上碰 Core Audio）。
+    ///
+    /// 第一次呼叫時也開始注意裝置的變化：之後接上或拔掉麥克風、AirPods 連上或斷開，清單會自己更新，
+    /// 新接上的裝置馬上出現在來源選單裡（不定時喚醒，只有裝置真的改變時才通知）。
     func refreshDevices() {
+        let watches = deviceWatcher == nil
         Task.detached(priority: .userInitiated) { [weak self] in
             let devices = AudioDevices.inputDevices()
-            await MainActor.run { self?.devices = devices }
+            let watcher =
+                watches
+                ? AudioDeviceWatcher { devices in
+                    Task { @MainActor in self?.devices = devices }
+                } : nil
+            await MainActor.run {
+                guard let self else { return }
+                self.devices = devices
+                if let watcher, self.deviceWatcher == nil { self.deviceWatcher = watcher }
+            }
         }
     }
 

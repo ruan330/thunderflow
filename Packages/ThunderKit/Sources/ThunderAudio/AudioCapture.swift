@@ -86,7 +86,7 @@ public enum AudioCaptureError: Error, CustomStringConvertible {
 
 /// 查詢音訊裝置。裝置清單每次都重新向系統查詢，不寫死任何裝置名稱。
 public enum AudioDevices {
-    /// 所有有輸入聲道的裝置。
+    /// 所有有輸入聲道的裝置。不含這個程式自己建立的私有 aggregate device（錄系統音訊用的，它也有輸入聲道）。
     public static func inputDevices() -> [AudioInputDevice] {
         let defaultID = defaultDevice(input: true)
         var address = AudioObjectPropertyAddress(
@@ -102,7 +102,9 @@ public enum AudioDevices {
         }
         return ids.compactMap { id in
             let channels = inputChannelCount(of: id)
-            guard channels > 0, let uid = string(kAudioDevicePropertyDeviceUID, of: id) else { return nil }
+            guard channels > 0, !isPrivateAggregate(id), let uid = string(kAudioDevicePropertyDeviceUID, of: id) else {
+                return nil
+            }
             return AudioInputDevice(
                 id: id, uid: uid, name: string(kAudioObjectPropertyName, of: id) ?? uid,
                 sampleRate: nominalSampleRate(of: id), channels: channels, isDefault: id == defaultID)
@@ -136,6 +138,20 @@ public enum AudioDevices {
         var rate: Float64 = 0
         var size = UInt32(MemoryLayout<Float64>.size)
         return AudioObjectGetPropertyData(device, &address, 0, nil, &size, &rate) == noErr ? rate : 0
+    }
+
+    /// 私有的 aggregate device 只有建立它的程式看得到，所以一定是自己錄系統音訊用的那一個。
+    /// 裝置有變化時清單會重新列出（`AudioDeviceWatcher`），錄系統音訊時它不該出現在麥克風的選單裡。
+    static func isPrivateAggregate(_ device: AudioDeviceID) -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioAggregateDevicePropertyComposition, mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain)
+        guard AudioObjectHasProperty(device, &address) else { return false }
+        var value: Unmanaged<CFDictionary>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFDictionary>?>.size)
+        guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, &value) == noErr, let value else { return false }
+        let composition = value.takeRetainedValue() as? [String: Any] ?? [:]
+        return (composition[kAudioAggregateDeviceIsPrivateKey] as? NSNumber)?.boolValue == true
     }
 
     static func inputChannelCount(of device: AudioDeviceID) -> Int {

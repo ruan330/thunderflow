@@ -18,7 +18,8 @@ public final class LiveCaptionModel {
     public private(set) var gapSeconds: Double = 0
     /// 畫面更新了幾次。給測試確認「合併更新」用。
     public private(set) var updateCount = 0
-    /// 有沒有字幕可以顯示（任何一行，或正在說的那一段）。
+    /// 有沒有字幕可以顯示（任何一行，或正在說的那一段）。只在有與沒有之間切換時才改變：
+    /// 畫面只看這個決定要不要顯示提示，字幕每一次更新時就不必跟著重畫。
     public private(set) var hasCaptions = false
 
     /// 兩次更新之間最短的間隔。
@@ -52,6 +53,7 @@ public final class LiveCaptionModel {
         engineStatus = nil
         billedSeconds = 0
         gapSeconds = 0
+        updateHasCaptions()
     }
 
     /// 立刻套用佇列裡的事件。
@@ -71,6 +73,13 @@ public final class LiveCaptionModel {
             }
         }
         updateCount += 1
+        updateHasCaptions()
+    }
+
+    private func updateHasCaptions() {
+        let has = !board.lines.isEmpty || !board.liveEnglish.isEmpty
+        // 值一樣時不要寫：寫了就算改變，看著它的畫面會重畫
+        if has != hasCaptions { hasCaptions = has }
     }
 }
 

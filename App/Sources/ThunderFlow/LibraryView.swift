@@ -47,7 +47,8 @@ struct LibraryView: View {
                     .frame(maxHeight: .infinity)
                 } else {
                     List(model.filteredSessions, selection: $model.selectedSession) { item in
-                        SessionRow(item: item, progress: model.processing[item.id])
+                        SessionRow(
+                            item: item, progress: model.processing[item.id], failed: model.finalizationFailures[item.id] != nil)
                             .tag(item.id)
                             .contextMenu {
                                 // 處理中不能刪除、不能重新產生摘要（判斷在 ThunderUI，有測試）
@@ -87,6 +88,8 @@ struct LibraryView: View {
 struct SessionRow: View {
     let item: SessionLibrary.Item
     let progress: String?
+    /// 結束處理失敗（還留在工作目錄裡）。
+    let failed: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -94,7 +97,7 @@ struct SessionRow: View {
                 Text(item.meta.title.isEmpty ? "未命名" : item.meta.title).font(.headline).lineLimit(1)
                 Spacer()
                 // 只有例外才掛狀態標籤；正常完成的不掛（DESIGN.md 4.5 節）
-                if let badge = Indicator.sessionBadge(item.meta, progress: progress) {
+                if let badge = Indicator.sessionBadge(item.meta, progress: progress, failed: failed) {
                     IndicatorView(badge).font(.caption).layoutPriority(1)
                 }
             }
@@ -145,13 +148,22 @@ struct SessionDetailView: View {
             .frame(maxHeight: .infinity)
             Divider()
             PlayerBar(
-                player: player, processing: model.processing[item.id] != nil && !player.isReady,
+                player: player, unavailable: recordingNote,
                 // 游標在搜尋欄裡時不設空白鍵：實測這時視窗仍會把空白鍵當成播放鍵的快捷鍵接走（performKeyEquivalent），
                 // 不設的話空白鍵一定留給打字，不靠鍵盤事件的分派順序
                 spaceToggles: !searchEditing && !findFocused)
         }
         .task(id: reloadKey) { load() }
         .onDisappear { player.stop() }
+    }
+
+    /// 播放器還不能播時的說明：處理中；合併錄音之前（還在工作目錄裡，或處理失敗）；或這一場沒有錄音檔。
+    private var recordingNote: String {
+        if model.processing[item.id] != nil { return "錄音處理中…" }
+        if !item.meta.completedSteps.contains(FinalizationStep.audio.rawValue) {
+            return "錄音還沒合併成一個檔案：原始的錄音分段在這一場的資料夾裡"
+        }
+        return "這一場沒有錄音檔"
     }
 
     /// 這一場的內容有變（處理進度、摘要完成）或資料夾換了位置（自動命名）就重新讀檔。
@@ -199,6 +211,12 @@ struct SessionDetailView: View {
             }
             if let progress = model.processing[item.id] {
                 Label(progress, systemImage: "hourglass").font(.callout).foregroundStyle(.secondary)
+            } else if let failure = model.finalizationFailures[item.id] {
+                Label(
+                    "結束處理沒有完成：\(failure)。錄音還在這一場的資料夾裡（在 Finder 中顯示），下次開啟 App 時會再試一次。",
+                    systemImage: "exclamationmark.triangle"
+                )
+                .font(.callout).foregroundStyle(.orange)
             }
         }
         .padding(.horizontal, 20)
@@ -513,7 +531,8 @@ final class PlayerModel {
 
 struct PlayerBar: View {
     @Bindable var player: PlayerModel
-    let processing: Bool
+    /// 還不能播時的說明（例如「錄音處理中…」）。
+    let unavailable: String
     /// 空白鍵播放／暫停（DESIGN.md 4.8 節）。游標在文字欄位裡時關掉，空白鍵留給打字。
     let spaceToggles: Bool
 
@@ -549,7 +568,7 @@ struct PlayerBar: View {
                 .labelsHidden()
                 .frame(width: 80)
             } else {
-                Label(processing ? "錄音處理中…" : "這一場沒有錄音檔", systemImage: "waveform")
+                Label(unavailable, systemImage: "waveform")
                     .foregroundStyle(.secondary)
                 Spacer()
             }

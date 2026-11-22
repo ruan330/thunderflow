@@ -135,6 +135,9 @@ final class AppModel {
     var sessions: [SessionLibrary.Item] = []
     /// 正在做結束處理的場次，以及目前做到哪一步。
     var processing: [UUID: String] = [:]
+    /// 這次開啟 App 之後結束處理失敗的場次，以及失敗的原因。前幾步失敗的場次留在工作目錄，
+    /// 過去錄音的清單上標「處理失敗」；下次開啟 App 時會再試一次（只記在記憶體裡）。
+    var finalizationFailures: [UUID: String] = [:]
     var selectedSession: UUID?
     var searchText = ""
 
@@ -560,12 +563,17 @@ final class AppModel {
     }
 
     /// 在背景把一場做完：段落、逐字稿、m4a、搬進資料夾、摘要。不擋下一場錄音。
-    func finalize(_ directory: SessionDirectory, id: UUID, showWhenReady: Bool) {
+    ///
+    /// - Parameters:
+    ///   - showWhenReady: 逐字稿做好時把畫面帶到這一場。
+    ///   - resumed: 開啟 App 時接著做上次沒做完的。這時失敗不跳橫幅（每次開 App 都會再試、再失敗一次），
+    ///     只在過去錄音的清單上標「處理失敗」，詳細頁說明原因。
+    func finalize(_ directory: SessionDirectory, id: UUID, showWhenReady: Bool, resumed: Bool = false) {
         processing[id] = "處理中"
-        Task { await runFinalization(directory, id: id, showWhenReady: showWhenReady) }
+        Task { await runFinalization(directory, id: id, showWhenReady: showWhenReady, resumed: resumed) }
     }
 
-    private func runFinalization(_ directory: SessionDirectory, id: UUID, showWhenReady: Bool) async {
+    private func runFinalization(_ directory: SessionDirectory, id: UUID, showWhenReady: Bool, resumed: Bool) async {
         let finalizer = await finalizer(needsModel: settings.autoSummary)
         Task.detached(priority: .utility) { [weak self] in
             var failure: String?
@@ -574,13 +582,12 @@ final class AppModel {
                     Task { @MainActor in
                         guard let self else { return }
                         self.processing[id] = Self.label(for: step)
-                        // 搬進資料夾之後，逐字稿就可以讀了：這時把畫面帶到這一場
-                        if step == .publish {
-                            self.reloadLibrary()
-                            if showWhenReady, !self.isRecording {
-                                self.selectedSession = id
-                                self.page = .library
-                            }
+                        // 清單與詳細頁跟著每一步更新：還在工作目錄裡的場次也列在過去錄音裡
+                        self.reloadLibrary()
+                        // 逐字稿做好就可以讀了：這時把畫面帶到這一場，不用等合併錄音、搬進 Library
+                        if step == .transcript, showWhenReady, !self.isRecording {
+                            self.selectedSession = id
+                            self.page = .library
                         }
                     }
                 }
@@ -592,7 +599,11 @@ final class AppModel {
             await MainActor.run {
                 guard let self else { return }
                 self.processing[id] = nil
-                if let failure { self.banner = "這一場的結束處理沒有完成：\(failure)。錄音還在，下次開啟 App 時會再試一次。" }
+                // 失敗的場次留在工作目錄：清單上標「處理失敗」，詳細頁說明原因
+                self.finalizationFailures[id] = failure
+                if let failure, !resumed {
+                    self.banner = "這一場的結束處理沒有完成：\(failure)。錄音還在，下次開啟 App 時會再試一次。"
+                }
                 self.reloadLibrary()
             }
         }
@@ -607,10 +618,12 @@ final class AppModel {
         }
     }
 
+    /// 重新列出過去錄音：Library 的場次，加上工作目錄裡已經停止、還沒搬進 Library 的場次（處理中或處理失敗）。
     func reloadLibrary() {
-        let root = settings.libraryRoot
+        let library = settings.libraryRoot
+        let working = settings.workingRoot
         Task.detached(priority: .userInitiated) { [weak self] in
-            let items = SessionLibrary.list(root: root)
+            let items = SessionLibrary.list(library: library, working: working)
             await MainActor.run { self?.sessions = items }
         }
     }
@@ -636,7 +649,7 @@ final class AppModel {
             await MainActor.run {
                 guard let self else { return }
                 for (directory, id) in found where self.processing[id] == nil {
-                    self.finalize(directory, id: id, showWhenReady: false)
+                    self.finalize(directory, id: id, showWhenReady: false, resumed: true)
                 }
             }
         }
@@ -674,6 +687,7 @@ final class AppModel {
         NSWorkspace.shared.recycle([item.directory.url]) { [weak self] _, _ in
             Task { @MainActor in
                 if self?.selectedSession == item.id { self?.selectedSession = nil }
+                self?.finalizationFailures[item.id] = nil
                 self?.reloadLibrary()
             }
         }

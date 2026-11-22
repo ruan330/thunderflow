@@ -32,16 +32,27 @@ public enum SessionLibrary {
             guard let meta = try? directory.loadMeta() else { continue }
             items.append(Item(id: meta.id, directory: directory, meta: meta))
         }
-        return items.sorted { lhs, rhs in
-            if lhs.meta.startedAt != rhs.meta.startedAt { return lhs.meta.startedAt > rhs.meta.startedAt }
-            return lhs.directory.url.path < rhs.directory.url.path
-        }
+        return items.sorted(by: newestFirst)
     }
 
-    /// 過去錄音的清單：Library 裡的場次，加上工作目錄裡已經停止錄音、還沒搬進 Library 的場次。
+    /// 過去錄音的清單（DESIGN.md 4.5 節：包含還在處理中的場次）：Library 裡的場次，加上工作目錄裡已經停止錄音、
+    /// 還沒搬進 Library 的場次（結束處理中，或前幾步處理失敗而留在工作目錄），由新到舊。
+    ///
+    /// - 工作目錄裡還在錄音（或中斷了還沒復原）的場次不列出。
+    /// - 同一場兩邊都有（搬進 Library 的途中）時只列 Library 的那一份。
+    /// - 先讀工作目錄、再讀 Library：搬移途中的場次至少會出現在其中一邊，不會從清單上消失一下
+    ///   （消失的話，正在看的詳細頁會被關掉、播放停止）。
     public static func list(library: URL, working: URL) -> [Item] {
-        // 暫時照目前 App 的做法（只列 Library），測試會指出問題；實作時改掉
-        list(root: library)
+        let unpublished = list(root: working).filter { $0.meta.state != .recording }
+        let published = list(root: library)
+        let publishedIDs = Set(published.map(\.id))
+        return (published + unpublished.filter { !publishedIDs.contains($0.id) }).sorted(by: newestFirst)
+    }
+
+    /// 由新到舊（依開始時間；相同時依資料夾路徑）。
+    private static func newestFirst(_ lhs: Item, _ rhs: Item) -> Bool {
+        if lhs.meta.startedAt != rhs.meta.startedAt { return lhs.meta.startedAt > rhs.meta.startedAt }
+        return lhs.directory.url.path < rhs.directory.url.path
     }
 
     /// 場次資料夾的名稱：開始時間（`timeZone` 的當地時間）加上標題，例如

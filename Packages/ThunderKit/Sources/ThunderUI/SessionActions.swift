@@ -4,11 +4,20 @@ public struct SessionActions: Sendable, Equatable {
     public let canDelete: Bool
     /// 能不能重新產生摘要。處理中不行：同一場同時只能有一個處理（`SessionLock`），按下去只會失敗。
     public let canRegenerateSummary: Bool
+    /// 要不要顯示「重試」。
+    public let showsRetry: Bool
+    /// 「重試」能不能按。
+    public let canRetry: Bool
 
-    /// - Parameter progress: 這一場正在處理的進度（結束處理或重新產生摘要）；nil 是沒有在處理。
-    public init(progress: String?) {
+    /// - Parameters:
+    ///   - progress: 這一場正在處理的進度（結束處理或重新產生摘要）；nil 是沒有在處理。
+    ///   - failed: 這一場的結束處理失敗了（清單上標「處理失敗」）。
+    public init(progress: String?, failed: Bool = false) {
         let idle = progress == nil
         canDelete = idle
         canRegenerateSummary = idle
+        // 暫時照目前的做法（沒有重試），測試會指出問題；實作時改掉
+        showsRetry = false
+        canRetry = false
     }
 }

@@ -4,9 +4,33 @@ import Security
 public struct KeychainError: Error, Equatable, CustomStringConvertible {
     public var status: OSStatus
 
+    public init(status: OSStatus) {
+        self.status = status
+    }
+
+    /// 這個錯誤屬於哪一類（使用者沒有允許、其他錯誤……），畫面依此說明。
+    public var outcome: KeychainOutcome { KeychainOutcome(status: status) }
+
     public var description: String {
         let message = SecCopyErrorMessageString(status, nil) as String? ?? "未知的錯誤"
         return "鑰匙圈錯誤 \(status)：\(message)"
+    }
+}
+
+/// 鑰匙圈操作的結果，依畫面該怎麼說分類。只看狀態碼，不碰鑰匙圈。
+public enum KeychainOutcome: Sendable, Equatable {
+    /// 成功。
+    case success
+    /// 沒有這個項目。
+    case notFound
+    /// 使用者在鑰匙圈的授權視窗按了拒絕或取消，或現在不能跳出授權視窗（例如鑰匙圈鎖著又不能詢問）。
+    /// 項目還在，只是這一次沒有拿到，不能說成「沒有 Key」。
+    case denied
+    /// 其他錯誤，帶原本的狀態碼。
+    case failed(OSStatus)
+
+    public init(status: OSStatus) {
+        self = .failed(status)
     }
 }
 

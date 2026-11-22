@@ -9,12 +9,18 @@ public struct InterruptedSession: Sendable, Equatable {
     /// 檔案裡實際救得回來的錄音長度（秒）。
     public var recordedDuration: TimeInterval
     public var segmentCount: Int
+    /// 場次資料夾最後一次寫入的時間（`session.json`、日誌、錄音分段裡最新的一個），大約就是中斷的時間。
+    public var lastWrittenAt: Date
 
-    public init(directory: SessionDirectory, meta: SessionMeta, recordedDuration: TimeInterval, segmentCount: Int) {
+    public init(
+        directory: SessionDirectory, meta: SessionMeta, recordedDuration: TimeInterval, segmentCount: Int,
+        lastWrittenAt: Date = .distantPast
+    ) {
         self.directory = directory
         self.meta = meta
         self.recordedDuration = recordedDuration
         self.segmentCount = segmentCount
+        self.lastWrittenAt = lastWrittenAt
     }
 }
 

@@ -305,28 +305,3 @@ struct Hairline: View {
             .accessibilityHidden(true)
     }
 }
-
-// MARK: - 字幕
-
-extension View {
-    /// 還在更新的那一行（暫定譯文、正在說的英文）：左邊一條 3 pt 的磷光綠線。
-    /// 畫在字幕區左邊的留白裡，文字的位置不動。
-    func updatingMarker() -> some View {
-        overlay(alignment: .leading) {
-            Capsule()
-                .fill(Theme.bolt)
-                .frame(width: 3)
-                .offset(x: -12)
-                .accessibilityHidden(true)
-        }
-    }
-}
-
-extension Text {
-    /// 標記過重點的那一行：文字後面加一面小的黃色旗子，跟著文字換行。
-    func flagged(_ marked: Bool, size: CGFloat) -> Text {
-        guard marked else { return self }
-        let flag = Text(Image(systemName: "flag.fill")).font(.system(size: size * 0.6)).foregroundStyle(Theme.mark)
-        return Text("\(self) \(flag)")
-    }
-}

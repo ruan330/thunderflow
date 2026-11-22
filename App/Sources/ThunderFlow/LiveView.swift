@@ -225,53 +225,6 @@ private struct StatusStrip: View {
     }
 }
 
-/// 錄音的時間（SF Mono）。
-private struct ElapsedTime: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        Text(Format.duration(model.elapsed))
-            .font(.system(.callout, design: .monospaced))
-            .fixedSize()
-    }
-}
-
-/// 預估費用（SF Mono、次要灰）。
-private struct CostEstimate: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        Text(Format.cost(audioSeconds: model.elapsed, provisional: model.settings.showsProvisional))
-            .font(.system(.callout, design: .monospaced))
-            .foregroundStyle(.secondary)
-            .fixedSize()
-    }
-}
-
-/// 音量：12 格。亮起的格子是磷光綠；超過 85% 時最上面亮起的那一格變黃，超過 95% 變紅。
-private struct LevelMeter: View {
-    @Environment(AppModel.self) private var model
-    private static let bars = 12
-
-    var body: some View {
-        // 音量以分貝顯示才看得出變化：-50 dB 到 0 dB
-        let decibels = 20 * log10(max(Double(model.level), 0.000_01))
-        let fraction = min(1, max(0, (decibels + 50) / 50))
-        let lit = Int((fraction * Double(Self.bars)).rounded())
-        let peak = fraction > 0.95 ? Theme.danger : fraction > 0.85 ? Theme.mark : Theme.bolt
-        HStack(spacing: 2) {
-            ForEach(0..<Self.bars, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 1, style: .continuous)
-                    .fill(index < lit ? (index == lit - 1 ? peak : Theme.bolt) : Color.white.opacity(0.1))
-                    .frame(width: 3, height: 10)
-            }
-        }
-        .accessibilityElement()
-        .accessibilityLabel("音量")
-        .accessibilityValue("\(Int(fraction * 100))%")
-    }
-}
-
 /// 浮動字幕的開關。開著的時候圖示填滿、變綠，底是淡綠色（DESIGN.md 4.10.5 節）。
 private struct FloatingCaptionsToggle: View {
     @Environment(AppModel.self) private var model
@@ -355,25 +308,14 @@ private struct DisplayOptions: View {
 // MARK: - 字幕
 
 /// 中文（大字）與英文（小字、灰色）兩區字幕，各自自動捲到最新；往上捲時暫停自動捲動。
+///
+/// 這裡只看「有沒有字幕」與顯示的設定：字幕每一次更新不經過 SwiftUI，由兩區自己的文字元件處理
+/// （`CaptionZone`，HANDOVER.md P9）。整場的字幕都在，錄音中可以捲回最前面。
 struct CaptionsView: View {
     @Environment(AppModel.self) private var model
 
-    /// 畫面上最多畫幾行（約半小時）。只畫最後這幾行，畫面的成本才不會隨場次變長。
-    /// 而且畫面不能一直拿著整份字幕：拿著的話，下一次更新時整份字幕都要複製一次（見 `LiveCaptionModel.flush`），
-    /// 所以這裡只把最後幾行複製出來，下面的內容也不引用整份字幕。更早的內容在結束後的逐字稿裡。
-    static let visibleLines = 400
-
     var body: some View {
-        let board = model.captions.board
-        let lines = Array(board.lines.suffix(Self.visibleLines))
-        let earlier = board.lines.count - lines.count
-        let liveEnglish = board.liveEnglish
-        let liveChinese = board.liveChinese
-        let mode = model.settings.displayMode
-        let size = model.settings.fontSize
-        let showsProvisional = model.settings.showsProvisional
-        let marked = model.markedLines
-        if lines.isEmpty, liveEnglish.isEmpty {
+        if !model.captions.hasCaptions {
             // 依錄音的階段說明：按下開始之後就不再叫使用者按開始（判斷在 ThunderUI，有測試）
             let placeholder = CaptionsPlaceholder(phase: model.shownPhase)
             ContentUnavailableView {
@@ -388,140 +330,30 @@ struct CaptionsView: View {
             // 佔滿字幕區：否則整頁會被垂直置中，標題列跑到畫面中間
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
+            let mode = model.settings.displayMode
+            let size = CGFloat(model.settings.fontSize)
+            let showsProvisional = model.settings.showsProvisional
             VSplitView {
                 if mode != .english {
-                    CaptionZone(title: "中文", updates: model.captions.updateCount) {
-                        if earlier > 0 { EarlierNote(count: earlier) }
-                        ForEach(lines) { line in
-                            ChineseLine(
-                                line: line, showsProvisional: showsProvisional, marked: marked.contains(line.id), size: size)
-                        }
-                        if showsProvisional, !liveChinese.isEmpty {
-                            Text(liveChinese).font(.system(size: size)).foregroundStyle(.secondary).updatingMarker()
-                        }
-                    }
                     // 行距約 1.45 倍（DESIGN.md 4.10.3 節）
-                    .lineSpacing(size * 0.25)
+                    CaptionZone(
+                        style: CaptionZoneStyle(
+                            title: "中文",
+                            options: CaptionZoneOptions(language: .chinese, showsProvisional: showsProvisional, showsFlags: true),
+                            fontSize: size, lineSpacing: size * 0.25)
+                    )
                     .frame(minHeight: 120)
                 }
                 if mode != .chinese {
-                    let englishSize = mode == .english ? size : size * 0.72
                     // 旗子只畫一次：雙語時畫在中文那一行，只看英文時畫在英文這一行
-                    let flagsEnglish = mode == .english
-                    CaptionZone(title: "English", updates: model.captions.updateCount) {
-                        if earlier > 0 { EarlierNote(count: earlier) }
-                        ForEach(lines) { line in
-                            Text(line.english)
-                                .flagged(flagsEnglish && marked.contains(line.id), size: englishSize)
-                                .font(.system(size: englishSize))
-                                .foregroundStyle(.secondary)
-                        }
-                        if !liveEnglish.isEmpty {
-                            // 正在說的這一行：白 45%，左邊一條綠線
-                            Text(liveEnglish.trimmingCharacters(in: .whitespaces))
-                                .font(.system(size: englishSize))
-                                .foregroundStyle(Theme.speaking)
-                                .updatingMarker()
-                        }
-                    }
+                    CaptionZone(
+                        style: CaptionZoneStyle(
+                            title: "English",
+                            options: CaptionZoneOptions(
+                                language: .english, showsProvisional: showsProvisional, showsFlags: mode == .english),
+                            fontSize: mode == .english ? size : size * 0.72, lineSpacing: 0)
+                    )
                     .frame(minHeight: 90)
-                }
-            }
-        }
-    }
-}
-
-/// 畫面上沒有畫出來的較早內容。
-private struct EarlierNote: View {
-    let count: Int
-
-    var body: some View {
-        Text("較早的 \(count) 段在結束後的逐字稿裡").font(.caption).foregroundStyle(.secondary)
-    }
-}
-
-/// 一行中文：有定稿用定稿（主要文字色）；沒有的話，允許時顯示暫定譯文（次要灰、左邊一條綠線）；
-/// 確定不會有定稿時先顯示英文並標示「未翻譯」。標記過重點的那一行後面有一面黃色旗子。
-private struct ChineseLine: View {
-    let line: CaptionBoard.Line
-    let showsProvisional: Bool
-    let marked: Bool
-    let size: CGFloat
-
-    var body: some View {
-        Group {
-            if !line.chinese.isEmpty {
-                Text(line.chinese).flagged(marked, size: size)
-            } else if line.untranslated {
-                // 這一段沒翻到：先顯示英文，結束後補上
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(line.english).flagged(marked, size: size).foregroundStyle(.secondary)
-                    UntranslatedTag()
-                }
-            } else {
-                // 定稿還沒到：這一行還在更新
-                let provisional = showsProvisional ? line.provisional : ""
-                Text(provisional.isEmpty ? "…" : provisional)
-                    .flagged(marked, size: size)
-                    .foregroundStyle(.secondary)
-                    .updatingMarker()
-            }
-        }
-        .font(.system(size: size))
-    }
-}
-
-/// 沒翻到的段：橘色的外框標籤（DESIGN.md 4.10.4 節）。
-private struct UntranslatedTag: View {
-    var body: some View {
-        Text("未翻譯")
-            .font(.caption)
-            .foregroundStyle(Theme.attention)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 1)
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.attention.opacity(0.7), lineWidth: 1))
-    }
-}
-
-/// 一區字幕：新的內容出現時捲到最下面；使用者往上捲之後就不再自動捲，並出現「回到最新」。
-struct CaptionZone<Content: View>: View {
-    let title: String
-    let updates: Int
-    @ViewBuilder var content: Content
-    @State private var pinned = true
-
-    var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
-                    Text(title).font(.caption).foregroundStyle(.secondary)
-                    content
-                    Color.clear.frame(height: 1).id("bottom")
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .textSelection(.enabled)
-            }
-            .onScrollGeometryChange(for: Bool.self) { geometry in
-                geometry.contentOffset.y + geometry.containerSize.height >= geometry.contentSize.height - 60
-            } action: { _, atBottom in
-                pinned = atBottom
-            }
-            .onChange(of: updates) {
-                if pinned { proxy.scrollTo("bottom", anchor: .bottom) }
-            }
-            .overlay(alignment: .bottomTrailing) {
-                if !pinned {
-                    Button {
-                        pinned = true
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    } label: {
-                        Label("回到最新", systemImage: "arrow.down")
-                    }
-                    .buttonStyle(NeutralButtonStyle())
-                    .padding(12)
                 }
             }
         }

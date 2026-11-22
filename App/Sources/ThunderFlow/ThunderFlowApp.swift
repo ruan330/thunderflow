@@ -268,7 +268,7 @@ struct FloatingCaptionsView: View {
 
     var body: some View {
         let board = model.captions.board
-        // 只複製最後兩行出來（不引用整份字幕，見 CaptionsView.visibleLines 的說明）
+        // 只複製最後兩行出來：一直拿著整份字幕的話，下一次更新時整份字幕都要複製一次（見 LiveCaptionModel.flush）
         let recent = Array(board.lines.suffix(2))
         let mode = model.settings.displayMode
         let showsProvisional = model.settings.showsProvisional
@@ -314,6 +314,10 @@ enum SelfTest {
         let defaults = UserDefaults.standard
         if defaults.bool(forKey: "diagnoseCapture") {
             diagnoseCapture()
+            return
+        }
+        if let prefix = defaults.string(forKey: "selfTestCaptions") {
+            previewCaptions(model, to: prefix)
             return
         }
         // 來源：`-selfTestSource system`（系統音訊）、`-selfTestSource microphone`（預設的麥克風），或 `-selfTestFile <音檔>`
@@ -428,6 +432,47 @@ enum SelfTest {
                     capture.mixer.discontinuityCount))
             fflush(stdout)
             if defaults.bool(forKey: "selfTestQuit") { NSApp.terminate(nil) }
+        }
+    }
+
+    /// 字幕區的外觀檢查（不錄音、不連線、不需要 Key）：`-selfTestCaptions <路徑前綴>` 把一組固定的字幕放進字幕區，
+    /// 畫成 `<前綴>.png`。內容涵蓋每一種樣子：定稿（會換行的長句）、標記的旗子、未翻譯、暫定譯文、「…」、
+    /// 正在說的那一段（英文與它的暫定譯文）。顯示模式用啟動參數 `-displayMode chinese|english|bilingual` 指定：
+    /// 啟動參數只影響這一次執行，不會改到使用者的設定。改動字幕區的外觀之後，用它比對改之前與改之後的圖。
+    static func previewCaptions(_ model: AppModel, to prefix: String) {
+        func source(_ text: String, _ segment: Int, ended: Bool = true) -> CaptionEvent {
+            .source(CaptionText(text: text, kind: ended ? .segmentEnd : .delta, at: .zero, segment: segment))
+        }
+        func provisional(_ text: String, _ segment: Int) -> CaptionEvent {
+            .provisional(CaptionText(text: text, kind: .delta, at: .zero, segment: segment))
+        }
+        func final(_ text: String, _ segment: Int) -> CaptionEvent {
+            .translation(CaptionText(text: text, kind: .segmentEnd, at: .zero, segment: segment))
+        }
+        let events: [CaptionEvent] = [
+            source("Today I want to talk about how we are making it easier to build production-ready agents.", 0),
+            final("今天我想談談，我們如何讓打造可上線的代理程式變得更容易。", 0),
+            source("Amazon Bedrock AgentCore gives you three core components: a runtime, a gateway, and memory.", 1),
+            final("Amazon Bedrock AgentCore 提供三個核心元件：執行環境、閘道與記憶。", 1),
+            source("Let me show you a quick demo.", 2),
+            source("Each agent runs in its own isolated session, so one customer's data never leaks into another's.", 3),
+            // 第 3 段的定稿先到：第 2 段就是沒翻到
+            final("每個代理程式都在自己獨立的工作階段裡執行，所以一位客戶的資料絕對不會流到另一位客戶那裡。", 3),
+            source("And you only pay for the compute you actually use.", 4),
+            provisional("而且你只需要為", 4),
+            source("That is the key point.", 5),
+            source(" With AgentCore Runtime, each session runs in its own isolated", 6, ended: false),
+            provisional("使用 AgentCore Runtime 時，每個工作階段……", 6),
+        ]
+        Task {
+            for event in events { model.captions.receive(event) }
+            model.captions.flush()
+            model.previewMarks([1, 4])
+            try? await Task.sleep(for: .milliseconds(800))
+            snapshot(to: prefix + ".png")
+            print("selfTest: captions done")
+            fflush(stdout)
+            if UserDefaults.standard.bool(forKey: "selfTestQuit") { NSApp.terminate(nil) }
         }
     }
 

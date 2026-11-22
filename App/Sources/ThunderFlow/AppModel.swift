@@ -305,6 +305,11 @@ final class AppModel {
         notify(.marked, "已標記 \(Format.timecode(recording.audioTime.seconds))")
     }
 
+    /// 只給字幕區的外觀檢查用（`SelfTest.previewCaptions`）：不錄音，直接標記這幾行。
+    func previewMarks(_ lines: Set<Int>) {
+        markedLines = lines
+    }
+
     private var captureSource: CaptureSource {
         switch source {
         case .system: .systemAudio

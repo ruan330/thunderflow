@@ -35,6 +35,14 @@ public struct TranslationPlanner: Sendable {
         public var maximumAttempts: Int = 3
         /// 帶前幾段英文當上下文。
         public var contextSegments: Int = 2
+        /// 整句模式（DESIGN.md 5.6.2 節）：一句說完就把整句重新翻譯一次，取代這一句各段的定稿。
+        public var sentences: Bool = false
+        /// 整句的請求帶前幾句（英文與已經翻好的中文）當上下文。
+        public var sentenceContext: Int = 3
+        /// 一句累積到這麼多字還沒有句號，就在這一段結束時當成一句。
+        public var sentenceWordLimit: Int = 60
+        /// 一句的最後一段確定之後，這麼久都沒有新的字，就把這一句當成說完了。
+        public var sentenceIdle: TimeInterval = 2.5
         /// 場次資訊與關鍵詞：放進提示，讓專有名詞保留原文。
         public var title: String = ""
         public var event: String = ""
@@ -53,6 +61,8 @@ public struct TranslationPlanner: Sendable {
         case translation(segment: Int, text: String)
         /// 第 `segment` 段到目前為止的暫定譯文（整段取代上一次的）。
         case provisional(segment: Int, text: String)
+        /// 整句模式：第 `number` 句（第 `first` 段到第 `last` 段）的整句定稿，取代這幾段各自的定稿。
+        case sentence(number: Int, first: Int, last: Int, text: String)
     }
 
     private enum Outcome: Equatable {
@@ -132,8 +142,16 @@ public struct TranslationPlanner: Sendable {
 
     // MARK: 輸入
 
-    /// 第 `segment` 段的英文確定了。
-    public mutating func segmentFinished(_ segment: Int, text: String, at now: TimeInterval) -> [Effect] {
+    /// 整句模式：正在說的那一句的編號，下一段英文屬於這一句。
+    public var openSentence: Int { 0 }
+
+    /// 整句模式：第 `segment` 段屬於第幾句。不是整句模式，或是很久以前的段時是 nil。
+    public func sentence(of segment: Int) -> Int? { nil }
+
+    /// 第 `segment` 段的英文確定了。`reason` 是切段的原因：整句模式用它判斷一句是不是說完了。
+    public mutating func segmentFinished(_ segment: Int, text: String, reason: Segmenter.Reason? = nil, at now: TimeInterval)
+        -> [Effect]
+    {
         var effects = advance(to: now)
         effects += endProvisional()
         // 已經送出、不會再變動的段可以丟掉了（晚到的尾巴只會併進最近確定的那一段）
@@ -145,6 +163,16 @@ public struct TranslationPlanner: Sendable {
         queue.append(segment)
         effects += startAttempt(for: segment)
         return effects
+    }
+
+    /// 第 `segment` 段（最近確定的那一段）補上了晚到的標點。段的定稿不用重翻；整句模式時，補上的如果是句號，這一句就在這一段結束。
+    public mutating func segmentAmended(_ segment: Int, text: String, at now: TimeInterval) -> [Effect] {
+        advance(to: now)
+    }
+
+    /// 收尾（音訊結束或暫停）：整句模式時，正在說的那一句當成說完了。
+    public mutating func flush(at now: TimeInterval) -> [Effect] {
+        advance(to: now)
     }
 
     /// 第 `segment` 段（最近確定的那一段）併入了晚到的尾巴，`text` 是併入之後整段的英文：重新翻譯。

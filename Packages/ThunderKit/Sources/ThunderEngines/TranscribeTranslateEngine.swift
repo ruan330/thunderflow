@@ -264,6 +264,8 @@ private final class EngineRun {
                 output.yield(.translation(CaptionText(text: text, kind: .segmentEnd, at: audioEnd, segment: segment)))
             case .provisional(let segment, let text):
                 output.yield(.provisional(CaptionText(text: text, kind: .delta, at: audioEnd, segment: segment)))
+            case .sentence:
+                break
             }
         }
     }

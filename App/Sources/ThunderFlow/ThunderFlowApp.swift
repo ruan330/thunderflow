@@ -32,6 +32,47 @@ struct ThunderFlowApp: App {
         .commands {
             // ⌘N 是「開始錄音」（DESIGN.md 4.8 節），不是開新視窗。只有一個主視窗
             CommandGroup(replacing: .newItem) {}
+            RecordingMenu(model: model)
+        }
+    }
+}
+
+/// 「錄音」選單（DESIGN.md 4.8 節）：⌘N、⌘.、⌘B、⌘⇧F、⌘F 在任何一頁都能用。
+///
+/// 這幾個快捷鍵只在這裡設定，畫面上的按鈕不另外設定：同一個快捷鍵只有一個地方接，
+/// 字幕區的文字（NSTextView）拿著鍵盤焦點時也照樣能用。每一項照實際的階段啟用或停用（`RecordingCommands`，有測試）；
+/// 開始、暫停、繼續、停止和即時翻譯頁的按鈕共用防連點（`AppModel.press`）。
+struct RecordingMenu: Commands {
+    let model: AppModel
+
+    var body: some Commands {
+        let commands = RecordingCommands(phase: model.recorderPhase)
+        CommandMenu("錄音") {
+            Button("開始錄音") {
+                model.press { Task.immediate { await model.start() } }
+            }
+            .keyboardShortcut("n", modifiers: .command)
+            .disabled(!commands.canStart)
+            Button(commands.pauseTitle) {
+                model.press { model.togglePause() }
+            }
+            .disabled(!commands.canTogglePause)
+            Button("停止") {
+                model.press { Task.immediate { await model.stop() } }
+            }
+            .keyboardShortcut(".", modifiers: .command)
+            .disabled(!commands.canStop)
+            Divider()
+            Button("標記重點") { model.mark() }
+                .keyboardShortcut("b", modifiers: .command)
+                .disabled(!commands.canMark)
+            Button(FloatingCaptions.shared.isOpen ? "關閉浮動字幕" : "打開浮動字幕") {
+                FloatingCaptions.shared.toggle(model: model)
+            }
+            .keyboardShortcut("f", modifiers: [.command, .shift])
+            Divider()
+            Button("搜尋過去錄音") { model.findInLibrary() }
+                .keyboardShortcut("f", modifiers: .command)
         }
     }
 }

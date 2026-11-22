@@ -56,13 +56,13 @@ struct LiveView: View {
 /// 開始／停止（DESIGN.md 4.10.5 節、D30）。
 ///
 /// 主要位置固定在最右邊、寬度不變：「開始錄音」在錄音中變成「暫停」（暫停時是「繼續」）。「停止」只出現在它左邊，
-/// 不會出現在主要位置，所以剛按下開始時手快多點一下，最多是暫停。狀態剛換的 0.5 秒內不接受點擊（`PressGuard`）；
-/// 開始或停止在 0.3 秒內完成時不顯示「準備中」「收尾中」：按下的按鈕維持按下的樣子，直接換成結果
+/// 不會出現在主要位置，所以剛按下開始時手快多點一下，最多是暫停。狀態剛換的 0.5 秒內不接受點擊（`AppModel.press`，
+/// 和「錄音」選單共用）；開始或停止在 0.3 秒內完成時不顯示「準備中」「收尾中」：按下的按鈕維持按下的樣子，直接換成結果
 /// （`RecorderPhase.shown`；計時在 `AppModel`，狀態列與字幕區共用同一個）。位置的判斷都在 `TransportSlots`。
+/// 快捷鍵（⌘N、⌘.）在「錄音」選單（`RecordingMenu`），這裡不另外設定。
 private struct TransportControls: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pressGuard = PressGuard()
 
     var body: some View {
         let phase = model.recorderPhase
@@ -79,20 +79,17 @@ private struct TransportControls: View {
             }
             .animation(Theme.standard, value: slots.main)
         }
-        // 狀態一換，防連點的 0.5 秒就從現在重新起算
-        .onChange(of: phase) { _, _ in pressGuard.stateChanged(at: .now) }
     }
 
     @ViewBuilder private func mainSlot(_ main: TransportSlots.Main, phase: RecorderPhase) -> some View {
         switch main {
         case .start:
             Button {
-                perform { Task.immediate { await model.start() } }
+                model.press { Task.immediate { await model.start() } }
             } label: {
                 SlotLabel { Label("開始錄音", systemImage: "record.circle") }
             }
             .buttonStyle(PrimaryButtonStyle(isHeld: phase == .starting))
-            .keyboardShortcut("n", modifiers: .command)
             // 開始中、「準備中」還沒出現：畫成按下去的樣子，不接受點擊
             .allowsHitTesting(phase == .idle)
         case .preparing:
@@ -108,7 +105,7 @@ private struct TransportControls: View {
             .disabled(true)
         case .pause:
             Button {
-                perform { model.togglePause() }
+                model.press { model.togglePause() }
             } label: {
                 SlotLabel { Label("暫停", systemImage: "pause.fill") }
             }
@@ -117,7 +114,7 @@ private struct TransportControls: View {
             .allowsHitTesting(phase == .recording)
         case .resume:
             Button {
-                perform { model.togglePause() }
+                model.press { model.togglePause() }
             } label: {
                 SlotLabel { Label("繼續", systemImage: "play.fill") }
             }
@@ -139,7 +136,7 @@ private struct TransportControls: View {
 
     private var stopButton: some View {
         Button {
-            perform { Task.immediate { await model.stop() } }
+            model.press { Task.immediate { await model.stop() } }
         } label: {
             Label {
                 Text("停止")
@@ -150,14 +147,7 @@ private struct TransportControls: View {
         // 按下停止、「收尾中」還沒出現：畫成按下去的樣子，不接受點擊
         .buttonStyle(NeutralButtonStyle(isHeld: model.recorderPhase == .stopping))
         .allowsHitTesting(model.recorderPhase != .stopping)
-        .keyboardShortcut(".", modifiers: .command)
         .fixedSize()
-    }
-
-    /// 每個動作先問防連點：狀態剛換的 0.5 秒內不算數（快捷鍵也一樣）。
-    private func perform(_ action: () -> Void) {
-        guard pressGuard.accepts(at: .now) else { return }
-        action()
     }
 }
 
@@ -205,13 +195,14 @@ private struct StatusStrip: View {
             }
             Spacer(minLength: 8)
             if recording {
+                // 快捷鍵 ⌘B 在「錄音」選單，任何一頁都能用
                 Button {
                     model.mark()
                 } label: {
                     Label("標記重點", systemImage: "flag")
                 }
                 .buttonStyle(NeutralButtonStyle())
-                .keyboardShortcut("b", modifiers: .command)
+                .help("標記重點（⌘B）")
                 .fixedSize()
             }
             FloatingCaptionsToggle()
@@ -239,7 +230,7 @@ private struct FloatingCaptionsToggle: View {
                 .foregroundStyle(isOpen ? Theme.bolt : Color.primary)
         }
         .buttonStyle(NeutralButtonStyle(isOn: isOpen))
-        .keyboardShortcut("f", modifiers: [.command, .shift])
+        // 快捷鍵 ⌘⇧F 在「錄音」選單，任何一頁都能用
         .help("浮動字幕（⌘⇧F）")
         .accessibilityValue(isOpen ? "開啟" : "關閉")
     }

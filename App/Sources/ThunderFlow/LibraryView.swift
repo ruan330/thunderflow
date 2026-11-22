@@ -9,6 +9,8 @@ import ThunderUI
 /// 過去錄音（DESIGN.md 4.5、4.6 節）：左邊是清單，右邊是選中那一場的摘要、逐字稿與播放器。
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
+    /// 游標在搜尋欄裡：⌘F 把游標放進來；在這裡打字時，空白鍵是打字，不是播放／暫停。
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         @Bindable var model = model
@@ -22,6 +24,12 @@ struct LibraryView: View {
         }
         .navigationTitle("過去錄音")
         .onAppear { model.reloadLibrary() }
+        // ⌘F（「錄音」選單，可能是從別頁按的）：這一頁出現或已經在這一頁時，把游標放進搜尋欄
+        .task(id: model.searchFocusRequested) {
+            guard model.searchFocusRequested else { return }
+            searchFocused = true
+            model.searchFocusRequested = false
+        }
     }
 
     private var library: some View {
@@ -30,6 +38,7 @@ struct LibraryView: View {
             VStack(spacing: 0) {
                 TextField("搜尋標題、摘要…", text: $model.searchText)
                     .textFieldStyle(.roundedBorder)
+                    .focused($searchFocused)
                     .padding(10)
                 if model.sessions.isEmpty {
                     ContentUnavailableView(
@@ -60,7 +69,7 @@ struct LibraryView: View {
             .frame(minWidth: 260, idealWidth: 320, maxWidth: 420, maxHeight: .infinity)
 
             if let item = model.sessions.first(where: { $0.id == model.selectedSession }) {
-                SessionDetailView(item: item)
+                SessionDetailView(item: item, searchEditing: searchFocused)
                     // 用場次的 id 識別，不用資料夾的位置：摘要做好之後自動命名會改資料夾的名稱，
                     // 用位置識別的話整個詳細頁會重建，播放停掉、分頁與捲動的位置都回到原點
                     .id(item.id)
@@ -103,12 +112,16 @@ struct SessionRow: View {
 struct SessionDetailView: View {
     @Environment(AppModel.self) private var model
     let item: SessionLibrary.Item
+    /// 游標在清單上方的搜尋欄裡。
+    let searchEditing: Bool
     /// 分頁：只在第一次讀到內容時決定先看哪一頁（判斷在 ThunderUI，有測試）。
     @State private var tabs = SessionDetailTabs()
     @State private var blocks: [TranscriptBlock] = []
     @State private var summary: SessionSummary?
     @State private var player = PlayerModel()
     @State private var find = ""
+    /// 游標在「在這一場裡搜尋」的欄位裡。
+    @FocusState private var findFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -131,7 +144,11 @@ struct SessionDetailView: View {
             }
             .frame(maxHeight: .infinity)
             Divider()
-            PlayerBar(player: player, processing: model.processing[item.id] != nil && !player.isReady)
+            PlayerBar(
+                player: player, processing: model.processing[item.id] != nil && !player.isReady,
+                // 游標在搜尋欄裡時不設空白鍵：實測這時視窗仍會把空白鍵當成播放鍵的快捷鍵接走（performKeyEquivalent），
+                // 不設的話空白鍵一定留給打字，不靠鍵盤事件的分派順序
+                spaceToggles: !searchEditing && !findFocused)
         }
         .task(id: reloadKey) { load() }
         .onDisappear { player.stop() }
@@ -293,6 +310,7 @@ struct SessionDetailView: View {
             VStack(spacing: 0) {
                 TextField("在這一場裡搜尋…", text: $find)
                     .textFieldStyle(.roundedBorder)
+                    .focused($findFocused)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 8)
                 ScrollView {
@@ -491,6 +509,8 @@ final class PlayerModel {
 struct PlayerBar: View {
     @Bindable var player: PlayerModel
     let processing: Bool
+    /// 空白鍵播放／暫停（DESIGN.md 4.8 節）。游標在文字欄位裡時關掉，空白鍵留給打字。
+    let spaceToggles: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -500,7 +520,7 @@ struct PlayerBar: View {
                 } label: {
                     Image(systemName: player.isPlaying ? "pause.fill" : "play.fill").frame(width: 18)
                 }
-                .keyboardShortcut(.space, modifiers: [])
+                .keyboardShortcut(spaceToggles ? KeyboardShortcut(.space, modifiers: []) : nil)
                 Button {
                     player.skip(-15)
                 } label: {

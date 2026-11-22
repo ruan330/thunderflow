@@ -31,7 +31,12 @@ final class AppModel {
     // MARK: 即時翻譯頁
 
     var liveState: LiveState = .idle {
-        didSet { if liveState != oldValue { waitChanged() } }
+        didSet {
+            guard liveState != oldValue else { return }
+            // 狀態一換，防連點的 0.5 秒就從現在重新起算
+            pressGuard.stateChanged(at: .now)
+            waitChanged()
+        }
     }
     var elapsed: TimeInterval = 0
     var level: Float = 0
@@ -72,6 +77,29 @@ final class AppModel {
 
     /// 畫面上表示的階段：等待未滿 0.3 秒時，按鈕、狀態列與字幕區都維持等待之前的樣子（判斷在 ThunderUI，有測試）。
     var shownPhase: RecorderPhase { recorderPhase.shown(before: phaseBeforeWait, waitVisible: waitVisible) }
+
+    // MARK: 防連點
+
+    /// 開始、暫停、繼續、停止的防連點：狀態剛換的 0.5 秒內不算數（DESIGN.md 4.10.5 節）。
+    /// 放在這裡而不是按鈕裡：即時翻譯頁的按鈕和「錄音」選單（快捷鍵）共用同一個。
+    @ObservationIgnored private var pressGuard = PressGuard()
+
+    /// 使用者按下開始、暫停、繼續或停止（按鈕、選單或快捷鍵）：狀態剛換的 0.5 秒內不算數。
+    func press(_ action: () -> Void) {
+        guard pressGuard.accepts(at: .now) else { return }
+        action()
+    }
+
+    // MARK: 搜尋
+
+    /// ⌘F 要求把游標放進過去錄音的搜尋欄；過去錄音頁放好之後清掉。
+    var searchFocusRequested = false
+
+    /// ⌘F（DESIGN.md 4.8 節）：到過去錄音，把游標放進搜尋欄。
+    func findInLibrary() {
+        page = .library
+        searchFocusRequested = true
+    }
 
     private func waitChanged() {
         let now = ContinuousClock.now

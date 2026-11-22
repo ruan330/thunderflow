@@ -66,7 +66,12 @@ final class AppModel {
     @ObservationIgnored private var waitReveal: Task<Void, Never>?
 
     /// 延遲顯示的「準備中」（或「收尾中」）是不是已經出現。
-    var preparingVisible: Bool { waiting.isVisible(at: waitClock) }
+    var waitVisible: Bool { waiting.isVisible(at: waitClock) }
+    /// 這段等待開始之前的階段（尚未開始、錄音中或已暫停）。
+    private var phaseBeforeWait: RecorderPhase = .idle
+
+    /// 畫面上表示的階段：等待未滿 0.3 秒時，按鈕、狀態列與字幕區都維持等待之前的樣子（判斷在 ThunderUI，有測試）。
+    var shownPhase: RecorderPhase { recorderPhase.shown(before: phaseBeforeWait, waitVisible: waitVisible) }
 
     private func waitChanged() {
         let now = ContinuousClock.now
@@ -74,6 +79,7 @@ final class AppModel {
             waiting.begin(at: now)
         } else {
             waiting.end()
+            phaseBeforeWait = recorderPhase
         }
         waitClock = now
         waitReveal?.cancel()
@@ -292,7 +298,8 @@ final class AppModel {
 
     /// 標記重點：記進這一場，字幕最新的那一行加上旗子，並用提示說出標記的時間。
     func mark() {
-        guard let recording else { return }
+        // 收尾中的那一場不再標記（按下停止後，畫面還維持錄音中的那 0.3 秒內按 ⌘B 也一樣）
+        guard let recording, isRecording else { return }
         recording.mark()
         if let line = captions.board.lines.last?.id { markedLines.insert(line) }
         notify(.marked, "已標記 \(Format.timecode(recording.audioTime.seconds))")

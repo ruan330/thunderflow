@@ -47,7 +47,7 @@ struct LiveView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         // 停止鈕出現或收起時，左邊的東西跟著平順地移動（版面變化 280 ms）
-        .animation(Theme.layout, value: TransportSlots(phase: model.recorderPhase, preparingVisible: false).showsStop)
+        .animation(Theme.layout, value: TransportSlots(phase: model.shownPhase, preparingVisible: model.waitVisible).showsStop)
     }
 }
 
@@ -57,8 +57,8 @@ struct LiveView: View {
 ///
 /// 主要位置固定在最右邊、寬度不變：「開始錄音」在錄音中變成「暫停」（暫停時是「繼續」）。「停止」只出現在它左邊，
 /// 不會出現在主要位置，所以剛按下開始時手快多點一下，最多是暫停。狀態剛換的 0.5 秒內不接受點擊（`PressGuard`）；
-/// 0.3 秒內就開始錄音時不顯示「準備中」，按鈕維持按下的樣子，直接變成錄音中（`DelayedIndicator`；計時在 `AppModel`，狀態列共用同一個）。
-/// 位置的判斷都在 `TransportSlots`。
+/// 開始或停止在 0.3 秒內完成時不顯示「準備中」「收尾中」：按下的按鈕維持按下的樣子，直接換成結果
+/// （`RecorderPhase.shown`；計時在 `AppModel`，狀態列與字幕區共用同一個）。位置的判斷都在 `TransportSlots`。
 private struct TransportControls: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -66,7 +66,8 @@ private struct TransportControls: View {
 
     var body: some View {
         let phase = model.recorderPhase
-        let slots = TransportSlots(phase: phase, preparingVisible: model.preparingVisible)
+        // 按鈕照畫面上表示的階段排：等待未滿 0.3 秒時是等待之前的階段
+        let slots = TransportSlots(phase: model.shownPhase, preparingVisible: model.waitVisible)
         HStack(spacing: 8) {
             if slots.showsStop {
                 stopButton
@@ -112,6 +113,8 @@ private struct TransportControls: View {
                 SlotLabel { Label("暫停", systemImage: "pause.fill") }
             }
             .buttonStyle(NeutralButtonStyle())
+            // 按下停止、「收尾中」還沒出現：維持原樣，不接受點擊
+            .allowsHitTesting(phase == .recording)
         case .resume:
             Button {
                 perform { model.togglePause() }
@@ -119,6 +122,7 @@ private struct TransportControls: View {
                 SlotLabel { Label("繼續", systemImage: "play.fill") }
             }
             .buttonStyle(NeutralButtonStyle())
+            .allowsHitTesting(phase == .paused)
         case .finishing:
             Button {} label: {
                 SlotLabel {
@@ -143,7 +147,9 @@ private struct TransportControls: View {
                 Image(systemName: "stop.fill").foregroundStyle(Theme.recording)
             }
         }
-        .buttonStyle(NeutralButtonStyle())
+        // 按下停止、「收尾中」還沒出現：畫成按下去的樣子，不接受點擊
+        .buttonStyle(NeutralButtonStyle(isHeld: model.recorderPhase == .stopping))
+        .allowsHitTesting(model.recorderPhase != .stopping)
         .keyboardShortcut(".", modifiers: .command)
         .fixedSize()
     }
@@ -176,11 +182,12 @@ private struct StatusStrip: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        let recording = model.isRecording
+        // 和開始／停止的按鈕同時換：等待未滿 0.3 秒時維持等待之前的樣子
+        let shown = model.shownPhase
+        let recording = shown == .recording || shown == .paused
         HStack(spacing: 14) {
             HStack(spacing: 8) {
-                // 和開始／停止的按鈕同時換：按鈕還沒顯示「準備中」時，這裡也還是尚未開始
-                IndicatorView(.recorder(model.recorderPhase, preparingVisible: model.preparingVisible))
+                IndicatorView(.recorder(shown))
                 if recording { ElapsedTime() }
             }
             .fixedSize()
@@ -368,7 +375,7 @@ struct CaptionsView: View {
         let marked = model.markedLines
         if lines.isEmpty, liveEnglish.isEmpty {
             // 依錄音的階段說明：按下開始之後就不再叫使用者按開始（判斷在 ThunderUI，有測試）
-            let placeholder = CaptionsPlaceholder(phase: model.recorderPhase)
+            let placeholder = CaptionsPlaceholder(phase: model.shownPhase)
             ContentUnavailableView {
                 Label {
                     Text(placeholder.title)

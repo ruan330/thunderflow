@@ -31,7 +31,22 @@ public struct CaptionBoard: Sendable, Equatable {
     /// 暫定譯文屬於哪一段。
     private var liveChineseSegment: Int?
 
+    /// 字幕改過幾版：每一次改到 `lines`（新增一行，或改到已經有的行）就加一。
+    public private(set) var revision = 0
+    /// 這一份字幕的識別：複製的是同一份，清空重來（`CaptionBoard()`）的是另一份。
+    public let identity = UUID()
+
     public init() {}
+
+    /// 從 `revision` 那一版到現在，最前面改到（或新增）的是第幾行；沒有改到任何一行時是 nil。
+    public func firstChangedLine(since revision: Int) -> Int? {
+        nil
+    }
+
+    /// 段號是 `id` 的那一行在 `lines` 裡的位置。
+    public func index(ofLine id: Int) -> Int? {
+        nil
+    }
 
     /// 套用一個引擎事件。狀態、缺口、用量不影響字幕，會被忽略。
     public mutating func apply(_ event: CaptionEvent) {

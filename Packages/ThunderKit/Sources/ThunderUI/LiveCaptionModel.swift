@@ -18,6 +18,8 @@ public final class LiveCaptionModel {
     public private(set) var gapSeconds: Double = 0
     /// 畫面更新了幾次。給測試確認「合併更新」用。
     public private(set) var updateCount = 0
+    /// 有沒有字幕可以顯示（任何一行，或正在說的那一段）。
+    public private(set) var hasCaptions = false
 
     /// 兩次更新之間最短的間隔。
     public static let minimumInterval: Duration = .milliseconds(33)

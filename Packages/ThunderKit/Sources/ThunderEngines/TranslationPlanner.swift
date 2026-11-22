@@ -43,7 +43,7 @@ public struct TranslationPlanner: Sendable {
         public var sentenceWordLimit: Int = 60
         /// 一句的最後一段確定之後，這麼久都沒有新的字，就把這一句當成說完了。
         public var sentenceIdle: TimeInterval = 2.5
-        /// 整句的暫定譯文（DESIGN.md 5.6.3 節）：整句模式、有暫定譯文時，暫定譯文翻的是「這一句目前聽到的部分」
+        /// 整句的暫定譯文（DESIGN.md 5.6.2 節）：整句模式、有暫定譯文時，暫定譯文翻的是「這一句目前聽到的部分」
         /// （已經確定的段＋進行中的文字），請求帶畫面上已經有的暫定譯文，請模型盡量保留、只在後面接上新的部分。
         /// 一句說完才結束；送出的時機照 `provisionalWords`、`provisionalInterval`。
         public var sentenceProvisional: Bool = false
@@ -149,6 +149,8 @@ public struct TranslationPlanner: Sendable {
         var requestedWords = 0.0
         var requestedAt = -Double.infinity
         var inFlight: (request: Int, startedAt: TimeInterval)?
+        /// 最近一次請求送出的英文（檢查譯文裡的英文字是不是原文有的）。
+        var english = ""
     }
 
     /// 進行中的這一段（暫定譯文）。
@@ -344,7 +346,7 @@ public struct TranslationPlanner: Sendable {
         case .draft(let number):
             // 收到的字接得上畫面上的字（以它開頭、而且更長）就先送出；接不上的等完整回來再整個換掉
             guard var current = draft, current.number == number, current.inFlight?.request == request,
-                output.count > current.shown.count, output.hasPrefix(current.shown), !ChineseScript.containsSimplified(output),
+                output.count > current.shown.count, output.hasPrefix(current.shown), acceptable(output, english: current.english),
                 let first = draftFirstSegment
             else { break }
             current.shown = output
@@ -396,7 +398,7 @@ public struct TranslationPlanner: Sendable {
         case .draft(let number):
             guard var current = draft, current.number == number, current.inFlight?.request == request else { break }
             current.inFlight = nil
-            if !output.isEmpty, output != current.shown, !ChineseScript.containsSimplified(output), let first = draftFirstSegment {
+            if !output.isEmpty, output != current.shown, acceptable(output, english: current.english), let first = draftFirstSegment {
                 current.shown = output
                 effects.append(.sentenceProvisional(number: number, first: first, text: output))
             }
@@ -720,9 +722,29 @@ public struct TranslationPlanner: Sendable {
         current.inFlight = (request, now)
         current.requestedWords = words
         current.requestedAt = now
+        current.english = english
         draft = current
-        let context = Array(recent.suffix(configuration.sentenceContext))
-        return [.start(request: request, makeDraftRequest(english: english, context: context, shown: current.shown))]
+        // 前文只帶已經翻好的句子：只有英文的那一句，模型常常會把它也翻進這一句（HANDOVER.md P11）
+        let context = recent.suffix(configuration.sentenceContext).filter { $0.chinese != nil }
+        return [.start(request: request, makeDraftRequest(english: english, context: Array(context), shown: current.shown))]
+    }
+
+    /// 暫定譯文可以顯示：沒有簡體字，也沒有原文沒有的英文字（3 個字母以上；模型偶爾會把雜訊輸出來）。
+    /// 原文、場次資訊與關鍵詞裡有的名稱照常。
+    private func acceptable(_ output: String, english: String) -> Bool {
+        guard !ChineseScript.containsSimplified(output) else { return false }
+        let known = ([english, configuration.title, configuration.event, configuration.speaker] + configuration.keywords)
+            .joined(separator: " ").lowercased()
+        var word = ""
+        for character in output + " " {
+            if character.isASCII, character.isLetter {
+                word.append(character)
+                continue
+            }
+            if word.count >= 3, !known.contains(word.lowercased()) { return false }
+            word = ""
+        }
+        return true
     }
 
     /// 一句說完（或收尾）：取消還沒回來的整句暫定譯文。

@@ -54,20 +54,42 @@ public enum GapReason: String, Sendable {
     case backpressure
     /// 引擎已經停止（例如 API Key 失效）之後的音訊。
     case engineStopped
+    /// 錄音中斷：電腦睡眠。醒來之後接著錄同一場，睡眠的時間沒有錄到（DESIGN.md 5.4 節）。
+    case sleep
+    /// 錄音中斷：收音裝置不見了（拔掉 USB 麥克風、AirPods 斷線），改用別的裝置接著錄。
+    case deviceLost
+    /// 錄音中斷：錄系統音訊時預設的輸出裝置換了（例如接上或拔掉 AirPods），用新的輸出裝置接著錄。
+    case outputChanged
+    /// 錄音中斷：收音停了（一段時間沒有收到任何聲音資料），重新開始收音接著錄。
+    case captureStalled
     case unknown
 }
 
 /// 一段沒有被翻譯到的音訊。錄音本身不受影響，之後可以補翻。
+///
+/// 錄音中斷（原因是 `sleep`、`deviceLost`、`outputChanged`、`captureStalled`）也記成一筆缺口：
+/// 在中斷的音訊時間，長度是 0（錄音直接接在中斷之前的聲音後面，不補靜音），`lostSeconds` 是沒有錄到的時間。
 public struct AudioGap: Sendable, Equatable {
     public var from: AudioTime
     public var to: AudioTime
     public var reason: GapReason
+    /// 錄音中斷時，中斷期間沒有錄到的時間（實際經過的秒數）。其他缺口是 0。
+    public var lostSeconds: TimeInterval
 
-    public init(from: AudioTime, to: AudioTime, reason: GapReason) {
+    public init(from: AudioTime, to: AudioTime, reason: GapReason, lostSeconds: TimeInterval = 0) {
         self.from = from
         self.to = to
         self.reason = reason
+        self.lostSeconds = lostSeconds
     }
+
+    /// 錄音中斷：在音訊時間 `time` 這裡，有 `lostSeconds` 秒（實際經過的時間）沒有錄到。
+    public static func interruption(at time: AudioTime, lostSeconds: TimeInterval, reason: GapReason) -> AudioGap {
+        AudioGap(from: time, to: time, reason: reason, lostSeconds: lostSeconds)
+    }
+
+    /// 這是一筆錄音中斷（睡眠、裝置不見、換了輸出裝置、收音停了）。
+    public var isInterruption: Bool { false }
 
     public var duration: TimeInterval { to - from }
 

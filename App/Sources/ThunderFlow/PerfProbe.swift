@@ -3,7 +3,9 @@ import Foundation
 import Synchronization
 
 /// 量測用（DESIGN.md 9.8 節）：啟動參數 `-reportPerf YES` 時，每一場錄音在標準輸出印出
-/// - `perf.startToCapture.ms`：按下開始到第一個樣本進來（`session.startToCapture`）
+/// - `perf.start.keyLoaded.ms`：按下開始到拿到 API Key（記在記憶體裡時接近 0；第一次要讀鑰匙圈）
+/// - `perf.start.captureStarted.ms`：按下開始到收音開始（裝置已經啟動、場次已經建立）
+/// - `perf.startToCapture.ms`：按下開始到第一個樣本進來（`session.startToCapture`）。音檔來源不經過裝置，不印
 /// - `perf.mainThreadHitch.ms`：錄音中主執行緒最長的一次卡頓（`ui.mainThreadHitch`）
 ///
 /// 沒有這個參數時什麼都不做，也不建立任何執行緒。時間一律用 `CLOCK_UPTIME_RAW`，
@@ -23,6 +25,23 @@ enum PerfProbe {
         guard enabled else { return }
         pressedAt = now()
         reportedStart = false
+    }
+
+    /// 拿到 API Key 了（從記憶體或鑰匙圈）。
+    static func keyLoaded() {
+        report("perf.start.keyLoaded.ms")
+    }
+
+    /// 收音開始了（`LiveRecording.start()` 回傳）。
+    static func captureStarted() {
+        report("perf.start.captureStarted.ms")
+    }
+
+    /// 印出從按下開始到現在經過的時間。
+    private static func report(_ name: String) {
+        guard enabled, let pressedAt else { return }
+        print(name, String(format: "%.1f", Double(now() &- pressedAt) / 1_000_000))
+        fflush(stdout)
     }
 
     /// 錄音真的開始了：開始看主執行緒。

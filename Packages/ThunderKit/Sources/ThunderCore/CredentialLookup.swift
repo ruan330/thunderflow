@@ -69,11 +69,23 @@ public struct CredentialCache: Sendable {
 
     public var ticket: Ticket { Ticket(generation: generation) }
 
-    /// 記住讀到的 Key。
+    /// 記住讀到的 Key。只記「讀到了」：沒有 Key、沒有允許與其他錯誤都不記，下次重新讀。
+    /// 號碼牌是在 `invalidate()` 之前拿的（讀的途中 Key 被存入或刪除）就不記：讀到的可能是舊的 Key。
     public mutating func remember(_ lookup: CredentialLookup, ticket: Ticket) {
-        if case .found(let key) = lookup { stored = key }
+        guard ticket.generation == generation, case .found(let key) = lookup else { return }
+        stored = key
     }
 
-    /// 設定頁存入或刪除了 Key：忘掉記住的值。
-    public mutating func invalidate() {}
+    /// 設定頁存入或刪除了 Key：忘掉記住的值，進行中的讀取讀到的也不記。
+    public mutating func invalidate() {
+        stored = nil
+        generation += 1
+    }
+}
+
+extension CredentialCache: CustomStringConvertible, CustomDebugStringConvertible {
+    /// 不含 Key 本身：印出來或寫進 log 也不會外洩（不變條件 5）。
+    public var description: String { stored == nil ? "CredentialCache(空的)" : "CredentialCache(<不顯示>)" }
+
+    public var debugDescription: String { description }
 }

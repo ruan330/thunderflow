@@ -97,6 +97,7 @@ struct SettingsView: View {
         let result = await Task.detached(priority: .userInitiated) { Result { try Credentials.save(key) } }.value
         switch result {
         case .success:
+            model.keyChanged()
             model.settings.hasKey = true
             keyDraft = ""
             keyStatus = "已儲存"
@@ -115,6 +116,7 @@ struct SettingsView: View {
         let result = await Task.detached(priority: .userInitiated) { Result { try Credentials.delete() } }.value
         switch result {
         case .success:
+            model.keyChanged()
             model.settings.hasKey = false
             keyStatus = "已刪除"
         case .failure(let error):

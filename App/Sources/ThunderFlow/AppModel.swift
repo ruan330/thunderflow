@@ -120,6 +120,8 @@ final class AppModel {
     private var didStart = false
     /// 只放在記憶體裡的 API Key（自動測試用 `-apiKeyFromStdin YES` 從標準輸入讀進來）。有值時完全不碰鑰匙圈。
     private var keyOverride: String?
+    /// 讀過一次的 API Key 留在記憶體裡，之後按開始不再讀鑰匙圈；設定頁存入或刪除 Key 時作廢（`keyChanged()`）。
+    @ObservationIgnored private var keyCache = CredentialCache()
 
     init() {
         let key = UserDefaults.standard.string(forKey: "sourceKey") ?? "system"
@@ -209,14 +211,12 @@ final class AppModel {
             banner = "讀不到鑰匙圈裡的 API Key（\(error)），所以沒有開始錄音。"
             return
         }
+        PerfProbe.keyLoaded()
         settings.hasKey = true
         if case .microphone = source, !(await Permissions.microphone()) {
             liveState = .idle
             banner = "沒有麥克風的權限，所以沒有開始錄音。請到「系統設定 → 隱私權與安全性 → 麥克風」打開 ThunderFlow。"
             return
-        }
-        if let free = Self.freeSpace(at: settings.workingRoot), free < 2_000_000_000 {
-            banner = "磁碟剩餘空間不到 2 GB。錄音每小時約需要 350 MB 的暫存空間。"
         }
 
         captions.reset()
@@ -263,6 +263,7 @@ final class AppModel {
             liveState = .idle
             return
         }
+        PerfProbe.captureStarted()
         self.recording = recording
         sourceDescription = recording.sourceDescription
         liveState = .recording
@@ -270,6 +271,21 @@ final class AppModel {
         activity = ProcessInfo.processInfo.beginActivity(options: [.idleSystemSleepDisabled, .userInitiated], reason: "錄音中")
         PerfProbe.recordingStarted()
         startTicker()
+        warnIfLowOnDisk(during: recording)
+    }
+
+    /// 剩餘空間不到 2 GB 時提醒（DESIGN.md 5.5 節）。只是提醒，不影響錄音，所以收音開始之後才在背景算：
+    /// 「重要用途可用的空間」要問系統能清掉多少，比較慢，不該算在按下開始到開始收音裡。
+    /// 已經有別的橫幅（更晚發生的事）時不蓋掉它。
+    private func warnIfLowOnDisk(during recording: LiveRecording) {
+        let root = settings.workingRoot
+        Task.detached(priority: .utility) { [weak self] in
+            guard let free = Self.freeSpace(at: root), free < 2_000_000_000 else { return }
+            await MainActor.run {
+                guard let self, self.recording === recording, self.banner == nil else { return }
+                self.banner = "磁碟剩餘空間不到 2 GB。錄音每小時約需要 350 MB 的暫存空間。"
+            }
+        }
     }
 
     /// 結束這一場並交給結束處理。`showingResult` 是 false 時，做完不切換到那一場（例如因為磁碟滿了而自動停止，
@@ -402,9 +418,9 @@ final class AppModel {
         return parts.joined(separator: " ")
     }
 
-    /// 剩餘空間。`important` 是 true 時包含系統可以清掉的空間（算起來比較慢，只在開始時用）；
+    /// 剩餘空間。`important` 是 true 時包含系統可以清掉的空間（算起來比較慢，只在開始時、在背景用）；
     /// 錄音中定期檢查用 false：只算真的空著的空間，又快又保守。
-    private static func freeSpace(at url: URL, important: Bool = true) -> Int64? {
+    nonisolated private static func freeSpace(at url: URL, important: Bool = true) -> Int64? {
         let existing = url.deletingLastPathComponent().deletingLastPathComponent()
         if important {
             return try? existing.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
@@ -416,10 +432,20 @@ final class AppModel {
     // MARK: API Key
 
     /// 讀 API Key 並分類（讀到、沒有、使用者沒有允許、其他錯誤）。
+    /// 讀過一次就留在記憶體裡，之後不再讀鑰匙圈（第一次讀可能跳出授權視窗）。
     /// 鑰匙圈可能跳出授權視窗、等使用者回答，所以不在主執行緒上讀，畫面不會卡住。
     func loadKey() async -> CredentialLookup {
         if let keyOverride { return .found(keyOverride) }
-        return await Task.detached(priority: .userInitiated) { Credentials.lookup() }.value
+        if let key = keyCache.key { return .found(key) }
+        let ticket = keyCache.ticket
+        let lookup = await Task.detached(priority: .userInitiated) { Credentials.lookup() }.value
+        keyCache.remember(lookup, ticket: ticket)
+        return lookup
+    }
+
+    /// 設定頁存入或刪除了 Key：忘掉記在記憶體裡的 Key，下次按開始重新讀鑰匙圈。
+    func keyChanged() {
+        keyCache.invalidate()
     }
 
     /// 自動測試用：從標準輸入讀 Key（`open --stdin <FIFO>` 加上啟動參數 `-apiKeyFromStdin YES`）。

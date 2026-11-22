@@ -553,6 +553,8 @@ final class AppModel {
     }
 
     func regenerateSummary(_ item: SessionLibrary.Item) {
+        // 處理中不再開始另一個（選單的按鈕這時也停用）：只會拿不到鎖而失敗，失敗時還會把處理中的標示清掉
+        guard SessionActions(progress: processing[item.id]).canRegenerateSummary else { return }
         processing[item.id] = "產生摘要中"
         Task { await runRegeneration(item) }
     }
@@ -577,6 +579,8 @@ final class AppModel {
     }
 
     func delete(_ item: SessionLibrary.Item) {
+        // 處理中不刪除（選單的按鈕這時也停用）：結束處理還在寫這個資料夾，搬走會讓它寫到一半
+        guard SessionActions(progress: processing[item.id]).canDelete else { return }
         NSWorkspace.shared.recycle([item.directory.url]) { [weak self] _, _ in
             Task { @MainActor in
                 if self?.selectedSession == item.id { self?.selectedSession = nil }

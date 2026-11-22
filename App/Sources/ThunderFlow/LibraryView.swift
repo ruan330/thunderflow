@@ -27,10 +27,14 @@ struct LibraryView: View {
                         SessionRow(item: item, progress: model.processing[item.id])
                             .tag(item.id)
                             .contextMenu {
+                                // 處理中不能刪除、不能重新產生摘要（判斷在 ThunderUI，有測試）
+                                let actions = SessionActions(progress: model.processing[item.id])
                                 Button("在 Finder 中顯示") { NSWorkspace.shared.activateFileViewerSelecting([item.directory.url]) }
                                 Button("重新產生摘要") { model.regenerateSummary(item) }
+                                    .disabled(!actions.canRegenerateSummary)
                                 Divider()
                                 Button("刪除（移到垃圾桶）", role: .destructive) { model.delete(item) }
+                                    .disabled(!actions.canDelete)
                             }
                     }
                     // 清單的底透出內容區的墨黑；選取的列維持系統的樣子
@@ -133,6 +137,9 @@ struct SessionDetailView: View {
         player.load(directory.recordingURL)
     }
 
+    /// 處理中不能刪除、不能重新產生摘要（判斷在 ThunderUI，有測試）。
+    private var actions: SessionActions { SessionActions(progress: model.processing[item.id]) }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -141,6 +148,7 @@ struct SessionDetailView: View {
                 Button("在 Finder 中顯示") { NSWorkspace.shared.activateFileViewerSelecting([item.directory.url]) }
                 Menu {
                     Button("重新產生摘要") { model.regenerateSummary(item) }
+                        .disabled(!actions.canRegenerateSummary)
                     Button("複製全文（雙語）") {
                         copy(blocks.map { "\($0.en)\n\($0.zh)" }.joined(separator: "\n\n"), as: "雙語全文")
                     }
@@ -148,6 +156,7 @@ struct SessionDetailView: View {
                     Button("複製全文（英文）") { copy(blocks.map(\.en).joined(separator: "\n\n"), as: "英文全文") }
                     Divider()
                     Button("刪除（移到垃圾桶）", role: .destructive) { model.delete(item) }
+                        .disabled(!actions.canDelete)
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -242,6 +251,7 @@ struct SessionDetailView: View {
                 Text("錄音與逐字稿不受影響。")
             } actions: {
                 Button("重新產生摘要") { model.regenerateSummary(item) }
+                    .disabled(!actions.canRegenerateSummary)
             }
         } else if model.processing[item.id] != nil {
             ContentUnavailableView("摘要產生中…", systemImage: "hourglass")

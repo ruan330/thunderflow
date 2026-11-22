@@ -65,6 +65,8 @@ public final class LiveRecording: @unchecked Sendable {
         var pastCallbacks = 0
         var pastDiscontinuities = 0
         var firstSample: UInt64?
+        /// `stop()` 之後不再重新開始收音（裝置的變化可能和停止同時發生）。
+        var finished = false
     }
 
     /// - Parameters:
@@ -164,7 +166,7 @@ public final class LiveRecording: @unchecked Sendable {
     /// 還沒開始、或已經中斷時不做任何事。
     public func suspendCapture() {
         operation.withLock {
-            guard session != nil, state.withLock({ $0.interruptedAt == nil }) else { return }
+            guard session != nil, state.withLock({ $0.interruptedAt == nil && !$0.finished }) else { return }
             stopCapture()
             state.withLock { $0.interruptedAt = .now }
         }
@@ -179,10 +181,11 @@ public final class LiveRecording: @unchecked Sendable {
     /// - Parameters:
     ///   - reason: 為什麼中斷（`sleep`、`deviceLost`、`outputChanged`、`captureStalled`）。
     ///   - since: 中斷從什麼時候開始（例如最後一次收到聲音的時間）。nil 時用 `suspendCapture()` 的時間，沒有就是現在。
-    /// - Throws: 重新開始收音失敗（例如一個收音裝置都沒有）。場次照常，維持中斷中，之後可以再呼叫一次，或停止。
+    /// - Throws: 重新開始收音失敗（例如一個收音裝置都沒有）：場次照常，維持中斷中，之後可以再呼叫一次，或停止。
+    ///   已經停止之後呼叫丟出 `RecordingSessionError.alreadyFinished`，不會再開始收音。
     public func resumeCapture(reason: GapReason, since: ContinuousClock.Instant? = nil) throws {
         try operation.withLock {
-            guard let session else { throw RecordingSessionError.alreadyFinished }
+            guard let session, !state.withLock({ $0.finished }) else { throw RecordingSessionError.alreadyFinished }
             let interruptedAt = since ?? state.withLock { $0.interruptedAt } ?? .now
             stopCapture()
             // 換掉的來源的計數併進累計；重新開始失敗時維持中斷中，下次從原本中斷的時間算起
@@ -220,6 +223,7 @@ public final class LiveRecording: @unchecked Sendable {
     @discardableResult
     public func stop() async throws -> SessionMeta {
         let counts = operation.withLock { () -> (ringDropped: Int, discontinuities: Int) in
+            state.withLock { $0.finished = true }
             stopCapture()
             return (ring.droppedSampleCount, state.withLock { $0.pastDiscontinuities + $0.capture.discontinuityCount })
         }

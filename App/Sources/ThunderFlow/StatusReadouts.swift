@@ -26,7 +26,7 @@ struct CostEstimate: View {
     var body: some View {
         // 「約 $0.01」唸成「約 0.01 美元」
         ReadoutText(model: model, color: .secondaryLabelColor, label: "預估費用", spoken: { "\($0.replacingOccurrences(of: "$", with: "")) 美元" }) {
-            Format.cost(audioSeconds: $0.elapsed, provisional: $0.settings.showsProvisional)
+            $0.estimatedCost.text
         }
     }
 }

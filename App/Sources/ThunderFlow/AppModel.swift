@@ -40,6 +40,15 @@ final class AppModel {
     }
     var elapsed: TimeInterval = 0
     var level: Float = 0
+    /// 這一場開始時有沒有開暫定譯文：預估費用照它算（錄音中切換設定只改變顯示，引擎的做法不變）。
+    private(set) var recordingProvisional = false
+
+    /// 這一場到目前為止的預估費用（DESIGN.md 4.3 節）：引擎回報了計費秒數就照它算，還沒回報時照錄下的長度
+    /// （規則在 ThunderUI，有測試）。
+    var estimatedCost: EstimatedCost {
+        let billed = captions.billedSeconds
+        return EstimatedCost(audioSeconds: elapsed, billedSeconds: billed > 0 ? billed : nil, provisional: recordingProvisional)
+    }
     /// 頁面頂端的橫幅：發生了什麼、錄音有沒有受影響、該怎麼處理。
     var banner: String?
     var title = ""
@@ -278,7 +287,10 @@ final class AppModel {
         configuration.link.settings.keywords = keywords
         configuration.link.settings.prompt = Self.prompt(title: title, event: event, speaker: speaker)
         configuration.translation.model = settings.liveTextModel
-        configuration.translation.provisional = settings.showsProvisional
+        // 暫定譯文在開始時就決定了：錄音中切換只改變顯示，引擎的做法（與費用）不變
+        let provisional = settings.showsProvisional
+        recordingProvisional = provisional
+        configuration.translation.provisional = provisional
         // 一句說完就整句重翻，取代這一句各段的定稿（DESIGN.md 5.6.2 節）
         configuration.translation.sentences = true
         // 整句的暫定譯文（D33）：每一句 2 個字就送第一個，之後每多 3 個字、至少隔 1 秒
@@ -297,6 +309,7 @@ final class AppModel {
         options.speaker = speaker.trimmingCharacters(in: .whitespaces)
         options.keywords = keywords
         options.engineName = "\(settings.transcriptionModel)＋\(settings.liveTextModel)"
+        options.provisionalTranslation = provisional
         let captions = captions
         let recording = LiveRecording(options: options, engine: engine) { captions.receive($0) }
         recording.onSourceEnded = { [weak self] in

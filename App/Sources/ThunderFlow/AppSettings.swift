@@ -126,11 +126,4 @@ enum Format {
         date.formatted(.dateTime.month(.twoDigits).day(.twoDigits)) + " "
             + date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
     }
-
-    /// 預估費用：轉錄每分鐘 0.017 美元，加上翻譯（實測每小時約 0.08 美元；開暫定譯文約 0.27 美元）。
-    static func cost(audioSeconds: Double, provisional: Bool) -> String {
-        // 轉錄每分鐘 0.017；翻譯每小時：各段的定稿約 0.03、整句定稿約 0.05，整句的暫定譯文再加約 0.19（DESIGN.md 9.7 節）
-        let dollars = audioSeconds / 60 * 0.017 + audioSeconds / 3_600 * (provisional ? 0.27 : 0.08)
-        return String(format: "約 $%.2f", dollars)
-    }
 }

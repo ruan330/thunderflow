@@ -138,7 +138,8 @@ public final class RecordingSession: @unchecked Sendable {
             engine: config.engineName,
             event: config.event,
             speaker: config.speaker,
-            keywords: config.keywords)
+            keywords: config.keywords,
+            provisionalTranslation: config.provisionalTranslation)
         try directory.saveMeta(meta)
         initialMeta = meta
         journal = try JournalWriter(url: directory.journalURL)

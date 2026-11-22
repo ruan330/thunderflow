@@ -13,14 +13,16 @@ public struct EstimatedCost: Sendable, Equatable {
     public let dollars: Double
 
     /// - Parameters:
-    ///   - audioSeconds: 錄下的長度（秒）。
-    ///   - billedSeconds: 引擎回報的計費秒數；nil 是還沒有回報。
-    ///   - provisional: 這一場有沒有開暫定譯文。
+    ///   - audioSeconds: 錄下的長度（秒）。引擎還沒回報計費秒數時（開始的前 10 秒）用它估計。
+    ///   - billedSeconds: 引擎回報的計費秒數：送去轉錄的音訊（`LiveCaptionModel.billedSeconds`、
+    ///     `SessionMeta.billedAudioSeconds`）。nil 是還沒有回報。轉錄照它算；翻譯也照它算：
+    ///     沒有送去轉錄的聲音（例如翻譯斷線的那段）不會有譯文。
+    ///   - provisional: 這一場有沒有開暫定譯文。要用開始時的設定：引擎的做法在開始時就固定了，
+    ///     錄音中切換只改變顯示。
     public init(audioSeconds: Double, billedSeconds: Double?, provisional: Bool) {
-        // 暫時照目前 App 的做法（只看錄下的長度），測試會指出問題；實作時改掉
-        dollars =
-            audioSeconds / 60 * Self.transcriptionPerMinute
-            + audioSeconds / 3_600 * (provisional ? Self.translationPerHourWithProvisional : Self.translationPerHour)
+        let seconds = billedSeconds ?? audioSeconds
+        let translationPerHour = provisional ? Self.translationPerHourWithProvisional : Self.translationPerHour
+        dollars = seconds / 60 * Self.transcriptionPerMinute + seconds / 3_600 * translationPerHour
     }
 
     /// 「約 $0.80」。

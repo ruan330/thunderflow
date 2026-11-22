@@ -210,7 +210,12 @@ struct SessionDetailView: View {
         var parts = [
             meta.startedAt.formatted(date: .numeric, time: .shortened), Format.duration(meta.durationSeconds), meta.source, meta.engine,
         ]
-        if meta.billedAudioSeconds > 0 { parts.append(Format.cost(audioSeconds: meta.billedAudioSeconds, provisional: true)) }
+        if meta.billedAudioSeconds > 0 {
+            // 照這一場開始時的暫定譯文設定；記下這個設定之前的場次不知道，用目前的設定估計
+            let provisional = meta.provisionalTranslation ?? model.settings.showsProvisional
+            parts.append(
+                EstimatedCost(audioSeconds: meta.durationSeconds, billedSeconds: meta.billedAudioSeconds, provisional: provisional).text)
+        }
         return parts.filter { !$0.isEmpty }.joined(separator: " · ")
     }
 

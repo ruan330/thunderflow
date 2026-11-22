@@ -96,8 +96,9 @@ public struct SessionMeta: Sendable, Equatable, Codable {
     public var failedSteps: [String]
     /// 摘要的一句話總結，給清單頁顯示。還沒有摘要時是空字串。
     public var oneLiner: String
-    /// 這一場開始時有沒有開暫定譯文（估算翻譯的費用用）。nil：還沒有這個欄位時的場次，不知道。
-    public var provisionalTranslation: Bool? = nil
+    /// 這一場開始時有沒有開暫定譯文（估算翻譯的費用用）。nil：還沒有這個欄位時的場次，不知道；這時不寫進檔案。
+    /// 只增加、可省略的欄位，格式版本維持 1。
+    public var provisionalTranslation: Bool?
 
     public init(
         id: UUID = UUID(),
@@ -115,7 +116,8 @@ public struct SessionMeta: Sendable, Equatable, Codable {
         keywords: [String] = [],
         completedSteps: [String] = [],
         failedSteps: [String] = [],
-        oneLiner: String = ""
+        oneLiner: String = "",
+        provisionalTranslation: Bool? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
         self.id = id
@@ -134,12 +136,14 @@ public struct SessionMeta: Sendable, Equatable, Codable {
         self.completedSteps = completedSteps
         self.failedSteps = failedSteps
         self.oneLiner = oneLiner
+        self.provisionalTranslation = provisionalTranslation
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, id, title, startedAt, state, recovered, source, engine
         case durationSeconds, billedAudioSeconds, integrity
         case event, speaker, keywords, completedSteps, failedSteps, oneLiner
+        case provisionalTranslation
     }
 
     public init(from decoder: any Decoder) throws {
@@ -166,6 +170,7 @@ public struct SessionMeta: Sendable, Equatable, Codable {
             keywords: try container.decodeIfPresent([String].self, forKey: .keywords) ?? [],
             completedSteps: try container.decodeIfPresent([String].self, forKey: .completedSteps) ?? [],
             failedSteps: try container.decodeIfPresent([String].self, forKey: .failedSteps) ?? [],
-            oneLiner: try container.decodeIfPresent(String.self, forKey: .oneLiner) ?? "")
+            oneLiner: try container.decodeIfPresent(String.self, forKey: .oneLiner) ?? "",
+            provisionalTranslation: try container.decodeIfPresent(Bool.self, forKey: .provisionalTranslation))
     }
 }

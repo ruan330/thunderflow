@@ -21,6 +21,8 @@ public final class LiveRecording: @unchecked Sendable {
         public var keywords: [String] = []
         /// 引擎的名稱，記在 `session.json`。
         public var engineName = ""
+        /// 開始時有沒有開暫定譯文，記在 `session.json`（估算費用用）。nil 時不記。
+        public var provisionalTranslation: Bool?
         /// 工作目錄：錄音中的場次資料夾放在這裡。
         public var workingRoot: URL
         /// 結束時最多等引擎把最後幾段翻完多久。
@@ -80,6 +82,7 @@ public final class LiveRecording: @unchecked Sendable {
             config.startedAt = startedAt
             config.source = capture.sourceDescription
             config.engineName = options.engineName
+            config.provisionalTranslation = options.provisionalTranslation
             config.engineDrainTimeout = options.engineDrainTimeout
             let session = try RecordingSession(config: config, directory: directory, engine: engine)
             let meter = meter

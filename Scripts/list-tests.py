@@ -16,12 +16,89 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 TESTS = ROOT / "Packages" / "ThunderKit" / "Tests"
 OUTPUT = ROOT / "TESTS.md"
 
-DECLARATION = re.compile(r'@(Suite|Test)\(\s*"((?:[^"\\]|\\.)*)"(.*?)\)\s*\n\s*(?:struct|func)', re.S)
+DECORATOR = re.compile(r"@(Suite|Test)\(")
+NAME = re.compile(r'\s*"((?:[^"\\]|\\.)*)"')
+# 測試的屬性和宣告之間可以有別的屬性（@MainActor、@available(…)）、修飾詞與註解
+GAP = re.compile(r"(?:\s+|//[^\n]*)*")
+ATTRIBUTE = re.compile(r"@\w+")
+WORD = re.compile(r"\w+")
+MODIFIERS = {"private", "fileprivate", "internal", "package", "public", "open", "static", "final", "nonisolated",
+             "mutating", "override"}
+DECLARATIONS = {"struct", "class", "enum", "actor", "extension", "func"}
+
+
+def string_end(text: str, i: int) -> int:
+    """`text[i]` 是字串開頭的 `"`：回傳字串結束之後的位置。"""
+    i += 1
+    while i < len(text) and text[i] != '"':
+        i += 2 if text[i] == "\\" else 1
+    return i + 1
+
+
+def closing(text: str, i: int) -> int:
+    """`text[i]` 是 `(` 或 `[`：回傳對應的右括號的位置（字串裡的括號不算）。找不到時回傳 -1。"""
+    depth = 0
+    while i < len(text):
+        if text[i] == '"':
+            i = string_end(text, i)
+            continue
+        if text[i] in "([{":
+            depth += 1
+        elif text[i] in ")]}":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return -1
+
+
+def top_level_items(text: str) -> list[str]:
+    """以最外層的逗號分開（括號與字串裡的逗號不算），不含空的項目（例如最後多一個逗號）。"""
+    items, depth, start, i = [], 0, 0, 0
+    while i < len(text):
+        if text[i] == '"':
+            i = string_end(text, i)
+            continue
+        if text[i] in "([{":
+            depth += 1
+        elif text[i] in ")]}":
+            depth -= 1
+        elif text[i] == "," and depth == 0:
+            items.append(text[start:i])
+            start = i + 1
+        i += 1
+    items.append(text[start:])
+    return [item for item in items if item.strip()]
+
+
+def declaration_follows(text: str, i: int) -> bool:
+    """從 `i` 開始，略過別的屬性、修飾詞與註解之後，是不是一個宣告（struct、func……）。"""
+    while True:
+        i = GAP.match(text, i).end()
+        if attribute := ATTRIBUTE.match(text, i):
+            i = attribute.end()
+            if text.startswith("(", i):
+                end = closing(text, i)
+                if end < 0:
+                    return False
+                i = end + 1
+            continue
+        word = WORD.match(text, i)
+        if not word or word.group() not in MODIFIERS:
+            return bool(word) and word.group() in DECLARATIONS
+        i = word.end()
 
 
 def declarations(text: str) -> list[tuple[str, str, str]]:
     """原始碼裡依序出現的測試組與測試：(Suite 或 Test, 名稱, 名稱後面的其餘參數)。"""
-    return DECLARATION.findall(text)
+    found = []
+    for match in DECORATOR.finditer(text):
+        end = closing(text, match.end() - 1)
+        name = NAME.match(text, match.end())
+        if end < 0 or not name or name.end() > end or not declaration_follows(text, end + 1):
+            continue
+        found.append((match.group(1), name.group(1), text[name.end():end]))
+    return found
 
 
 def attribute_count(text: str) -> int:
@@ -38,12 +115,14 @@ def condition(traits: str) -> str:
 
 
 def cases(traits: str) -> str:
-    match = re.search(r"arguments:\s*\[(.*?)\]", traits, re.S)
-    if match:
-        return f"（{len([a for a in match.group(1).split(',') if a.strip()])} 組參數）"
-    if "arguments:" in traits:
+    """參數化的測試有幾組參數：直接寫出的陣列算最外層的元素（一個 tuple 或一個陣列算一組），其他寫法不算。"""
+    match = re.search(r"arguments:\s*", traits)
+    if not match:
+        return ""
+    end = closing(traits, match.end()) if traits.startswith("[", match.end()) else -1
+    if end < 0:
         return "（多組參數）"
-    return ""
+    return f"（{len(top_level_items(traits[match.end() + 1:end]))} 組參數）"
 
 
 def line(kind: str, name: str, traits: str) -> str:

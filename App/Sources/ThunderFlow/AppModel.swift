@@ -30,7 +30,9 @@ final class AppModel {
 
     // MARK: 即時翻譯頁
 
-    var liveState: LiveState = .idle
+    var liveState: LiveState = .idle {
+        didSet { if liveState != oldValue { waitChanged() } }
+    }
     var elapsed: TimeInterval = 0
     var level: Float = 0
     /// 頁面頂端的橫幅：發生了什麼、錄音有沒有受影響、該怎麼處理。
@@ -53,6 +55,35 @@ final class AppModel {
     /// 提示上一次重畫的時間：提示到期時更新它，畫面就會在那時把提示收起來。
     private var toastClock = ContinuousClock.now
     @ObservationIgnored private var toastExpiry: Task<Void, Never>?
+
+    // MARK: 等待的提示
+
+    /// 「準備中」「收尾中」的延遲顯示（DESIGN.md 4.10.4）：開始／停止的按鈕與狀態列共用這一個計時，兩邊同時換。
+    /// 放在這裡而不是畫面裡，換頁回來時也不會重新起算。
+    private var waiting = DelayedIndicator()
+    /// 等待的提示上一次重畫的時間：提示該出現時更新它，畫面就會在那時重畫。
+    private var waitClock = ContinuousClock.now
+    @ObservationIgnored private var waitReveal: Task<Void, Never>?
+
+    /// 延遲顯示的「準備中」（或「收尾中」）是不是已經出現。
+    var preparingVisible: Bool { waiting.isVisible(at: waitClock) }
+
+    private func waitChanged() {
+        let now = ContinuousClock.now
+        if liveState == .starting || liveState == .stopping {
+            waiting.begin(at: now)
+        } else {
+            waiting.end()
+        }
+        waitClock = now
+        waitReveal?.cancel()
+        waitReveal = nil
+        guard let revealsAt = waiting.revealsAt, revealsAt > now else { return }
+        waitReveal = Task { [weak self] in
+            do { try await Task.sleep(until: revealsAt, clock: .continuous) } catch { return }
+            self?.waitClock = .now
+        }
+    }
 
     // MARK: 過去錄音
 

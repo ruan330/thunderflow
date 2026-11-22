@@ -186,7 +186,7 @@ public struct SessionFinalizer: Sendable {
     /// 合併出來的時長和 CAF 分段的總長相差在這個範圍內（秒）才算一致。
     private static let durationTolerance = 0.2
 
-    /// 步驟 4：CAF 分段 → `recording.m4a`；確認時長一致之後才刪除 CAF 分段與空的 `audio/`。
+    /// 步驟 4：CAF 分段 → `recording.m4a`；確認時長一致之後才刪除 CAF 分段（包括打不開的）與空的 `audio/`。
     ///
     /// 重做時不會把已經合併好的錄音換成比較短的：`recording.m4a` 已經存在、而且不比還在的 CAF 分段短，
     /// 代表上次已經合併並確認過（中斷在刪除 CAF 的前後），這時只把剩下的 CAF 刪掉。
@@ -211,8 +211,9 @@ public struct SessionFinalizer: Sendable {
                 duration = recorded
             }
         }
-        // 到這裡錄音已經完整地在 recording.m4a 裡（或根本沒有聲音）：CAF 分段可以刪了
-        for segment in segments { try fileManager.removeItem(at: segment.url) }
+        // 到這裡錄音已經完整地在 recording.m4a 裡（或根本沒有聲音）：CAF 分段可以刪了。
+        // 打不開的分段檔（磁碟滿了留下的空檔）裡沒有聲音，合併時略過了，這裡也一起刪，否則 audio/ 刪不掉
+        for url in try RecordingFiles.segmentFiles(in: directory.audioDirectoryURL) { try fileManager.removeItem(at: url) }
         rmdir(directory.audioDirectoryURL.path)  // 空的才刪得掉
 
         if let duration, duration > 0, try directory.loadMeta().durationSeconds == 0 {

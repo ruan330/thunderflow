@@ -234,20 +234,28 @@ public enum RecordingFiles {
     /// 資料夾不存在時回傳空陣列；不是分段檔的檔案會被忽略。
     ///
     /// 分段檔是檔名為三位數以上序號的 `.caf`（`000.caf`、`001.caf`……）。錄音中的分段也讀得到，
-    /// 長度是目前已經寫入的樣本數。打不開的分段檔（程式剛好在建立檔頭的瞬間被殺掉，裡面沒有任何聲音）會被略過。
+    /// 長度是目前已經寫入的樣本數。打不開的分段檔（程式剛好在建立檔頭的瞬間被殺掉，或磁碟滿了寫不進檔頭，
+    /// 裡面沒有任何聲音）會被略過。
     public static func segments(in directory: URL) throws -> [RecordingSegment] {
+        try segmentFiles(in: directory).compactMap { url in
+            guard let index = segmentIndex(fileName: url.lastPathComponent), let file = try? AVAudioFile(forReading: url)
+            else { return nil }
+            return RecordingSegment(url: url, index: index, sampleRate: file.fileFormat.sampleRate, frameCount: file.length)
+        }
+    }
+
+    /// 資料夾裡所有分段檔的位置，依序號排序。資料夾不存在時回傳空陣列。
+    ///
+    /// 和 `segments(in:)` 不同，打不開的分段檔（空的、檔頭沒寫完）也包含在內：合併並確認錄音之後，
+    /// 用它把分段檔全部刪掉，`audio/` 才刪得掉。
+    public static func segmentFiles(in directory: URL) throws -> [URL] {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue
         else { return [] }
-        var segments: [RecordingSegment] = []
-        for name in try FileManager.default.contentsOfDirectory(atPath: directory.path) {
-            guard let index = segmentIndex(fileName: name) else { continue }
-            let url = directory.appendingPathComponent(name)
-            guard let file = try? AVAudioFile(forReading: url) else { continue }
-            segments.append(
-                RecordingSegment(url: url, index: index, sampleRate: file.fileFormat.sampleRate, frameCount: file.length))
-        }
-        return segments.sorted { $0.index < $1.index }
+        return try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            .compactMap { name in segmentIndex(fileName: name).map { (index: $0, name: name) } }
+            .sorted { $0.index < $1.index }
+            .map { directory.appendingPathComponent($0.name) }
     }
 
     public static func totalDuration(of segments: [RecordingSegment]) -> TimeInterval {

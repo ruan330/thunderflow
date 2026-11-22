@@ -320,7 +320,9 @@ final class AppModel {
     }
 
     func togglePause() {
-        guard let recording else { return }
+        // 只有錄音中與暫停時（判斷在 ThunderUI，有測試）。收尾中按下去會把狀態改回錄音中，
+        // 停止鈕再出現，同一場就可能被停止、做兩次結束處理
+        guard let recording, RecordingCommands(phase: recorderPhase).canTogglePause else { return }
         if recording.isPaused {
             recording.resume()
             liveState = .recording

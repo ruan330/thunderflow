@@ -36,6 +36,18 @@ public enum CaptureWatch {
 
     /// 要重新開始收音的原因（`deviceLost`、`outputChanged`、`captureStalled`）；不需要時是 nil。
     public static func reason(_ snapshot: Snapshot) -> GapReason? {
-        nil
+        switch snapshot.source {
+        case .file:
+            return nil
+        case .microphone:
+            if let device = snapshot.deviceInUse, let inputs = snapshot.inputUIDs, !inputs.contains(device) {
+                return .deviceLost
+            }
+        case .systemAudio:
+            if let device = snapshot.deviceInUse, let output = snapshot.defaultOutputUID, output != device {
+                return .outputChanged
+            }
+        }
+        return snapshot.secondsWithoutCallbacks >= stallSeconds ? .captureStalled : nil
     }
 }

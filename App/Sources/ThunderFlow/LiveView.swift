@@ -15,11 +15,12 @@ struct LiveView: View {
         VStack(alignment: .leading, spacing: 0) {
             if let banner = model.banner {
                 BannerView(text: banner) { model.banner = nil }
+                Hairline()
             }
             header
-            Divider()
-            statusRow
-            Divider()
+            Hairline()
+            StatusStrip()
+            Hairline()
             CaptionsView()
         }
         .navigationTitle("即時翻譯")
@@ -41,129 +42,337 @@ struct LiveView: View {
             Spacer()
             SourcePicker()
                 .disabled(model.liveState != .idle)
-            startButton
+            TransportControls()
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
+        // 停止鈕出現或收起時，左邊的東西跟著平順地移動（版面變化 280 ms）
+        .animation(Theme.layout, value: TransportSlots(phase: model.recorderPhase, preparingVisible: false).showsStop)
+    }
+}
+
+// MARK: - 開始／停止
+
+/// 開始／停止（DESIGN.md 4.10.5 節、D30）。
+///
+/// 主要位置固定在最右邊、寬度不變：「開始錄音」在錄音中變成「暫停」（暫停時是「繼續」）。「停止」只出現在它左邊，
+/// 不會出現在主要位置，所以剛按下開始時手快多點一下，最多是暫停。狀態剛換的 0.5 秒內不接受點擊（`PressGuard`）；
+/// 0.3 秒內就開始錄音時不顯示「準備中」，按鈕維持按下的樣子，直接變成錄音中（`DelayedIndicator`）。
+/// 位置的判斷都在 `TransportSlots`。
+private struct TransportControls: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pressGuard = PressGuard()
+    @State private var waiting = DelayedIndicator()
+    /// 上一次重畫的時間。「準備中」該出現時更新它，畫面就會在那時重畫一次。
+    @State private var now = ContinuousClock.now
+
+    var body: some View {
+        let phase = model.recorderPhase
+        let slots = TransportSlots(phase: phase, preparingVisible: waiting.isVisible(at: now))
+        HStack(spacing: 8) {
+            if slots.showsStop {
+                stopButton
+                    .transition(Theme.transition(.move(edge: .trailing), reduceMotion: reduceMotion))
+            }
+            // 疊在一起換內容：換的時候新舊內容在同一個位置淡入淡出，不會並排撐開
+            ZStack {
+                mainSlot(slots.main, phase: phase)
+            }
+            .animation(Theme.standard, value: slots.main)
+        }
+        .onChange(of: phase) { _, phase in phaseChanged(to: phase) }
+        .onAppear {
+            // 換頁回來時剛好在等：從現在起算
+            if phase == .starting || phase == .stopping {
+                waiting.begin(at: .now)
+                now = .now
+            }
+        }
+        .task(id: waiting.revealsAt) { await redraw(at: waiting.revealsAt) }
     }
 
-    @ViewBuilder private var startButton: some View {
-        switch model.liveState {
-        case .idle:
+    @ViewBuilder private func mainSlot(_ main: TransportSlots.Main, phase: RecorderPhase) -> some View {
+        switch main {
+        case .start:
             Button {
-                Task { await model.start() }
+                perform { Task.immediate { await model.start() } }
             } label: {
-                Label("開始錄音", systemImage: "record.circle")
+                SlotLabel { Label("開始錄音", systemImage: "record.circle") }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(PrimaryButtonStyle(isHeld: phase == .starting))
             .keyboardShortcut("n", modifiers: .command)
-        case .starting:
-            Button("準備中…") {}.disabled(true)
-        case .recording, .paused:
+            // 開始中、「準備中」還沒出現：畫成按下去的樣子，不接受點擊
+            .allowsHitTesting(phase == .idle)
+        case .preparing:
+            Button {} label: {
+                SlotLabel {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("準備中")
+                    }
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle(isHeld: true))
+            .disabled(true)
+        case .pause:
             Button {
-                model.togglePause()
+                perform { model.togglePause() }
             } label: {
-                Label(model.liveState == .paused ? "繼續" : "暫停", systemImage: model.liveState == .paused ? "play.fill" : "pause.fill")
+                SlotLabel { Label("暫停", systemImage: "pause.fill") }
             }
-            Button(role: .destructive) {
-                Task { await model.stop() }
+            .buttonStyle(NeutralButtonStyle())
+        case .resume:
+            Button {
+                perform { model.togglePause() }
             } label: {
-                Label("停止", systemImage: "stop.fill")
+                SlotLabel { Label("繼續", systemImage: "play.fill") }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
-            .keyboardShortcut(".", modifiers: .command)
-        case .stopping:
-            Button("收尾中…") {}.disabled(true)
+            .buttonStyle(NeutralButtonStyle())
+        case .finishing:
+            Button {} label: {
+                SlotLabel {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("收尾中")
+                    }
+                }
+            }
+            .buttonStyle(NeutralButtonStyle())
+            .allowsHitTesting(false)
         }
     }
 
-    private var statusRow: some View {
-        @Bindable var settings = model.settings
-        return HStack(spacing: 14) {
-            StatusChip(text: recordingLabel, color: recordingColor)
-            if model.isRecording {
-                StatusChip(text: engineLabel, color: engineColor)
-                Text(Format.duration(model.elapsed)).monospacedDigit().fixedSize()
-                LevelMeter(level: model.level)
-                Text(Format.cost(audioSeconds: model.elapsed, provisional: model.settings.showsProvisional))
-                    .foregroundStyle(.secondary)
-                    .fixedSize()
+    private var stopButton: some View {
+        Button {
+            perform { Task.immediate { await model.stop() } }
+        } label: {
+            Label {
+                Text("停止")
+            } icon: {
+                Image(systemName: "stop.fill").foregroundStyle(Theme.recording)
+            }
+        }
+        .buttonStyle(NeutralButtonStyle())
+        .keyboardShortcut(".", modifiers: .command)
+        .fixedSize()
+    }
+
+    /// 每個動作先問防連點：狀態剛換的 0.5 秒內不算數（快捷鍵也一樣）。
+    private func perform(_ action: () -> Void) {
+        guard pressGuard.accepts(at: .now) else { return }
+        action()
+    }
+
+    private func phaseChanged(to phase: RecorderPhase) {
+        let instant = ContinuousClock.now
+        pressGuard.stateChanged(at: instant)
+        if phase == .starting || phase == .stopping {
+            waiting.begin(at: instant)
+        } else {
+            waiting.end()
+        }
+        now = instant
+    }
+
+    /// 「準備中」出現的時間到了：重畫一次。等待提前結束時，這個工作會被取消。
+    private func redraw(at instant: ContinuousClock.Instant?) async {
+        guard let instant else { return }
+        do { try await Task.sleep(until: instant, clock: .continuous) } catch { return }
+        now = .now
+    }
+}
+
+/// 主要位置的內容：用看不見的「開始錄音」撐出固定的大小，換成任何內容寬度都不變。
+private struct SlotLabel<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ZStack {
+            Label("開始錄音", systemImage: "record.circle").fontWeight(.semibold).hidden()
+            content
+        }
+    }
+}
+
+// MARK: - 狀態列
+
+/// 狀態列：左邊只放狀態（錄音、翻譯、音量、費用、來源），右邊只放三個控制項（標記重點、浮動字幕、顯示）。
+///
+/// 每 0.25 秒更新的時間、音量與費用各自讀 `AppModel`，更新時只重畫那一小塊。
+private struct StatusStrip: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let recording = model.isRecording
+        HStack(spacing: 14) {
+            HStack(spacing: 8) {
+                IndicatorView(.recorder(model.recorderPhase))
+                if recording { ElapsedTime() }
+            }
+            .fixedSize()
+            if recording {
+                // 翻譯的狀態和錄音分開顯示：翻譯斷線時，錄音仍然持續
+                IndicatorView(.engine(model.captions.engineStatus))
+                    .layoutPriority(1)
+                LevelMeter()
+                CostEstimate()
                 if !model.sourceDescription.isEmpty {
                     // 空間不夠時最先被截短（上方的來源選單已經寫了來源）
                     Text(model.sourceDescription).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                         .layoutPriority(-1)
                 }
             }
-            Spacer()
-            if model.isRecording {
+            Spacer(minLength: 8)
+            if recording {
                 Button {
                     model.mark()
                 } label: {
                     Label("標記重點", systemImage: "flag")
                 }
+                .buttonStyle(NeutralButtonStyle())
                 .keyboardShortcut("b", modifiers: .command)
                 .fixedSize()
             }
-            Button {
-                FloatingCaptions.shared.toggle(model: model)
-            } label: {
-                Label("浮動字幕", systemImage: "rectangle.on.rectangle").labelStyle(.iconOnly)
+            FloatingCaptionsToggle()
+            DisplayOptionsButton()
+        }
+        .font(.callout)
+        .controlSize(.small)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 7)
+        .background(Theme.ink1)
+    }
+}
+
+/// 錄音的時間（SF Mono）。
+private struct ElapsedTime: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        Text(Format.duration(model.elapsed))
+            .font(.system(.callout, design: .monospaced))
+            .fixedSize()
+    }
+}
+
+/// 預估費用（SF Mono、次要灰）。
+private struct CostEstimate: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        Text(Format.cost(audioSeconds: model.elapsed, provisional: model.settings.showsProvisional))
+            .font(.system(.callout, design: .monospaced))
+            .foregroundStyle(.secondary)
+            .fixedSize()
+    }
+}
+
+/// 音量：12 格。亮起的格子是磷光綠；超過 85% 時最上面亮起的那一格變黃，超過 95% 變紅。
+private struct LevelMeter: View {
+    @Environment(AppModel.self) private var model
+    private static let bars = 12
+
+    var body: some View {
+        // 音量以分貝顯示才看得出變化：-50 dB 到 0 dB
+        let decibels = 20 * log10(max(Double(model.level), 0.000_01))
+        let fraction = min(1, max(0, (decibels + 50) / 50))
+        let lit = Int((fraction * Double(Self.bars)).rounded())
+        let peak = fraction > 0.95 ? Theme.danger : fraction > 0.85 ? Theme.mark : Theme.bolt
+        HStack(spacing: 2) {
+            ForEach(0..<Self.bars, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(index < lit ? (index == lit - 1 ? peak : Theme.bolt) : Color.white.opacity(0.1))
+                    .frame(width: 3, height: 10)
             }
-            .keyboardShortcut("f", modifiers: [.command, .shift])
-            .help("浮動字幕（⌘⇧F）")
-            Picker("顯示", selection: $settings.displayMode) {
+        }
+        .accessibilityElement()
+        .accessibilityLabel("音量")
+        .accessibilityValue("\(Int(fraction * 100))%")
+    }
+}
+
+/// 浮動字幕的開關。開著的時候圖示填滿、變綠，底是淡綠色（DESIGN.md 4.10.5 節）。
+private struct FloatingCaptionsToggle: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let isOpen = FloatingCaptions.shared.isOpen
+        Button {
+            FloatingCaptions.shared.toggle(model: model)
+        } label: {
+            Label("浮動字幕", systemImage: isOpen ? "rectangle.fill.on.rectangle.fill" : "rectangle.on.rectangle")
+                .labelStyle(.iconOnly)
+                .foregroundStyle(isOpen ? Theme.bolt : Color.primary)
+        }
+        .buttonStyle(NeutralButtonStyle(isOn: isOpen))
+        .keyboardShortcut("f", modifiers: [.command, .shift])
+        .help("浮動字幕（⌘⇧F）")
+        .accessibilityValue(isOpen ? "開啟" : "關閉")
+    }
+}
+
+/// 「顯示」：顯示模式、字級與暫定譯文放在彈出視窗裡，狀態列只留一個按鈕。
+private struct DisplayOptionsButton: View {
+    @State private var shows = false
+
+    var body: some View {
+        Button {
+            shows.toggle()
+        } label: {
+            Label {
+                Text("顯示")
+            } icon: {
+                // 中文介面下系統會把這個符號換成「大小」兩個字，和旁邊的「顯示」連在一起讀不通：固定用大小兩個 A 的圖形
+                Image(systemName: "textformat.size").environment(\.locale, Locale(identifier: "en"))
+            }
+        }
+        .buttonStyle(NeutralButtonStyle())
+        .fixedSize()
+        .help("顯示模式、字級、暫定譯文")
+        .popover(isPresented: $shows, arrowEdge: .bottom) { DisplayOptions() }
+    }
+}
+
+private struct DisplayOptions: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var settings = model.settings
+        VStack(alignment: .leading, spacing: 16) {
+            Picker("顯示模式", selection: $settings.displayMode) {
                 ForEach(DisplayMode.allCases) { Text($0.shortLabel).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 150)
             .help("雙語／只看中文／只看英文")
-            Stepper("字級 \(Int(settings.fontSize))", value: $settings.fontSize, in: 14...48, step: 2)
-                .fixedSize()
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("字級")
+                    Spacer()
+                    Text("\(Int(settings.fontSize)) pt")
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: $settings.fontSize, in: 14...48, step: 2) { Text("字級") }
+                    .labelsHidden()
+            }
+            Toggle(isOn: $settings.showsProvisional) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("顯示暫定譯文")
+                    Text("句子還沒說完就先顯示，之後由定稿取代").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .toggleStyle(.switch)
         }
-        .font(.callout)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
-    }
-
-    private var recordingLabel: String {
-        switch model.liveState {
-        case .idle: "尚未開始"
-        case .starting: "準備中"
-        case .recording: "錄音中"
-        case .paused: "已暫停"
-        case .stopping: "收尾中"
-        }
-    }
-
-    private var recordingColor: Color {
-        switch model.liveState {
-        case .recording: .red
-        case .paused: .orange
-        default: .secondary
-        }
-    }
-
-    /// 翻譯的狀態和錄音分開顯示：翻譯斷線時，錄音仍然持續。
-    private var engineLabel: String {
-        switch model.captions.engineStatus {
-        case .none, .connecting?: "翻譯連線中"
-        case .live?: "翻譯即時"
-        case .reconnecting?: "翻譯重新連線中，錄音持續中"
-        case .idle?: "翻譯待命"
-        case .failed(let reason)?: "翻譯已停止：\(reason)（錄音持續中）"
-        }
-    }
-
-    private var engineColor: Color {
-        switch model.captions.engineStatus {
-        case .live?: .green
-        case .failed?: .red
-        default: .orange
-        }
+        .font(.body)
+        .controlSize(.regular)
+        .padding(16)
+        .frame(width: 280)
     }
 }
+
+// MARK: - 字幕
 
 /// 中文（大字）與英文（小字、灰色）兩區字幕，各自自動捲到最新；往上捲時暫停自動捲動。
 struct CaptionsView: View {
@@ -183,34 +392,57 @@ struct CaptionsView: View {
         let mode = model.settings.displayMode
         let size = model.settings.fontSize
         let showsProvisional = model.settings.showsProvisional
+        let marked = model.markedLines
         if lines.isEmpty, liveEnglish.isEmpty {
-            ContentUnavailableView(
-                "按下「開始錄音」", systemImage: "waveform",
-                description: Text("講者說英文時，這裡會即時出現英文逐字稿與台灣繁體中文翻譯。"))
+            ContentUnavailableView {
+                Label {
+                    Text("按下「開始錄音」")
+                } icon: {
+                    BoltShape()
+                        .fill(Theme.bolt)
+                        .aspectRatio(BoltShape.aspectRatio, contentMode: .fit)
+                        .frame(height: 44)
+                }
+            } description: {
+                Text("講者說英文時，這裡會即時出現英文逐字稿與台灣繁體中文翻譯。")
+            }
+            // 佔滿字幕區：否則整頁會被垂直置中，標題列跑到畫面中間
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             VSplitView {
                 if mode != .english {
                     CaptionZone(title: "中文", updates: model.captions.updateCount) {
                         if earlier > 0 { EarlierNote(count: earlier) }
                         ForEach(lines) { line in
-                            ChineseLine(line: line, showsProvisional: showsProvisional).font(.system(size: size))
+                            ChineseLine(
+                                line: line, showsProvisional: showsProvisional, marked: marked.contains(line.id), size: size)
                         }
                         if showsProvisional, !liveChinese.isEmpty {
-                            Text(liveChinese).font(.system(size: size)).foregroundStyle(.tertiary)
+                            Text(liveChinese).font(.system(size: size)).foregroundStyle(.secondary).updatingMarker()
                         }
                     }
+                    // 行距約 1.45 倍（DESIGN.md 4.10.3 節）
+                    .lineSpacing(size * 0.25)
                     .frame(minHeight: 120)
                 }
                 if mode != .chinese {
+                    let englishSize = mode == .english ? size : size * 0.72
+                    // 旗子只畫一次：雙語時畫在中文那一行，只看英文時畫在英文這一行
+                    let flagsEnglish = mode == .english
                     CaptionZone(title: "English", updates: model.captions.updateCount) {
                         if earlier > 0 { EarlierNote(count: earlier) }
                         ForEach(lines) { line in
-                            Text(line.english).font(.system(size: mode == .english ? size : size * 0.72)).foregroundStyle(.secondary)
+                            Text(line.english)
+                                .flagged(flagsEnglish && marked.contains(line.id), size: englishSize)
+                                .font(.system(size: englishSize))
+                                .foregroundStyle(.secondary)
                         }
                         if !liveEnglish.isEmpty {
+                            // 正在說的這一行：白 45%，左邊一條綠線
                             Text(liveEnglish.trimmingCharacters(in: .whitespaces))
-                                .font(.system(size: mode == .english ? size : size * 0.72))
-                                .foregroundStyle(.tertiary)
+                                .font(.system(size: englishSize))
+                                .foregroundStyle(Theme.speaking)
+                                .updatingMarker()
                         }
                     }
                     .frame(minHeight: 90)
@@ -229,27 +461,47 @@ private struct EarlierNote: View {
     }
 }
 
-/// 一行中文：有定稿用定稿；沒有的話，允許時顯示暫定譯文（淡色）；確定不會有定稿時先顯示英文並標示「未翻譯」。
+/// 一行中文：有定稿用定稿（主要文字色）；沒有的話，允許時顯示暫定譯文（次要灰、左邊一條綠線）；
+/// 確定不會有定稿時先顯示英文並標示「未翻譯」。標記過重點的那一行後面有一面黃色旗子。
 private struct ChineseLine: View {
     let line: CaptionBoard.Line
     let showsProvisional: Bool
+    let marked: Bool
+    let size: CGFloat
 
     var body: some View {
-        let text = line.chinese.isEmpty ? (showsProvisional ? line.provisional : "") : line.chinese
-        if !line.chinese.isEmpty {
-            Text(text)
-        } else if line.untranslated {
-            // 這一段沒翻到：先顯示英文，結束後補上
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(line.english).foregroundStyle(.secondary)
-                Text("未翻譯").font(.caption).padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(.orange.opacity(0.2), in: Capsule())
+        Group {
+            if !line.chinese.isEmpty {
+                Text(line.chinese).flagged(marked, size: size)
+            } else if line.untranslated {
+                // 這一段沒翻到：先顯示英文，結束後補上
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(line.english).flagged(marked, size: size).foregroundStyle(.secondary)
+                    UntranslatedTag()
+                }
+            } else {
+                // 定稿還沒到：這一行還在更新
+                let provisional = showsProvisional ? line.provisional : ""
+                Text(provisional.isEmpty ? "…" : provisional)
+                    .flagged(marked, size: size)
+                    .foregroundStyle(.secondary)
+                    .updatingMarker()
             }
-        } else if !text.isEmpty {
-            Text(text).foregroundStyle(.tertiary)
-        } else {
-            Text("…").foregroundStyle(.tertiary)
         }
+        .font(.system(size: size))
+    }
+}
+
+/// 沒翻到的段：橘色的外框標籤（DESIGN.md 4.10.4 節）。
+private struct UntranslatedTag: View {
+    var body: some View {
+        Text("未翻譯")
+            .font(.caption)
+            .foregroundStyle(Theme.attention)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.attention.opacity(0.7), lineWidth: 1))
     }
 }
 
@@ -289,12 +541,15 @@ struct CaptionZone<Content: View>: View {
                     } label: {
                         Label("回到最新", systemImage: "arrow.down")
                     }
+                    .buttonStyle(NeutralButtonStyle())
                     .padding(12)
                 }
             }
         }
     }
 }
+
+// MARK: - 場次資訊與來源
 
 struct SessionDetailsForm: View {
     @Environment(AppModel.self) private var model
@@ -359,51 +614,22 @@ struct SourcePicker: View {
     }
 }
 
-struct StatusChip: View {
-    let text: String
-    let color: Color
+// MARK: - 橫幅
 
-    var body: some View {
-        HStack(spacing: 5) {
-            Circle().fill(color).frame(width: 7, height: 7)
-            Text(text).lineLimit(1)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 3)
-        .background(color.opacity(0.12), in: Capsule())
-        // 狀態最重要：先分到空間，不折行
-        .layoutPriority(1)
-    }
-}
-
-struct LevelMeter: View {
-    let level: Float
-
-    var body: some View {
-        // 音量以分貝顯示才看得出變化：-50 dB 到 0 dB
-        let decibels = 20 * log10(max(Double(level), 0.000_01))
-        let fraction = min(1, max(0, (decibels + 50) / 50))
-        Capsule().fill(.quaternary).frame(width: 60, height: 6)
-            .overlay(alignment: .leading) {
-                Capsule().fill(fraction > 0.95 ? Color.red : Color.green).frame(width: 60 * fraction, height: 6)
-            }
-            .accessibilityLabel("音量")
-    }
-}
-
+/// 頁面頂端的橫幅：發生了什麼、錄音有沒有受影響、該怎麼處理（DESIGN.md 4.1 節）。
 struct BannerView: View {
     let text: String
     let dismiss: () -> Void
 
     var body: some View {
         HStack(alignment: .top) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.attention)
             Text(text).textSelection(.enabled)
             Spacer()
             Button("關閉", action: dismiss).buttonStyle(.borderless)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
-        .background(.orange.opacity(0.12))
+        .background(Theme.ink1)
     }
 }

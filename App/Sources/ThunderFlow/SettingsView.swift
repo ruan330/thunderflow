@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import ThunderCore
+import ThunderUI
 
 /// 設定頁（DESIGN.md 4.7 節）。
 struct SettingsView: View {
@@ -79,6 +80,8 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        // 表單的底透出內容區的墨黑
+        .scrollContentBackground(.hidden)
         .navigationTitle("設定")
     }
 
@@ -90,6 +93,8 @@ struct SettingsView: View {
             keyDraft = ""
             keyStatus = "已儲存"
             model.banner = nil
+            // 存進鑰匙圈的結果在畫面上看不到：用提示說出來
+            model.notify(.saved, "已儲存 Key")
         } catch {
             keyStatus = "存不進鑰匙圈：\(error)"
         }

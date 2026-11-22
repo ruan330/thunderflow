@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100">
+  <!-- 「純粹閃電」：100 單位的格線、對畫布中心點對稱。磷光綠 #A6F24A，上緣 #C8F78F，到 60% 處變成 #A6F24A。
+       1.5 單位的圓角描邊（同一個漸層）讓轉角稍微圓一點。顏色以 sRGB 解讀（Icon Composer 對沒有標色彩空間的 SVG 預設 sRGB）。 -->
+  <defs>
+    <linearGradient id="phosphor" gradientUnits="userSpaceOnUse" x1="0" y1="16" x2="0" y2="84">
+      <stop offset="0" stop-color="#C8F78F"/>
+      <stop offset="0.6" stop-color="#A6F24A"/>
+    </linearGradient>
+  </defs>
+  <path d="M60.5 16 L29.5 55 H48.5 L39.5 84 L70.5 45 H51.5 Z" fill="url(#phosphor)" stroke="url(#phosphor)" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>

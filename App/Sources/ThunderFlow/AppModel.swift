@@ -43,6 +43,16 @@ final class AppModel {
     var source: SourceChoice
     var devices: [AudioInputDevice] = []
     var sourceDescription = ""
+    /// 這一場標記過重點的字幕行（段號）：那一行顯示黃色旗子。
+    private(set) var markedLines: Set<Int> = []
+
+    // MARK: 提示
+
+    /// 結果看不到的操作做完之後的提示（DESIGN.md 4.10.5 節）。
+    private var toasts = ToastState()
+    /// 提示上一次重畫的時間：提示到期時更新它，畫面就會在那時把提示收起來。
+    private var toastClock = ContinuousClock.now
+    @ObservationIgnored private var toastExpiry: Task<Void, Never>?
 
     // MARK: 過去錄音
 
@@ -80,6 +90,33 @@ final class AppModel {
     }
 
     var isRecording: Bool { liveState == .recording || liveState == .paused }
+
+    /// 錄音的階段：狀態的表示與開始／停止的按鈕照它顯示（判斷在 ThunderUI，有測試）。
+    var recorderPhase: RecorderPhase {
+        switch liveState {
+        case .idle: .idle
+        case .starting: .starting
+        case .recording: .recording
+        case .paused: .paused
+        case .stopping: .stopping
+        }
+    }
+
+    /// 現在要顯示的提示。
+    var toast: Toast? { toasts.visible(at: toastClock) }
+
+    /// 顯示一則提示，取代目前的那一則；到期時畫面重畫一次，提示就消失。
+    func notify(_ kind: Toast.Kind, _ text: String) {
+        let now = ContinuousClock.now
+        toasts.post(kind, text, at: now)
+        toastClock = now
+        toastExpiry?.cancel()
+        guard let expiresAt = toasts.expiresAt else { return }
+        toastExpiry = Task { [weak self] in
+            do { try await Task.sleep(until: expiresAt, clock: .continuous) } catch { return }
+            self?.toastClock = .now
+        }
+    }
 
     // MARK: 啟動之後
 
@@ -133,6 +170,7 @@ final class AppModel {
         }
 
         captions.reset()
+        markedLines = []
         elapsed = 0
         let keywords = AppSettings.lines(settings.keywords) + AppSettings.lines(sessionKeywords)
 
@@ -221,8 +259,12 @@ final class AppModel {
         }
     }
 
+    /// 標記重點：記進這一場，字幕最新的那一行加上旗子，並用提示說出標記的時間。
     func mark() {
-        recording?.mark()
+        guard let recording else { return }
+        recording.mark()
+        if let line = captions.board.lines.last?.id { markedLines.insert(line) }
+        notify(.marked, "已標記 \(Format.timecode(recording.audioTime.seconds))")
     }
 
     private var captureSource: CaptureSource {

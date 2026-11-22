@@ -248,12 +248,11 @@ public final class RecordingSession: @unchecked Sendable {
             if let existing = state.finishTask { return existing }
             state.finished = true
             let eventTask = state.eventTask
-            let capture = (ringDroppedSamples: ringDroppedSamples, discontinuities: captureDiscontinuities)
             // 不跟著呼叫端被取消：結束的步驟一旦開始就要做完
             let task = Task { [self] in
                 try await performFinish(
-                    eventTask: eventTask, ringDroppedSamples: capture.ringDroppedSamples,
-                    captureDiscontinuities: capture.discontinuities)
+                    eventTask: eventTask, ringDroppedSamples: ringDroppedSamples,
+                    captureDiscontinuities: captureDiscontinuities)
             }
             state.finishTask = task
             return task

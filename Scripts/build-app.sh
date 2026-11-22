@@ -25,14 +25,17 @@ cp "$binary" "$app/Contents/MacOS/ThunderFlow"
 cp App/Resources/Info.plist "$app/Contents/Info.plist"
 
 # 圖示與強調色。圖示名稱要和 .icon 的檔名相同：名稱不對時 actool 不會失敗，只是什麼都不產生，所以下面逐項檢查。
+# 路徑一律給絕對路徑：actool 交給常駐的 ibtoold 編譯，相對路徑是照 ibtoold 的工作目錄解讀的。
+# 幾分鐘內在另一個資料夾（例如另一個 worktree）打包過，輸出會寫到那個資料夾的 App 裡，這裡的 App 就沒有圖示。
+root="$(pwd -P)"
 assets="build/actool"
 rm -rf "$assets"
 mkdir -p "$assets"
 minimum="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' App/Resources/Info.plist)"
-if ! xcrun actool App/Resources/ThunderFlow.icon App/Resources/Assets.xcassets \
-    --compile "$app/Contents/Resources" \
+if ! xcrun actool "$root/App/Resources/ThunderFlow.icon" "$root/App/Resources/Assets.xcassets" \
+    --compile "$root/$app/Contents/Resources" \
     --app-icon ThunderFlow --accent-color AccentColor \
-    --output-partial-info-plist "$assets/Info.plist" \
+    --output-partial-info-plist "$root/$assets/Info.plist" \
     --platform macosx --target-device mac --minimum-deployment-target "$minimum" \
     --output-format human-readable-text --errors --warnings >"$assets/actool.log" 2>&1; then
     cat "$assets/actool.log" >&2
@@ -41,6 +44,11 @@ if ! xcrun actool App/Resources/ThunderFlow.icon App/Resources/Assets.xcassets \
 fi
 if grep -q -E "(^|: )(warning|error):|com\.apple\.actool\.(document\.)?(warnings|errors)" "$assets/actool.log"; then
     cat "$assets/actool.log" >&2
+fi
+if [ ! -s "$assets/Info.plist" ]; then
+    cat "$assets/actool.log" >&2
+    echo "錯誤：actool 沒有寫出 ${assets}/Info.plist（輸出可能寫到別的資料夾去了，見上面的紀錄）" >&2
+    exit 1
 fi
 /usr/libexec/PlistBuddy -c "Merge $assets/Info.plist" "$app/Contents/Info.plist" >/dev/null
 for key in CFBundleIconName CFBundleIconFile NSAccentColorName; do

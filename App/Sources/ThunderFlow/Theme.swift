@@ -243,17 +243,20 @@ private struct PrimaryButton: View {
 
 /// 次要按鈕：墨黑 2 的底加 1 px 的框線；按下時換成墨黑 3 並縮到 98%。
 /// `isOn` 是開關開啟的樣子（例如浮動字幕開著）：淡綠的底。圖示要不要變綠由內容自己決定。
+/// `isHeld` 讓按鈕維持按下的樣子：例如按下停止之後、「收尾中」還沒出現之前。
 struct NeutralButtonStyle: ButtonStyle {
     var isOn = false
+    var isHeld = false
 
     func makeBody(configuration: Configuration) -> some View {
-        NeutralButton(configuration: configuration, isOn: isOn)
+        NeutralButton(configuration: configuration, isOn: isOn, isHeld: isHeld)
     }
 }
 
 private struct NeutralButton: View {
     let configuration: ButtonStyleConfiguration
     let isOn: Bool
+    let isHeld: Bool
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.controlSize) private var controlSize
     @Environment(\.displayScale) private var displayScale
@@ -265,7 +268,7 @@ private struct NeutralButton: View {
     private static let hoverWash = Theme.bolt.opacity(0.2)
 
     var body: some View {
-        let pressed = configuration.isPressed
+        let pressed = configuration.isPressed || isHeld
         let metrics = ButtonMetrics(controlSize)
         let shape = RoundedRectangle(cornerRadius: metrics.radius, style: .continuous)
         let hover = hovering && isEnabled

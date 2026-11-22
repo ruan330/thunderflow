@@ -44,6 +44,7 @@ struct SettingsView: View {
             }
             Section("字幕") {
                 Toggle("顯示暫定譯文（句子還沒說完就先顯示，會被定稿取代）", isOn: $settings.showsProvisional)
+                Toggle("加速翻譯（OpenAI 的 Fast mode：每個翻譯請求快約 0.14 秒，翻譯的費用約 2 倍；下一場起生效）", isOn: $settings.fastTranslation)
                 Picker("顯示模式", selection: $settings.displayMode) {
                     ForEach(DisplayMode.allCases) { Text($0.label).tag($0) }
                 }

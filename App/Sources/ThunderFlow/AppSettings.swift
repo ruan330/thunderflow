@@ -38,6 +38,8 @@ final class AppSettings {
     var postTextModel: String { didSet { defaults.set(postTextModel, forKey: "postTextModel") } }
     var baseURL: String { didSet { defaults.set(baseURL, forKey: "baseURL") } }
     var showsProvisional: Bool { didSet { defaults.set(showsProvisional, forKey: "showsProvisional") } }
+    /// 加速翻譯：用 OpenAI 的 Fast mode（`service_tier: priority`），每個翻譯請求快約 0.14 秒，翻譯的單價約 2 倍（HANDOVER.md P11）。
+    var fastTranslation: Bool { didSet { defaults.set(fastTranslation, forKey: "fastTranslation") } }
     var autoSummary: Bool { didSet { defaults.set(autoSummary, forKey: "autoSummary") } }
     /// 每一場都會帶上的關鍵詞，一行一個。
     var keywords: String { didSet { defaults.set(keywords, forKey: "keywords") } }
@@ -67,6 +69,7 @@ final class AppSettings {
         // 預設不顯示暫定譯文：字一直變比晚一點出現更干擾閱讀（HANDOVER.md P10 的實驗）
         // 暫定譯文預設開啟（D33）：整句的暫定譯文邊說邊出、幾乎只往後接，比等整句定稿好讀
         showsProvisional = defaults.object(forKey: "showsProvisional") as? Bool ?? true
+        fastTranslation = defaults.bool(forKey: "fastTranslation")
         autoSummary = defaults.object(forKey: "autoSummary") as? Bool ?? true
         keywords = defaults.string(forKey: "keywords") ?? ""
         fontSize = defaults.object(forKey: "fontSize") as? Double ?? 22

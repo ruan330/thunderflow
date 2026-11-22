@@ -23,6 +23,8 @@ func live(_ arguments: Arguments) async throws {
     if let first = arguments.options["provisional-first-words"].flatMap(Int.init) {
         configuration.translation.sentenceProvisionalFirstWords = first
     }
+    // 優先處理（OpenAI 的 service_tier，例如 priority）：較快、單價較高
+    configuration.translation.serviceTier = arguments.options["service-tier"]
     if let path = arguments.options["keywords"] {
         let keywords = try String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8)
             .split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }

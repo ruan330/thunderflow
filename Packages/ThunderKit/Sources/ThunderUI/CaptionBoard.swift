@@ -62,6 +62,7 @@ public struct CaptionBoard: Sendable, Equatable {
     public static func == (lhs: CaptionBoard, rhs: CaptionBoard) -> Bool {
         lhs.lines == rhs.lines && lhs.liveSegment == rhs.liveSegment && lhs.liveEnglish == rhs.liveEnglish
             && lhs.liveChinese == rhs.liveChinese && lhs.liveChineseSegment == rhs.liveChineseSegment
+            && lhs.liveSentence == rhs.liveSentence
     }
 
     /// 從 `revision` 那一版到現在，最前面改到（或新增）的是第幾行；沒有改到任何一行時是 nil。
@@ -94,6 +95,7 @@ public struct CaptionBoard: Sendable, Equatable {
                     liveEnglish = ""
                 }
                 liveEnglish += text.text
+                liveSentence = text.sentence
             } else {
                 finishSource(text)
             }
@@ -110,15 +112,21 @@ public struct CaptionBoard: Sendable, Equatable {
                 liveChinese = text.text
             }
         case .translation(let text):
+            if let first = text.sentenceStart, let last = text.segment {
+                finishSentence(text, first: first, last: last)
+                return
+            }
             // 沒有段號的引擎：照順序配給第一行還沒有中文的
-            guard let index = text.segment.flatMap(index(of:)) ?? lines.firstIndex(where: { $0.chinese.isEmpty && !$0.untranslated })
+            guard
+                let index = text.segment.flatMap(index(of:))
+                    ?? lines.firstIndex(where: { $0.chinese.isEmpty && !$0.untranslated && !$0.coveredBySentence })
             else { return }
             lines[index].chinese = text.text
             lines[index].provisional = ""
             lines[index].untranslated = false
-            // 定稿依段的順序送出：輪到這一段了，前面還沒有中文的就是沒翻到
+            // 定稿依段的順序送出：輪到這一段了，前面還沒有中文的就是沒翻到（被整句定稿涵蓋的段不算）
             var earlier = index - 1
-            while earlier >= 0, lines[earlier].chinese.isEmpty, !lines[earlier].untranslated {
+            while earlier >= 0, lines[earlier].chinese.isEmpty, !lines[earlier].untranslated, !lines[earlier].coveredBySentence {
                 lines[earlier].untranslated = true
                 lines[earlier].provisional = ""
                 earlier -= 1
@@ -129,14 +137,34 @@ public struct CaptionBoard: Sendable, Equatable {
         }
     }
 
-    /// 引擎結束了：還沒有中文的段不會再有定稿。
+    /// 引擎結束了：還沒有中文的段不會再有定稿。整句模式時，還沒有整句定稿的句子用各段的定稿接起來當成整句定稿。
     public mutating func engineEnded() {
         var first: Int?
-        for index in lines.indices where lines[index].chinese.isEmpty {
+        var start = 0
+        while start < lines.count {
+            guard let sentence = lines[start].sentence else {
+                start += 1
+                continue
+            }
+            var end = start + 1
+            while end < lines.count, lines[end].sentence == sentence { end += 1 }
+            let parts = lines[start..<end].map(\.chinese).filter { !$0.isEmpty }
+            if !lines[start..<end].contains(where: \.coveredBySentence), !parts.isEmpty {
+                for index in start..<end {
+                    lines[index].coveredBySentence = true
+                    lines[index].untranslated = false
+                    lines[index].provisional = ""
+                }
+                lines[end - 1].sentenceChinese = TextFlow.join(parts)
+                if first == nil { first = start }
+            }
+            start = end
+        }
+        for index in lines.indices where lines[index].chinese.isEmpty && !lines[index].coveredBySentence {
             guard !lines[index].untranslated || !lines[index].provisional.isEmpty else { continue }
             lines[index].untranslated = true
             lines[index].provisional = ""
-            if first == nil { first = index }
+            first = min(first ?? index, index)
         }
         if let first { changed(from: first) }
         liveChinese = ""
@@ -154,19 +182,46 @@ public struct CaptionBoard: Sendable, Equatable {
         if let index = index(of: segment) {
             // 同一段再確定一次：補上了晚到的標點或尾巴，以這一次為準
             lines[index].english = text.text
+            if let sentence = text.sentence { lines[index].sentence = sentence }
             changed(from: index)
         } else {
             let carried = liveChineseSegment == segment ? liveChinese : ""
-            lines.append(Line(id: segment, english: text.text, chinese: "", provisional: carried, untranslated: false, at: text.at))
+            lines.append(
+                Line(
+                    id: segment, english: text.text, chinese: "", provisional: carried, untranslated: false, at: text.at,
+                    sentence: text.sentence))
             changed(from: lines.count - 1)
         }
         // 進行中的那一行到此為止（它不是剛確定的這一段，就是被併進上一段的尾巴）
         liveEnglish = ""
         liveSegment = nil
+        liveSentence = nil
         if liveChineseSegment == nil || liveChineseSegment == segment || liveChineseSegment == segment + 1 {
             liveChinese = ""
             liveChineseSegment = nil
         }
+    }
+
+    /// 整句定稿：第 `first` 段到第 `last` 段是同一句，整句的中文放在最後一段，這幾段都算有定稿。
+    private mutating func finishSentence(_ text: CaptionText, first: Int, last: Int) {
+        guard let end = index(of: last) else { return }
+        var start = end
+        while start > 0, lines[start - 1].id >= first { start -= 1 }
+        for index in start...end {
+            if let sentence = text.sentence { lines[index].sentence = sentence }
+            lines[index].sentenceChinese = index == end ? text.text : ""
+            lines[index].coveredBySentence = true
+            lines[index].untranslated = false
+            lines[index].provisional = ""
+        }
+        // 定稿依段的順序送出：輪到這一句了，前面還沒有中文的就是沒翻到
+        var earlier = start - 1
+        while earlier >= 0, lines[earlier].chinese.isEmpty, !lines[earlier].untranslated, !lines[earlier].coveredBySentence {
+            lines[earlier].untranslated = true
+            lines[earlier].provisional = ""
+            earlier -= 1
+        }
+        changed(from: earlier + 1)
     }
 
     /// 記一版：這一版從第 `line` 行開始有改變。

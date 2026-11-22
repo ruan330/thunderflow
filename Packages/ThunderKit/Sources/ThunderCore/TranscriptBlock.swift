@@ -19,14 +19,23 @@ public struct TranscriptBlock: Sendable, Equatable, Codable, Identifiable {
     public var segments: [Int]
     /// 有重點標記落在這個段落。
     public var marked: Bool
+    /// 這個段落開始之前發生的錄音中斷（睡眠、裝置不見……），依發生的順序。逐字稿標在段落前面。
+    public var interruptionsBefore: [TranscriptInterruption]
+    /// 最後一個段落之後才發生的錄音中斷（之後沒有人說話），依發生的順序。逐字稿標在段落後面。只有最後一個段落會有。
+    public var interruptionsAfter: [TranscriptInterruption]
 
-    public init(id: Int, start: Double, en: String, zh: String = "", segments: [Int] = [], marked: Bool = false) {
+    public init(
+        id: Int, start: Double, en: String, zh: String = "", segments: [Int] = [], marked: Bool = false,
+        interruptionsBefore: [TranscriptInterruption] = [], interruptionsAfter: [TranscriptInterruption] = []
+    ) {
         self.id = id
         self.start = start
         self.en = en
         self.zh = zh
         self.segments = segments
         self.marked = marked
+        self.interruptionsBefore = interruptionsBefore
+        self.interruptionsAfter = interruptionsAfter
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -367,4 +376,22 @@ private enum BlockLine {
         }
         line.append(UInt8(ascii: "\""))
     }
+}
+
+/// 逐字稿裡的一次錄音中斷（DESIGN.md 5.4 節）：日誌裡原因是 sleep、deviceLost、outputChanged、captureStalled 的缺口。
+public struct TranscriptInterruption: Sendable, Equatable {
+    /// 中斷的音訊時間（秒）。
+    public var at: Double
+    public var reason: GapReason
+    /// 沒有錄到的時間（秒，實際經過的時間）。
+    public var lostSeconds: Double
+
+    public init(at: Double, reason: GapReason, lostSeconds: Double) {
+        self.at = at
+        self.reason = reason
+        self.lostSeconds = lostSeconds
+    }
+
+    /// 逐字稿裡的標示，例如「〔錄音中斷：電腦睡眠，約 14 分鐘沒有錄到〕」。
+    public var label: String { "" }
 }

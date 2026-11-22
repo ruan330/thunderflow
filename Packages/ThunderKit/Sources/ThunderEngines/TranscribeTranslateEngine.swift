@@ -189,6 +189,8 @@ private final class EngineRun {
                 if !flushed {
                     flushed = true
                     handle(segmenter.flush(at: time), at: time)
+                    // 整句模式：正在說的那一句當成說完了
+                    apply(planner.flush(at: time))
                 }
                 if !planner.hasPendingFinals { break }
             }
@@ -235,15 +237,24 @@ private final class EngineRun {
             case .delta(let segment, let text):
                 liveSegment = segment
                 grew = true
-                output.yield(.source(CaptionText(text: text, kind: .delta, at: audioEnd, segment: segment)))
-            case .finished(let segment, let text, _):
-                output.yield(.source(CaptionText(text: text, kind: .segmentEnd, at: audioEnd, segment: segment)))
-                apply(planner.segmentFinished(segment, text: text, at: time))
+                output.yield(.source(CaptionText(text: text, kind: .delta, at: audioEnd, segment: segment, sentence: openSentence)))
+            case .finished(let segment, let text, let reason):
+                // 句子的編號在交給翻譯排程之前就決定：這一段屬於正在說的那一句（它可能就在這一段結束）
+                output.yield(
+                    .source(CaptionText(text: text, kind: .segmentEnd, at: audioEnd, segment: segment, sentence: openSentence)))
+                apply(planner.segmentFinished(segment, text: text, reason: reason, at: time))
             case .amended(let segment, let text):
-                // 補上晚到的標點：英文更新，中文不用重翻
-                output.yield(.source(CaptionText(text: text, kind: .segmentEnd, at: audioEnd, segment: segment)))
+                // 補上晚到的標點：英文更新，段的中文不用重翻；整句模式時，補上的句號讓這一句在這一段結束
+                output.yield(
+                    .source(
+                        CaptionText(
+                            text: text, kind: .segmentEnd, at: audioEnd, segment: segment, sentence: planner.sentence(of: segment))))
+                if sentences { apply(planner.segmentAmended(segment, text: text, at: time)) }
             case .extended(let segment, let text):
-                output.yield(.source(CaptionText(text: text, kind: .segmentEnd, at: audioEnd, segment: segment)))
+                output.yield(
+                    .source(
+                        CaptionText(
+                            text: text, kind: .segmentEnd, at: audioEnd, segment: segment, sentence: planner.sentence(of: segment))))
                 apply(planner.segmentExtended(segment, text: text, at: time))
             }
         }
@@ -252,6 +263,10 @@ private final class EngineRun {
             if !pending.isEmpty { apply(planner.pendingText(pending, segment: liveSegment, at: time)) }
         }
     }
+
+    /// 整句模式：英文帶的句子編號（正在說的那一句）。不是整句模式時是 nil。
+    private var openSentence: Int? { sentences ? planner.openSentence : nil }
+    private var sentences: Bool { planner.configuration.sentences }
 
     private func apply(_ effects: [TranslationPlanner.Effect]) {
         for effect in effects {
@@ -264,8 +279,11 @@ private final class EngineRun {
                 output.yield(.translation(CaptionText(text: text, kind: .segmentEnd, at: audioEnd, segment: segment)))
             case .provisional(let segment, let text):
                 output.yield(.provisional(CaptionText(text: text, kind: .delta, at: audioEnd, segment: segment)))
-            case .sentence:
-                break
+            case .sentence(let number, let first, let last, let text):
+                output.yield(
+                    .translation(
+                        CaptionText(
+                            text: text, kind: .segmentEnd, at: audioEnd, segment: last, sentence: number, sentenceStart: first)))
             }
         }
     }

@@ -21,6 +21,7 @@ struct LibraryView: View {
                     ContentUnavailableView(
                         "還沒有錄音", systemImage: "tray",
                         description: Text("到「即時翻譯」按下開始錄音，結束後會出現在這裡。"))
+                    .frame(maxHeight: .infinity)
                 } else {
                     List(model.filteredSessions, selection: $model.selectedSession) { item in
                         SessionRow(item: item, progress: model.processing[item.id])
@@ -36,15 +37,17 @@ struct LibraryView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .frame(minWidth: 260, idealWidth: 320, maxWidth: 420)
+            // 兩邊都撐滿高度：左右分欄的高度取兩邊內容的理想高度。沒選場次時右邊只有一個小提示，
+            // 不撐滿的話整個分欄只有提示那麼高、被垂直置中，清單只看得到一兩列（點一場之後詳細頁撐開才恢復）。
+            .frame(minWidth: 260, idealWidth: 320, maxWidth: 420, maxHeight: .infinity)
 
             if let item = model.sessions.first(where: { $0.id == model.selectedSession }) {
                 SessionDetailView(item: item)
                     .id(item.directory.url)
-                    .frame(minWidth: 480)
+                    .frame(minWidth: 480, maxHeight: .infinity)
             } else {
                 ContentUnavailableView("選一場錄音", systemImage: "doc.text.magnifyingglass")
-                    .frame(minWidth: 480, maxWidth: .infinity)
+                    .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationTitle("過去錄音")

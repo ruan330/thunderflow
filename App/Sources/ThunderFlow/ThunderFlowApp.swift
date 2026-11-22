@@ -305,7 +305,8 @@ struct FloatingCaptionsView: View {
 ///     ThunderFlow -selfTestFile <音檔> [-selfTestSeconds 30] [-selfTestSnapshot <路徑前綴>] [-selfTestMark YES]
 ///                 [-selfTestQuit YES] [-libraryPath <資料夾>] [-workingPath <資料夾>] [-apiKeyFromStdin YES]
 ///
-/// 截圖依序是開始前（`-idle.png`）、錄音中（`-live.png`）、結束後的詳細頁（`-detail.png`）與設定頁（`-settings.png`）。
+/// 截圖依序是開始前（`-idle.png`）、錄音中（`-live.png`）、結束後的詳細頁（`-detail.png`）、設定頁（`-settings.png`），
+/// 以及從設定頁切回過去錄音、還沒選任何一場時的清單（`-library.png`，同時印出清單有幾列、看得到幾列）。
 /// `-selfTestMark YES` 在錄音中的截圖前 1 秒標記一次重點，截圖裡就看得到提示與字幕的旗子。用法見 CLAUDE.md。
 @MainActor
 enum SelfTest {
@@ -361,6 +362,15 @@ enum SelfTest {
                 model.page = .settings
                 try? await Task.sleep(for: .milliseconds(500))
                 snapshot(to: prefix + "-settings.png")
+                // 從別頁切到過去錄音、還沒選任何一場時的清單（`-library.png`），和使用者從側邊欄點進來一樣。
+                // 同時印出清單有幾列、看得到幾列：只顯示一部分時，分得出是資料少了還是沒畫出來。
+                model.selectedSession = nil
+                model.page = .library
+                for wait in [100, 400, 1_000] {
+                    try? await Task.sleep(for: .milliseconds(wait))
+                    print("selfTest: library sessions=\(model.sessions.count) \(listDiagnostics())")
+                }
+                snapshot(to: prefix + "-library.png")
             }
             let states = model.sessions.map { "\($0.meta.title.isEmpty ? "未命名" : $0.meta.title)｜\($0.meta.state.rawValue)｜\(Int($0.meta.durationSeconds)) 秒｜失敗的步驟 \($0.meta.failedSteps)" }
             print("selfTest: done banner=\(model.banner ?? "-") sessions=\(states)")
@@ -422,6 +432,21 @@ enum SelfTest {
     }
 
     /// 把主視窗的內容畫成圖檔（在程式裡自己畫，不需要螢幕錄製的權限）。
+    /// 畫面上每個清單（NSTableView）的列數、看得到的列數與可見的高度。
+    static func listDiagnostics() -> String {
+        var tables: [NSTableView] = []
+        func walk(_ view: NSView) {
+            if let table = view as? NSTableView { tables.append(table) }
+            view.subviews.forEach(walk)
+        }
+        for window in NSApp.windows {
+            if let content = window.contentView { walk(content) }
+        }
+        return tables.map { table in
+            "rows=\(table.numberOfRows) visible=\(table.rows(in: table.visibleRect).length) height=\(Int(table.visibleRect.height))"
+        }.joined(separator: "; ")
+    }
+
     static func snapshot(to path: String) {
         guard let view = NSApp.windows.first(where: { !($0 is NSPanel) && $0.contentView != nil })?.contentView,
             let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds)

@@ -92,7 +92,10 @@ extension Indicator {
     /// 過去錄音的狀態標籤。正常完成的場次不顯示標籤（nil）。
     ///
     /// 依序判斷：正在處理時顯示處理的進度（`progress`）；還沒處理完顯示「處理中」；摘要失敗；其他步驟失敗；已復原。
-    public static func sessionBadge(_ meta: SessionMeta, progress: String? = nil) -> Indicator? {
+    ///
+    /// - Parameter failed: 這一場的結束處理失敗了（還留在工作目錄裡，下次開啟 App 時重試）。
+    public static func sessionBadge(_ meta: SessionMeta, progress: String? = nil, failed: Bool = false) -> Indicator? {
+        // 暫時不看 failed（目前的做法），測試會指出問題；實作時改掉
         if let progress { return Indicator(symbol: .spinner, tone: .neutral, text: progress) }
         if meta.state != .complete { return Indicator(symbol: .spinner, tone: .neutral, text: "處理中") }
         if meta.failedSteps.contains(FinalizationStep.summary.rawValue) {

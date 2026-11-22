@@ -38,6 +38,12 @@ public enum SessionLibrary {
         }
     }
 
+    /// 過去錄音的清單：Library 裡的場次，加上工作目錄裡已經停止錄音、還沒搬進 Library 的場次。
+    public static func list(library: URL, working: URL) -> [Item] {
+        // 暫時照目前 App 的做法（只列 Library），測試會指出問題；實作時改掉
+        list(root: library)
+    }
+
     /// 場次資料夾的名稱：開始時間（`timeZone` 的當地時間）加上標題，例如
     /// `2026-12-02 1030 Building Agents with Bedrock`；沒有標題時是 `2026-12-02 1030 未命名`。
     ///

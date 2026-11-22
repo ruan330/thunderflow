@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import ThunderAudio
 import ThunderCore
+import ThunderSession
 import ThunderUI
 import UniformTypeIdentifiers
 
@@ -13,6 +14,11 @@ struct LiveView: View {
     var body: some View {
         @Bindable var model = model
         VStack(alignment: .leading, spacing: 0) {
+            if let prompt = model.interruptedPrompt {
+                InterruptedSessionsBanner(
+                    prompt: prompt, finish: { model.finishInterruptedSessions() }, later: { model.postponeInterruptedSessions() })
+                Hairline()
+            }
             if let banner = model.banner {
                 BannerView(text: banner) { model.banner = nil }
                 Hairline()
@@ -436,6 +442,27 @@ struct BannerView: View {
             Text(text).textSelection(.enabled)
             Spacer()
             Button("關閉", action: dismiss).buttonStyle(.borderless)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(Theme.ink1)
+    }
+}
+
+/// 上次沒有正常結束的場次（當機、被強制結束）：問要現在結束並產生逐字稿，還是稍後再決定（D26）。
+/// 和其他橫幅一樣放在頁面頂端，不擋任何操作；好幾場時一次問。
+struct InterruptedSessionsBanner: View {
+    let prompt: InterruptedSessionPrompt
+    let finish: () -> Void
+    let later: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.attention)
+            Text(prompt.message).textSelection(.enabled)
+            Spacer()
+            Button(InterruptedSessionPrompt.laterLabel, action: later)
+            Button(InterruptedSessionPrompt.finishLabel, action: finish).buttonStyle(.borderedProminent)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)

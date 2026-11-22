@@ -51,6 +51,11 @@ final class AppModel {
     }
     /// 頁面頂端的橫幅：發生了什麼、錄音有沒有受影響、該怎麼處理。
     var banner: String?
+    /// 上次沒有正常結束的場次（當機、被強制結束）要問使用者的話；沒有時是 nil（D26、DESIGN.md 5.5 節）。
+    /// 即時翻譯頁頂端顯示，不擋任何操作。
+    var interruptedPrompt: InterruptedSessionPrompt?
+    /// 問的是哪幾場（場次的 id）。
+    @ObservationIgnored private var promptedSessionIDs: Set<UUID> = []
     var title = ""
     var event = ""
     var speaker = ""
@@ -466,10 +471,12 @@ final class AppModel {
         level = 0
         liveState = .idle
         if failed {
-            // 錄音的物件放掉之後，場次的鎖才會交出來（見 SessionLock）：等這個函式結束再復原，不用等下次開啟 App
+            // 錄音的物件放掉之後，場次的鎖才會交出來（見 SessionLock）：等這個函式結束再復原，不用等下次開啟 App。
+            // 只復原這一場（使用者剛按了停止）；上次當機留下的其他場次仍然要先問
+            let id = recording.id
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(1))
-                self?.resumeUnfinished()
+                self?.recoverAndFinalize { $0.meta.id == id }
             }
         }
     }
@@ -760,9 +767,10 @@ final class AppModel {
         let working = settings.workingRoot
         let library = settings.libraryRoot
         Task.detached(priority: .utility) { [weak self] in
-            for interrupted in (try? SessionRecovery.findInterrupted(in: working)) ?? [] {
-                _ = try? SessionRecovery.recover(interrupted)
-            }
+            // 上次沒有正常結束的場次（當機、被強制結束）：先問使用者，不自動收尾、也不自動接著錄（D26）
+            let interrupted = (try? SessionRecovery.findInterrupted(in: working)) ?? []
+            let prompt = InterruptedSessionPrompt(sessions: interrupted, now: Date())
+            let promptedIDs = Set(interrupted.map(\.meta.id))
             var pending: [(SessionDirectory, UUID)] = []
             let names = (try? FileManager.default.contentsOfDirectory(atPath: working.path)) ?? []
             for name in names {
@@ -773,6 +781,40 @@ final class AppModel {
                 pending.append((item.directory, item.meta.id))
             }
             let found = pending
+            await MainActor.run {
+                guard let self else { return }
+                for (directory, id) in found where self.processing[id] == nil {
+                    self.finalize(directory, id: id, showWhenReady: false, resumed: true)
+                }
+                self.interruptedPrompt = prompt
+                self.promptedSessionIDs = promptedIDs
+            }
+        }
+    }
+
+    /// 「結束並產生逐字稿」：上次中斷的場次照當機復原的做法收尾（依檔案裡實際的錄音長度、標記為已復原），再做結束處理。
+    func finishInterruptedSessions() {
+        let ids = promptedSessionIDs
+        interruptedPrompt = nil
+        promptedSessionIDs = []
+        recoverAndFinalize { ids.contains($0.meta.id) }
+    }
+
+    /// 「稍後再決定」：留在工作目錄，下次開啟 App 再問。
+    func postponeInterruptedSessions() {
+        interruptedPrompt = nil
+        promptedSessionIDs = []
+    }
+
+    /// 重新找一次上次中斷的場次（問了之後，另一個開著的 App 可能已經處理掉了），把符合的復原並做結束處理。
+    private func recoverAndFinalize(where matches: @escaping @Sendable (InterruptedSession) -> Bool) {
+        let working = settings.workingRoot
+        Task.detached(priority: .utility) { [weak self] in
+            var recovered: [(SessionDirectory, UUID)] = []
+            for session in (try? SessionRecovery.findInterrupted(in: working)) ?? [] where matches(session) {
+                if (try? SessionRecovery.recover(session)) != nil { recovered.append((session.directory, session.meta.id)) }
+            }
+            let found = recovered
             await MainActor.run {
                 guard let self else { return }
                 for (directory, id) in found where self.processing[id] == nil {

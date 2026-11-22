@@ -56,6 +56,10 @@ public final class LiveRecording: @unchecked Sendable {
     /// 來源的說明，例如裝置名稱或「系統音訊」。開始之後才有值。
     public var sourceDescription: String { capture.sourceDescription }
 
+    /// 收音的來源和使用者選的不一樣時給使用者的說明：記住的麥克風不在了，改用系統預設的
+    /// （說用了哪一個）。開始之後才有值；照選的開始時是 nil。
+    public var captureNotice: String? { capture.microphoneChoice?.notice }
+
     /// 來源自己結束了（音檔播完）。在別的執行緒上被呼叫。要在 `start()` 之前設定。
     public var onSourceEnded: (@Sendable () -> Void)? {
         get { capture.onEnded }

@@ -40,11 +40,17 @@ public struct MicrophoneChoice: Sendable, Equatable {
     /// - 指定的不在了（拔掉、iPhone 拿起來解鎖）：改用系統預設的輸入裝置照樣開始，記下原本指定的 UID。
     /// - 一個可以收音的裝置都沒有：nil。
     public static func choose(uid: String?, from devices: [AudioInputDevice]) -> MicrophoneChoice? {
-        nil
+        guard let fallback = devices.first(where: \.isDefault) ?? devices.first else { return nil }
+        guard let uid, !uid.isEmpty else { return MicrophoneChoice(device: fallback) }
+        if let chosen = devices.first(where: { $0.uid == uid }) { return MicrophoneChoice(device: chosen) }
+        return MicrophoneChoice(device: fallback, missingUID: uid)
     }
 
     /// 改用了別的裝置時給使用者的說明：說這一場用了哪一個裝置。照指定的（或本來就用預設的）時是 nil。
-    public var notice: String? { nil }
+    public var notice: String? {
+        guard missingUID != nil else { return nil }
+        return "先前選擇的麥克風找不到（可能被拔掉了），這一場改用「\(device.name)」錄音。原本的麥克風接回來之後，下一場會再用它。"
+    }
 }
 
 /// 收音的來源。
@@ -59,7 +65,6 @@ public enum CaptureSource: Sendable, Equatable {
 
 public enum AudioCaptureError: Error, CustomStringConvertible {
     case noInputDevice
-    case deviceNotFound(String)
     case coreAudio(operation: String, status: OSStatus)
     /// 系統音訊的裝置建立了，卻沒辦法開始收音。實機上看到的原因：還沒有允許「錄製系統音訊」
     /// （第一次使用、或開發版重新打包之後）。macOS 跳出授權視窗的同時，開始收音就直接失敗，不會等使用者回答。
@@ -69,7 +74,6 @@ public enum AudioCaptureError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .noInputDevice: "找不到可以收音的裝置"
-        case .deviceNotFound(let uid): "找不到先前選擇的裝置（\(uid)）"
         case .coreAudio(let operation, let status): "\(operation) 失敗（Core Audio 錯誤 \(status)）"
         case .systemAudioNotStarted(let status):
             "系統音訊沒辦法開始（Core Audio 錯誤 \(status)），通常是還沒有允許 ThunderFlow 錄製系統音訊。"
@@ -206,6 +210,9 @@ public final class AudioCapture: @unchecked Sendable {
     /// 來源的說明，記在 `session.json`，也顯示在畫面上。
     public private(set) var sourceDescription = ""
 
+    /// 麥克風：開始時選定的裝置。記住的裝置不在了會改用系統預設的，這時 `notice` 說明用了哪一個。開始之後才有值。
+    public private(set) var microphoneChoice: MicrophoneChoice?
+
     /// 開始收音。回傳來源的取樣率（寫進 RingBuffer 的是這個取樣率的單聲道樣本）。
     public func start() throws -> Double {
         mixer.resetContinuity()
@@ -246,20 +253,16 @@ public final class AudioCapture: @unchecked Sendable {
 
     // MARK: 麥克風
 
+    /// 記住的裝置不在了（拔掉、iPhone 拿起來解鎖）就改用系統預設的輸入裝置照樣開始（`MicrophoneChoice`）。
     private func startMicrophone(uid: String?) throws -> Double {
-        let devices = AudioDevices.inputDevices()
-        let chosen: AudioInputDevice
-        if let uid {
-            guard let match = devices.first(where: { $0.uid == uid }) else { throw AudioCaptureError.deviceNotFound(uid) }
-            chosen = match
-        } else {
-            guard let match = devices.first(where: \.isDefault) ?? devices.first else { throw AudioCaptureError.noInputDevice }
-            chosen = match
+        guard let choice = MicrophoneChoice.choose(uid: uid, from: AudioDevices.inputDevices()) else {
+            throw AudioCaptureError.noInputDevice
         }
-        device = chosen.id
-        sourceDescription = chosen.name
-        try startIOProc(on: chosen.id)
-        return chosen.sampleRate
+        microphoneChoice = choice
+        device = choice.device.id
+        sourceDescription = choice.device.name
+        try startIOProc(on: choice.device.id)
+        return choice.device.sampleRate
     }
 
     // MARK: 系統音訊（Process Tap＋私有的 aggregate device）

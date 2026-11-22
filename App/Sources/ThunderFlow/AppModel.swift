@@ -295,6 +295,8 @@ final class AppModel {
         self.recording = recording
         sourceDescription = recording.sourceDescription
         liveState = .recording
+        // 記住的麥克風不在了：已經改用系統預設的開始錄音，說明這一場用了哪一個（DESIGN.md 5.4 節）
+        if let notice = recording.captureNotice { banner = notice }
         // 錄音中不讓電腦因為閒置而睡眠
         activity = ProcessInfo.processInfo.beginActivity(options: [.idleSystemSleepDisabled, .userInitiated], reason: "錄音中")
         PerfProbe.recordingStarted()

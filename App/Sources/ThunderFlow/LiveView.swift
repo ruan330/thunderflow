@@ -385,6 +385,12 @@ struct SourcePicker: View {
             ForEach(model.devices) { device in
                 Text(device.name).tag(AppModel.SourceChoice.microphone(uid: device.uid))
             }
+            // 記住的麥克風不在清單裡（拔掉了，或清單還沒讀到）：保留這個選項，選單才不會變成無效的。
+            // 開始時改用系統預設的輸入裝置並說明；接回來之後又會用它
+            if case .microphone(let uid) = model.source, !uid.isEmpty, !model.devices.contains(where: { $0.uid == uid }) {
+                Text(model.devices.isEmpty ? "先前選擇的麥克風" : "先前選擇的麥克風（找不到，會改用系統預設的）")
+                    .tag(model.source)
+            }
             if case .file(let url) = model.source {
                 Text("音檔：\(url.lastPathComponent)").tag(AppModel.SourceChoice.file(url))
             }

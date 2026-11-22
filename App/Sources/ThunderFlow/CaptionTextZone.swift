@@ -207,7 +207,7 @@ final class CaptionZoneView: NSView {
     private let layoutManager = NSLayoutManager()
     private let container = NSTextContainer(size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
     private let lineMetrics = CaptionLineMetrics()
-    private let scrollView = NSScrollView()
+    private let scrollView = CaptionScrollView()
     private let textView: CaptionTextView
     private var lastWidth: CGFloat = -1
     private var layoutCheckScheduled = false
@@ -249,6 +249,14 @@ final class CaptionZoneView: NSView {
         textView.isSelectable = true
         textView.isRichText = false
         textView.importsGraphics = false
+        // 唯讀的字幕不需要任何自動的文字檢查（實測沒關時，背景會一直跑斷詞與資料偵測）
+        textView.enabledTextCheckingTypes = 0
+        textView.isAutomaticDataDetectionEnabled = false
+        textView.isAutomaticLinkDetectionEnabled = false
+        textView.isAutomaticTextReplacementEnabled = false
+        textView.isAutomaticSpellingCorrectionEnabled = false
+        textView.isContinuousSpellCheckingEnabled = false
+        textView.isGrammarCheckingEnabled = false
         // 不透明的底（和內容區一樣的墨黑 0）：捲動時系統可以沿用已經畫好的字，只畫新露出來的地方。
         // 透明的話，每一次捲到最新都要把看得到的字全部重畫一次
         textView.drawsBackground = true
@@ -333,8 +341,20 @@ final class CaptionZoneView: NSView {
     private static let tailLength = 20_000
 }
 
+/// 字幕的捲動區：捲動的位置不存進視窗的狀態。系統的捲動區每捲一次就把視窗的狀態標成要更新，
+/// 系統隨後會把整個視窗拍成圖、壓縮、寫進磁碟（重新打開 App 時的動畫用）；字幕每次捲到最新都會觸發，
+/// 錄音中約 0.4 點 CPU（實測）。重新打開 App 時不需要恢復錄音中的捲動位置。
+final class CaptionScrollView: NSScrollView {
+    override func invalidateRestorableState() {}
+    override func encodeRestorableState(with coder: NSCoder) {}
+}
+
 /// 唯讀的字幕文字：複製時只給純文字，不含旗子與「未翻譯」標籤。還在更新的段左邊畫一條綠線。
 final class CaptionTextView: NSTextView {
+    // 字幕不存進視窗的狀態（見 `CaptionScrollView`）
+    override func invalidateRestorableState() {}
+    override func encodeRestorableState(with coder: NSCoder) {}
+
     /// 還在更新、左邊要畫綠線的段（文字裡的範圍）。
     var markerRanges: [NSRange] = [] {
         didSet {

@@ -265,6 +265,9 @@ public final class AudioCapture: @unchecked Sendable {
     /// 麥克風：開始時選定的裝置。記住的裝置不在了會改用系統預設的，這時 `notice` 說明用了哪一個。開始之後才有值。
     public private(set) var microphoneChoice: MicrophoneChoice?
 
+    /// 系統音訊：開始時的預設輸出裝置的 UID（aggregate device 以它為主裝置）。預設輸出換了，就要重新建立擷取。
+    public private(set) var outputDeviceUID: String?
+
     /// 開始收音。回傳來源的取樣率（寫進 RingBuffer 的是這個取樣率的單聲道樣本）。
     public func start() throws -> Double {
         mixer.resetContinuity()
@@ -340,6 +343,7 @@ public final class AudioCapture: @unchecked Sendable {
             try check(AudioHardwareCreateAggregateDevice(aggregate as CFDictionary, &created), "建立系統音訊的裝置")
             aggregateID = created
             sourceDescription = "系統音訊"
+            outputDeviceUID = outputUID
             try startIOProc(on: created) { .systemAudioNotStarted(status: $0) }
         } catch {
             stop()
@@ -471,4 +475,37 @@ final class FilePlayer: @unchecked Sendable {
         }
         if !isStopped { onEnded?() }
     }
+}
+
+/// 收音的來源：真正的裝置（`AudioCapture`），或測試用的假來源。
+///
+/// 錄音中途可以換掉（`LiveRecording.resumeCapture`）：裝置不見、睡眠醒來、換了輸出裝置時，建立新的來源接著錄同一場。
+public protocol AudioCapturing: AnyObject, Sendable {
+    /// 開始收音，把單聲道樣本寫進建立時給的 RingBuffer。回傳取樣率。
+    func start() throws -> Double
+    /// 停止收音。返回之後不會再寫入 RingBuffer。可以重複呼叫。
+    func stop()
+    /// 來源的說明（裝置名稱或「系統音訊」）。開始之後才有值。
+    var sourceDescription: String { get }
+    /// 和使用者選的不一樣時給使用者的說明（記住的麥克風不在了，改用系統預設的）。開始之後才有值。
+    var notice: String? { get }
+    /// 收音用的裝置：麥克風是它的 UID，系統音訊是開始時的預設輸出裝置的 UID，音檔是 nil。
+    /// 用來判斷裝置是不是不見了、預設輸出是不是換了。開始之後才有值。
+    var deviceUID: String? { get }
+    /// 裝置的 callback 被呼叫了幾次。一直沒有增加，代表收音停了。音檔來源一直是 0。
+    var callbackCount: Int { get }
+    /// 裝置回報樣本位置不連續的次數。
+    var discontinuityCount: Int { get }
+    /// 裝置第一次送來樣本的時間（`CLOCK_UPTIME_RAW` 的奈秒）。音檔來源一直是 nil。
+    var firstSampleUptimeNanoseconds: UInt64? { get }
+    /// 來源自己結束了（音檔播完）。在別的執行緒上被呼叫。要在 `start()` 之前設定。
+    var onEnded: (@Sendable () -> Void)? { get set }
+}
+
+extension AudioCapture: AudioCapturing {
+    public var notice: String? { microphoneChoice?.notice }
+    public var deviceUID: String? { microphoneChoice?.device.uid ?? outputDeviceUID }
+    public var callbackCount: Int { mixer.callbackCount }
+    public var discontinuityCount: Int { mixer.discontinuityCount }
+    public var firstSampleUptimeNanoseconds: UInt64? { mixer.firstFramesUptimeNanoseconds }
 }

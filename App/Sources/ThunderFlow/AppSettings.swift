@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import ThunderCore
+import ThunderUI
 
 /// 字幕的顯示方式。
 enum DisplayMode: String, CaseIterable, Identifiable {
@@ -42,6 +43,15 @@ final class AppSettings {
     var keywords: String { didSet { defaults.set(keywords, forKey: "keywords") } }
     var fontSize: Double { didSet { defaults.set(fontSize, forKey: "fontSize") } }
     var displayMode: DisplayMode { didSet { defaults.set(displayMode.rawValue, forKey: "displayMode") } }
+    /// 浮動字幕的背景不透明度（DESIGN.md 4.4 節）：只有背景跟著變，字不會變淡。範圍與預設值在 `FloatingCaptionsStyle`。
+    var floatingOpacity: Double { didSet { defaults.set(floatingOpacity, forKey: "floatingOpacity") } }
+    /// 浮動字幕滑鼠穿透：點擊直接穿過字幕視窗，作用在底下的視窗。這時字幕視窗本身點不到，
+    /// 要從「錄音」選單或設定頁關掉（⌘⇧F 照樣可以關掉字幕視窗）。
+    var floatingClickThrough: Bool { didSet { defaults.set(floatingClickThrough, forKey: "floatingClickThrough") } }
+    /// 螢幕分享時隱藏浮動字幕（`sharingType = .none`）。
+    var floatingHiddenWhenSharing: Bool {
+        didSet { defaults.set(floatingHiddenWhenSharing, forKey: "floatingHiddenWhenSharing") }
+    }
     /// 預設的來源：`system`，或麥克風裝置的識別字串（空字串是系統預設的麥克風）。
     var sourceKey: String { didSet { defaults.set(sourceKey, forKey: "sourceKey") } }
     var libraryPath: String { didSet { defaults.set(libraryPath, forKey: "libraryPath") } }
@@ -61,6 +71,9 @@ final class AppSettings {
         keywords = defaults.string(forKey: "keywords") ?? ""
         fontSize = defaults.object(forKey: "fontSize") as? Double ?? 22
         displayMode = DisplayMode(rawValue: defaults.string(forKey: "displayMode") ?? "") ?? .bilingual
+        floatingOpacity = FloatingCaptionsStyle.opacity(stored: defaults.object(forKey: "floatingOpacity") as? Double)
+        floatingClickThrough = defaults.bool(forKey: "floatingClickThrough")
+        floatingHiddenWhenSharing = defaults.bool(forKey: "floatingHiddenWhenSharing")
         sourceKey = defaults.string(forKey: "sourceKey") ?? "system"
         libraryPath =
             defaults.string(forKey: "libraryPath")

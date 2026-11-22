@@ -49,6 +49,16 @@ struct SettingsView: View {
                 }
                 Slider(value: $settings.fontSize, in: 14...48, step: 2) { Text("字級 \(Int(settings.fontSize))") }
             }
+            // DESIGN.md 4.4、4.7 節。範圍與預設值在 ThunderUI（FloatingCaptionsStyle）
+            Section("浮動字幕") {
+                Slider(value: $settings.floatingOpacity, in: FloatingCaptionsStyle.opacityRange, step: 0.05) {
+                    Text("背景不透明度 \(Int((settings.floatingOpacity * 100).rounded()))%")
+                }
+                Toggle("滑鼠穿透（點擊會穿過字幕視窗，作用在底下的視窗）", isOn: $settings.floatingClickThrough)
+                Toggle("螢幕分享時隱藏", isOn: $settings.floatingHiddenWhenSharing)
+                Text("字級跟著上面的字幕字級。滑鼠穿透時字幕視窗本身點不到：用 ⌘⇧F 或「錄音」選單關掉字幕視窗或滑鼠穿透。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("關鍵詞（每一場都會帶上，一行一個：人名、產品名稱、術語）") {
                 TextEditor(text: $settings.keywords).font(.body.monospaced()).frame(height: 110)
             }

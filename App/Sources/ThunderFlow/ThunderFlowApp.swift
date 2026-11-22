@@ -146,6 +146,11 @@ struct RecordingMenu: Commands {
                 FloatingCaptions.shared.toggle(model: model)
             }
             .keyboardShortcut("f", modifiers: [.command, .shift])
+            // 滑鼠穿透時字幕視窗本身點不到：從這裡關掉（設定頁也有）
+            Toggle(
+                "浮動字幕滑鼠穿透",
+                isOn: Binding(
+                    get: { model.settings.floatingClickThrough }, set: { model.settings.floatingClickThrough = $0 }))
             Divider()
             Button("搜尋過去錄音") { model.findInLibrary() }
                 .keyboardShortcut("f", modifiers: .command)
@@ -348,11 +353,16 @@ final class FloatingCaptions: NSObject, NSWindowDelegate {
             panel.close()
             return
         }
+        // 背景由內容自己畫（不透明度可以調，只有背景跟著變、字不會變淡）：視窗本身與標題列都是透明的
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 900, height: 170),
-            styleMask: [.nonactivatingPanel, .titled, .resizable, .closable, .fullSizeContentView, .hudWindow],
+            styleMask: [.nonactivatingPanel, .titled, .resizable, .closable, .fullSizeContentView],
             backing: .buffered, defer: false)
         panel.title = "ThunderFlow 字幕"
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
         panel.level = .floating
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
@@ -365,9 +375,21 @@ final class FloatingCaptions: NSObject, NSWindowDelegate {
             panel.setFrameOrigin(NSPoint(x: frame.midX - 450, y: frame.minY + 60))
         }
         panel.delegate = self
-        panel.orderFrontRegardless()
         self.panel = panel
+        apply(model.settings)
+        panel.orderFrontRegardless()
         isOpen = true
+    }
+
+    /// 套用滑鼠穿透與螢幕分享時隱藏（DESIGN.md 4.4 節）。打開時套用一次，設定改了再套用（`FloatingCaptionsView`）。
+    ///
+    /// 滑鼠穿透時字幕視窗本身點不到（不能拖、不能按關閉）：⌘⇧F 與「錄音」選單照樣能關掉字幕視窗，
+    /// 滑鼠穿透也能從「錄音」選單或設定頁關掉。
+    func apply(_ settings: AppSettings) {
+        guard let panel else { return }
+        panel.ignoresMouseEvents = settings.floatingClickThrough
+        // 新版 macOS 用 ScreenCaptureKit 分享畫面時是否有效要實測（DESIGN.md 4.4 節）
+        panel.sharingType = settings.floatingHiddenWhenSharing ? .none : .readOnly
     }
 
     /// 字幕視窗關掉了：不論是開關關的，還是使用者按了字幕視窗自己的關閉鈕。
@@ -380,13 +402,16 @@ final class FloatingCaptions: NSObject, NSWindowDelegate {
 }
 
 /// 浮動視窗的內容：最新的兩段中文與一段英文，和主視窗的字幕區一樣（同一句合成一段、句尾不顯示「。」）。
+/// 字級跟著字幕的字級、背景的不透明度照設定（規則在 ThunderUI 的 `FloatingCaptionsStyle`，有測試）。
 struct FloatingCaptionsView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
+        let settings = model.settings
         let board = model.captions.board
-        let mode = model.settings.displayMode
-        let showsProvisional = model.settings.showsProvisional
+        let mode = settings.displayMode
+        let showsProvisional = settings.showsProvisional
+        let sizes = FloatingCaptionsStyle.fontSizes(captionFontSize: settings.fontSize, englishOnly: mode == .english)
         // 只算最後幾段：一直拿著整份字幕的話，下一次更新時整份字幕都要複製一次（見 LiveCaptionModel.flush）
         let chinese = CaptionZoneSync.lastParagraphs(
             board: board, marked: [],
@@ -404,17 +429,27 @@ struct FloatingCaptionsView: View {
             }
             if mode != .chinese, let english {
                 Text(english.text)
-                    .font(.system(size: 17))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: sizes.english))
+                    // 只看英文時英文是主要的字
+                    .foregroundStyle(mode == .english ? .primary : .secondary)
                     .lineLimit(2)
             }
             if board.lines.isEmpty, board.liveEnglish.isEmpty {
                 Text("開始錄音後，字幕會顯示在這裡。").foregroundStyle(.secondary)
             }
         }
-        .font(.system(size: 26, weight: .medium))
+        .font(.system(size: sizes.chinese, weight: .medium))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .padding(16)
+        .background {
+            // 只有背景照設定的不透明度，字不會變淡；背景一路畫到透明的標題列底下
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Theme.ink0.opacity(settings.floatingOpacity))
+                .ignoresSafeArea()
+        }
+        // 滑鼠穿透、螢幕分享時隱藏是視窗的設定：改了就套用到字幕視窗
+        .onChange(of: settings.floatingClickThrough) { FloatingCaptions.shared.apply(settings) }
+        .onChange(of: settings.floatingHiddenWhenSharing) { FloatingCaptions.shared.apply(settings) }
     }
 }
 

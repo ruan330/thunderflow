@@ -9,6 +9,7 @@ import Synchronization
 ///     {"k":"tr","t":13.25,"x":"你好","end":true,"seg":3}     中文定稿；`seg` 是段號，和它的英文相同
 ///     {"k":"tr","t":15,"x":"……","end":true,"seg":5,"sen":2,"first":3}  整句定稿：第 2 句（第 3–5 段）
 ///     {"k":"gap","from":30,"to":42.5,"why":"network"}       沒有字幕的音訊
+///     {"k":"gap","from":120,"to":120,"why":"sleep","lost":845.25}  錄音中斷：長度是 0，lost 是沒有錄到的實際秒數
 ///     {"k":"mark","t":95}                              重點標記
 ///     {"k":"pause","t":120}                            暫停
 ///     {"k":"resume","t":120}                           繼續
@@ -18,7 +19,8 @@ import Synchronization
 /// `sen`（句子的編號）與 `first`（整句定稿涵蓋的第一段）只在整句模式出現，沒有時省略，讀到不是整數的當成沒有。
 /// 不認識這兩個欄位的讀取端，會把整句定稿當成這一句最後一段的定稿。
 /// 同一個段號出現不只一筆 `end` 為 true 的紀錄時（補上晚到的標點或尾巴），以最後一筆為準。
-/// `why` 是 network／backpressure／engineStopped，讀到不認識的原因會變成 `.unknown`。
+/// `why` 是 network／backpressure／engineStopped，錄音中斷時是 sleep／deviceLost／outputChanged／captureStalled；
+/// 讀到不認識的原因會變成 `.unknown`。`lost` 只在錄音中斷時出現，沒有時當成 0。
 public enum JournalEntry: Sendable, Equatable {
     case source(CaptionText)
     case translation(CaptionText)
@@ -30,7 +32,8 @@ public enum JournalEntry: Sendable, Equatable {
 
 extension JournalEntry: Codable {
     private enum Key: String, CodingKey {
-        case kind = "k", time = "t", text = "x", end, from, to, why, segment = "seg", sentence = "sen", sentenceStart = "first"
+        case kind = "k", time = "t", text = "x", end, from, to, why, lost, segment = "seg", sentence = "sen",
+            sentenceStart = "first"
     }
 
     /// `k` 欄位的值。
@@ -72,7 +75,8 @@ extension JournalEntry: Codable {
                 AudioGap(
                     from: try container.decode(AudioTime.self, forKey: .from),
                     to: try container.decode(AudioTime.self, forKey: .to),
-                    reason: why.flatMap(GapReason.init(rawValue:)) ?? .unknown))
+                    reason: why.flatMap(GapReason.init(rawValue:)) ?? .unknown,
+                    lostSeconds: (try? container.decodeIfPresent(Double.self, forKey: .lost)) ?? 0))
         case .marker:
             self = .marker(at: try container.decode(AudioTime.self, forKey: .time))
         case .paused:
@@ -97,6 +101,7 @@ extension JournalEntry: Codable {
             try container.encode(gap.from, forKey: .from)
             try container.encode(gap.to, forKey: .to)
             try container.encode(gap.reason.rawValue, forKey: .why)
+            if gap.lostSeconds > 0 { try container.encode(gap.lostSeconds, forKey: .lost) }
         case .marker(let time), .paused(let time), .resumed(let time):
             try container.encode(time, forKey: .time)
         }
@@ -254,6 +259,11 @@ enum JournalLine {
             try appendNumber(gap.to.seconds, to: &line)
             append(#","why":"#, to: &line)
             appendString(gap.reason.rawValue, to: &line)
+            // 錄音中斷才有：沒有錄到的時間（實際經過的秒數）。其他缺口省略，和以前寫的一模一樣
+            if gap.lostSeconds > 0 {
+                append(#","lost":"#, to: &line)
+                try appendNumber(gap.lostSeconds, to: &line)
+            }
         case .marker(let time), .paused(let time), .resumed(let time):
             append(#","t":"#, to: &line)
             try appendNumber(time.seconds, to: &line)

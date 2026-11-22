@@ -89,7 +89,12 @@ public struct AudioGap: Sendable, Equatable {
     }
 
     /// 這是一筆錄音中斷（睡眠、裝置不見、換了輸出裝置、收音停了）。
-    public var isInterruption: Bool { false }
+    public var isInterruption: Bool {
+        switch reason {
+        case .sleep, .deviceLost, .outputChanged, .captureStalled: true
+        case .network, .backpressure, .engineStopped, .unknown: false
+        }
+    }
 
     public var duration: TimeInterval { to - from }
 
@@ -110,6 +115,7 @@ public struct AudioGap: Sendable, Equatable {
         for gap in ordered {
             if let index = lastIndexByReason[gap.reason], gap.from.seconds <= merged[index].to.seconds + seamTolerance {
                 merged[index].to = max(merged[index].to, gap.to)
+                merged[index].lostSeconds += gap.lostSeconds
             } else {
                 lastIndexByReason[gap.reason] = merged.count
                 merged.append(gap)

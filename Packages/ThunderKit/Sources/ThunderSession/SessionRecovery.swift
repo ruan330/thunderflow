@@ -52,12 +52,19 @@ public enum SessionRecovery {
             found.append(
                 InterruptedSession(
                     directory: directory, meta: meta, recordedDuration: RecordingFiles.totalDuration(of: segments),
-                    segmentCount: segments.count))
+                    segmentCount: segments.count, lastWrittenAt: lastWritten(directory, segments: segments) ?? meta.startedAt))
         }
         return found.sorted { lhs, rhs in
             if lhs.meta.startedAt != rhs.meta.startedAt { return lhs.meta.startedAt < rhs.meta.startedAt }
             return lhs.directory.url.path < rhs.directory.url.path
         }
+    }
+
+    /// 場次資料夾最後一次寫入的時間：`session.json`、日誌與錄音分段裡最新的一個。
+    private static func lastWritten(_ directory: SessionDirectory, segments: [RecordingSegment]) -> Date? {
+        ([directory.metaURL, directory.journalURL] + segments.map(\.url))
+            .compactMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate }
+            .max()
     }
 
     /// 復原一個場次：依實際救回的錄音長度更新 `session.json`，狀態改為 finalizing 並標記為已復原。

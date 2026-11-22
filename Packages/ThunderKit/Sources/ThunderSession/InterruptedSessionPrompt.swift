@@ -16,6 +16,24 @@ public struct InterruptedSessionPrompt: Sendable, Equatable {
     ///   - now: 現在，用來說「多久以前中斷」。
     /// - Returns: 沒有這種場次時是 nil。
     public init?(sessions: [InterruptedSession], now: Date) {
-        return nil
+        guard let latest = sessions.max(by: { $0.lastWrittenAt < $1.lastWrittenAt }) else { return nil }
+        let ago = Self.ago(now.timeIntervalSince(latest.lastWrittenAt))
+        let question = "已經錄下的聲音都還在。要「\(Self.finishLabel)」，還是「\(Self.laterLabel)」？"
+        if sessions.count == 1 {
+            let title = latest.meta.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let which = title.isEmpty ? "上次的錄音" : "上次的錄音「\(title)」"
+            message = "\(which)在 \(ago)中斷了，已經錄下 \(Timecode.duration(latest.recordedDuration))。" + question
+        } else {
+            message = "有 \(sessions.count) 場錄音上次沒有正常結束，最近的一場在 \(ago)中斷。" + question
+        }
+    }
+
+    /// 多久以前：不到 1 分鐘前、N 分鐘前、N 小時前、N 天前（捨去）。
+    private static func ago(_ seconds: TimeInterval) -> String {
+        let minutes = Int(max(0, seconds) / 60)
+        if minutes < 1 { return "不到 1 分鐘前" }
+        if minutes < 60 { return "\(minutes) 分鐘前" }
+        if minutes < 24 * 60 { return "\(minutes / 60) 小時前" }
+        return "\(minutes / (24 * 60)) 天前"
     }
 }

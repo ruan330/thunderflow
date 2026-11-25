@@ -37,8 +37,9 @@ public enum LiveTranscriptEntry: Sendable, Equatable {
 ///     [10:42:05] ⚑ 標記
 ///
 /// 一段英文要等它真的確定了才寫：真的引擎常在一段確定之後 0.2–0.8 秒再確定一次、補上最後一兩個字，
-/// 所以先放著、以最後一次為準；下一段開始有字（引擎保證之後不會再補前一段）、`settleDelay` 內沒有變化、
-/// 或關檔時才寫出去。它還沒寫出去時發生的標記等跟在它後面，照發生的順序寫。
+/// 所以先放著、以最後一次為準。補上的字原本是以下一段的增量送出的（切段的「晚到的尾巴」，最多 2 個字），
+/// 所以這些情況才寫出去：下一段確定了；下一段已經超過 2 個字；這一段併入過尾巴之後下一段又有字；
+/// `settleDelay` 內沒有變化；或關檔。它還沒寫出去時發生的標記等跟在它後面，照發生的順序寫。
 ///
 /// 每一行前面是發生當下的時刻（不是音訊時間：暫停前後才對得上牆上的時鐘）；一段英文用第一次確定的時刻。
 /// 一行用一次 write(2) 寫出。寫入失敗不丟出錯誤：這個檔只是給 agent 讀的副本，不能影響錄音。資料來源永遠是日誌。
@@ -56,6 +57,10 @@ public final class LiveTranscriptWriter: Sendable {
         /// 還沒寫出去的那一段的段號。有的時候，`pending` 的第一行就是它，後面是之後發生的標記等。
         var pendingSegment: Int?
         var pending: [Line] = []
+        /// 還沒寫出去的那一段併入過晚到的尾巴（再確定時字變多了）：之後不會再併，下一段一有字它就確定了。
+        var pendingExtended = false
+        /// 那一段最後一次確定之後，下一段累積的增量（判斷是不是晚到的尾巴）。
+        var nextText = ""
         /// 每次重新計時加一：計時到了，只有還是最後一次計時才寫出去。
         var generation = 0
     }
@@ -72,10 +77,10 @@ public final class LiveTranscriptWriter: Sendable {
     ///   - title: 場次的標題（空的就不寫）。
     ///   - startedAt: 開始的時間，寫在說明裡。
     ///   - timeZone: 時刻用的時區。
-    ///   - settleDelay: 一段確定之後，這麼久沒有變化（也沒有下一段）就寫出去。
+    ///   - settleDelay: 一段確定之後，這麼久沒有變化就寫出去。要比切段併回尾巴的時限（1.5 秒）長。
     ///   - clock: 每一行前面的時刻（發生當下）。
     public init(
-        url: URL, title: String, startedAt: Date, timeZone: TimeZone = .current, settleDelay: Duration = .seconds(2),
+        url: URL, title: String, startedAt: Date, timeZone: TimeZone = .current, settleDelay: Duration = .seconds(3),
         clock: @escaping @Sendable () -> Date = { Date() }
     ) throws {
         var calendar = Calendar(identifier: .gregorian)
@@ -135,7 +140,10 @@ public final class LiveTranscriptWriter: Sendable {
             if let pending = state.pendingSegment {
                 if segment < pending { return nil }
                 if segment == pending {
-                    // 同一段再確定一次（補上最後的字或標點）：以這一次為準，時間維持第一次確定的時刻
+                    // 同一段再確定一次（補上最後的字或標點）：以這一次為準，時間維持第一次確定的時刻。
+                    // 字變多了就是併入了晚到的尾巴；下一段重新從空的開始
+                    if Self.wordCount(line) > Self.wordCount(state.pending[0].text) { state.pendingExtended = true }
+                    state.nextText = ""
                     state.pending[0].text = line
                     state.generation += 1
                     return state.generation
@@ -150,7 +158,11 @@ public final class LiveTranscriptWriter: Sendable {
             // 下一段開始有字了：前一段不會再補字
             if let segment, let pending = state.pendingSegment, segment > pending { flush(&state) }
             return nil
-        case .words:
+        case .words(let text, let segment):
+            guard let segment, let pending = state.pendingSegment, segment > pending else { return nil }
+            state.nextText += text
+            // 超過尾巴的字數就不可能再併回去；已經併過一次也不會再併
+            if state.pendingExtended || Self.wordCount(state.nextText) > Self.maximumLateTailWords { flush(&state) }
             return nil
         case .marker, .paused, .resumed, .gap:
             guard let text = Self.text(for: entry) else { return nil }
@@ -183,6 +195,29 @@ public final class LiveTranscriptWriter: Sendable {
         if let segment = state.pendingSegment { state.lastSegment = segment }
         state.pending = []
         state.pendingSegment = nil
+        state.pendingExtended = false
+        state.nextText = ""
+    }
+
+    /// 切段併回上一段的「晚到的尾巴」最多幾個字（`Segmenter.Configuration.lateTailWords`）。
+    private static let maximumLateTailWords = 2.0
+
+    /// 字數，算法和切段相同：以空白分開、含有字母或數字的算一個字；中文字每 2 個算一個字。
+    private static func wordCount(_ text: String) -> Double {
+        var count = 0.0
+        for token in text.split(whereSeparator: \.isWhitespace) {
+            var ideographs = 0
+            var hasLetterOrDigit = false
+            for scalar in token.unicodeScalars {
+                if scalar.properties.isIdeographic {
+                    ideographs += 1
+                } else if CharacterSet.alphanumerics.contains(scalar) {
+                    hasLetterOrDigit = true
+                }
+            }
+            count += Double(ideographs) / 2 + (hasLetterOrDigit ? 1 : 0)
+        }
+        return count
     }
 
     private func write(_ line: Line, _ state: inout State) {

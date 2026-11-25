@@ -1358,7 +1358,7 @@ M0 與 M0b 的實驗不適用測試先行：它們是探索未知的 API。實�
 | 解碼一場的逐字稿（JSON） | 1 小時（127 KB）0.3 ms；8 小時（約 1 MB）2.3 ms |
 | 搜尋 500 場（約 107 MB 逐字稿） | 載入記憶體後用 Swift 字串搜尋：4.8–10.4 秒，多占 144 MB。直接掃描記憶體映射檔的位元組（英文不分大小寫）：0.14 秒，不占記憶體 |
 | Apple Translation 英文翻 zh-Hant-TW | 每句 0.75–1.1 秒；品質可用，但會出現「數據」等用語 |
-| `SpeechTranscriber` | 支援 45 個語系，包含 en_US。2026-11-25 和 `gpt-live-transcribe` 比較（AMI 兩場真實會議、人工逐字稿，`Benchmarks/results/m2-local-asr-report.md`）：錯字率只差 0.5–1 個百分點；開 `fastResults` 時字出現的延遲中位數只晚 0.1–0.2 秒；但英文出現之後有 30–46% 的字會被換掉（OpenAI 1–3%），確定的時間 P90 晚 1.3–4.6 秒；CPU 約多 4–5%。`DictationTranscriber` 不適合（錯字率 37–49%） |
+| `SpeechTranscriber` | 支援 45 個語系，包含 en_US。2026-11-25 和 `gpt-live-transcribe` 比較（AMI 兩場真實會議、人工逐字稿，`Benchmarks/results/m2-local-asr-report.md`）：錯字率只差 0.5–1 個百分點；開 `fastResults` 時字出現的延遲中位數只晚 0.1–0.2 秒；但英文出現之後有 30–46% 的字會被換掉（OpenAI 1–3%），確定的時間 P90 晚 1.3–4.6 秒；CPU 約多 4–5%。改寫大多發生在確定的那一刻，只顯示穩定部分的做法去不掉；只顯示確定的結果時，字要 1.9–2.7 秒後才出現（P90 5–8 秒）。結論：即時字幕繼續用 OpenAI，本機辨識留給「免費模式」或錄完之後的重新辨識。`DictationTranscriber` 不適合（錯字率 37–49%） |
 | ICU 的 `Hans-Hant` | 只轉字，不轉詞 |
 | Spotlight | 會索引 `.md` 檔的內容，包含中文（`mdimport`） |
 | Realtime Sanitizer | Apple clang 21 不支援 `-fsanitize=realtime` |

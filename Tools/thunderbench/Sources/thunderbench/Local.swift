@@ -81,10 +81,11 @@ func local(_ arguments: Arguments) async throws {
         events.write(data)
     }
 
-    // 兩種模型的結果型別不同，但都有涵蓋的範圍、是否確定與文字
-    func collect<Results: AsyncSequence>(_ results: Results, text: @escaping (Results.Element) -> String) async throws
-        -> (volatile: Int, final: Int, first: Double?) where Results.Element: SpeechModuleResult
-    {
+    // 兩種模型的結果型別不同，但都有涵蓋的範圍、是否確定與文字。words 是每個字（文字的每一段）與它的音訊時間，
+    // 分析時用來判斷確定的那一刻，暫時結果裡哪些字超過了確定的範圍、要留在畫面上
+    func collect<Results: AsyncSequence>(
+        _ results: Results, text: @escaping (Results.Element) -> String, words: @escaping (Results.Element) -> [[Any]]
+    ) async throws -> (volatile: Int, final: Int, first: Double?) where Results.Element: SpeechModuleResult {
         var volatile = 0
         var finals = 0
         var first: Double?
@@ -94,14 +95,14 @@ func local(_ arguments: Arguments) async throws {
             if result.isFinal { finals += 1 } else { volatile += 1 }
             record([
                 "t": (t * 1_000).rounded() / 1_000, "kind": result.isFinal ? "final" : "volatile",
-                "start": result.range.start.seconds, "end": result.range.end.seconds, "text": text(result),
+                "start": result.range.start.seconds, "end": result.range.end.seconds, "text": text(result), "words": words(result),
             ])
         }
         return (volatile, finals, first)
     }
     let reader = Task { () -> (volatile: Int, final: Int, first: Double?) in
-        if let speech { return try await collect(speech.results) { String($0.text.characters) } }
-        return try await collect(dictation!.results) { String($0.text.characters) }
+        if let speech { return try await collect(speech.results, text: { String($0.text.characters) }, words: { timedWords($0.text) }) }
+        return try await collect(dictation!.results, text: { String($0.text.characters) }, words: { timedWords($0.text) })
     }
 
     let cpuBefore = processCPUSeconds()
@@ -159,4 +160,13 @@ private func processCPUSeconds() -> Double {
     getrusage(RUSAGE_SELF, &usage)
     return Double(usage.ru_utime.tv_sec) + Double(usage.ru_utime.tv_usec) / 1e6 + Double(usage.ru_stime.tv_sec)
         + Double(usage.ru_stime.tv_usec) / 1e6
+}
+
+/// 結果的每一段文字與它的音訊時間（秒）：[[文字, 開始, 結束], …]。沒有時間的段（例如空白）略過。
+private func timedWords(_ text: AttributedString) -> [[Any]] {
+    text.runs.compactMap { run -> [Any]? in
+        guard let range = run.audioTimeRange else { return nil }
+        let piece = String(text[run.range].characters).trimmingCharacters(in: .whitespaces)
+        return piece.isEmpty ? nil : [piece, range.start.seconds, range.end.seconds]
+    }
 }

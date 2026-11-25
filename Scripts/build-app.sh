@@ -18,7 +18,10 @@ configuration="${1:-release}"
 swift build --package-path App -c "$configuration"
 binary="$(swift build --package-path App -c "$configuration" --show-bin-path)/ThunderFlow"
 
-app="build/ThunderFlow.app"
+# 輸出位置可以用環境變數 THUNDERFLOW_APP 換掉（相對於 repo 的路徑），例如負責人開著 build/ThunderFlow.app 時，
+# 自我檢查用 THUNDERFLOW_APP=build/check/ThunderFlow.app 另外打包，不會把正在執行的 App 刪掉。
+app="${THUNDERFLOW_APP:-build/ThunderFlow.app}"
+case "$app" in /*) echo "THUNDERFLOW_APP 要用相對於 repo 的路徑：$app" >&2; exit 1 ;; esac
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$binary" "$app/Contents/MacOS/ThunderFlow"

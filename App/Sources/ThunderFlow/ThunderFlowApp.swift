@@ -531,6 +531,10 @@ enum SelfTest {
                 let paths = AgentPaths.recording(directory)
                 let lines = (try? String(contentsOf: directory.liveTranscriptURL, encoding: .utf8))?.split(separator: "\n").count ?? 0
                 print("selfTest: live transcript=\(paths.transcript?.path ?? "-") lines=\(lines) workshop=\(paths.workshop?.path ?? "-")")
+                // 自我檢查用的是合成語音，內容可以印出來，看真的引擎寫出來的樣子
+                for line in ((try? String(contentsOf: directory.liveTranscriptURL, encoding: .utf8)) ?? "").split(separator: "\n") {
+                    print("selfTest: live| \(line)")
+                }
             }
             if let prefix { snapshot(to: prefix + "-live.png") }
             await model.stop()

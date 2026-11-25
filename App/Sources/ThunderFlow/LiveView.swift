@@ -171,7 +171,7 @@ private struct SlotLabel<Content: View>: View {
 
 // MARK: - 狀態列
 
-/// 狀態列：左邊只放狀態（錄音、翻譯、音量、費用、來源），右邊只放三個控制項（標記重點、浮動字幕、顯示）。
+/// 狀態列：左邊只放狀態（錄音、翻譯、音量、費用、來源），右邊只放控制項（錄音中的標記重點與複製逐字稿路徑、浮動字幕、顯示）。
 ///
 /// 每 0.25 秒更新的時間、音量與費用各自讀 `AppModel`，更新時只重畫那一小塊。
 private struct StatusStrip: View {
@@ -209,6 +209,15 @@ private struct StatusStrip: View {
                 }
                 .buttonStyle(NeutralButtonStyle())
                 .help("標記重點（⌘B）")
+                .fixedSize()
+                // 給 AI agent 讀的即時逐字稿（D34）：按停止之後改到詳細頁複製 transcript.md 的路徑
+                Button {
+                    model.copyLiveTranscriptPath()
+                } label: {
+                    Label("複製逐字稿路徑", systemImage: "doc.on.clipboard")
+                }
+                .buttonStyle(NeutralButtonStyle())
+                .help("複製即時逐字稿（live-transcript.txt）的路徑，給 AI agent 讀")
                 .fixedSize()
             }
             FloatingCaptionsToggle()

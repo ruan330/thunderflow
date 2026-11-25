@@ -532,6 +532,31 @@ final class AppModel {
         markedLines = lines
     }
 
+    // MARK: 給 AI agent 的路徑（DESIGN.md 4.3、4.6 節，D34）
+
+    /// 錄音中（含暫停）這一場的資料夾；收尾中與沒有錄音時是 nil。
+    var recordingDirectory: SessionDirectory? {
+        guard let recording, isRecording else { return nil }
+        return recording.directory
+    }
+
+    /// 即時翻譯頁的「複製逐字稿路徑」：這一場的 `live-transcript.txt`。按下去時才看檔案在不在。
+    func copyLiveTranscriptPath() {
+        guard let directory = recordingDirectory else { return }
+        guard let url = AgentPaths.recording(directory).transcript else {
+            notify(.info, "這一場沒有即時逐字稿（寫不進去），可以等結束後複製逐字稿的路徑")
+            return
+        }
+        copyPath(url, as: "即時逐字稿")
+    }
+
+    /// 複製路徑（純文字），並用提示說出複製了什麼（結果在畫面上看不到）。
+    func copyPath(_ url: URL, as name: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(url.path, forType: .string)
+        notify(.copied, "已複製\(name)的路徑")
+    }
+
     private var captureSource: CaptureSource {
         switch source {
         case .system: .systemAudio

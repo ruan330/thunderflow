@@ -187,12 +187,19 @@ struct SessionDetailView: View {
     /// 處理中不能刪除、不能重新產生摘要；處理失敗的可以重試（判斷在 ThunderUI，有測試）。
     private var actions: SessionActions { model.actions(for: item) }
 
+    /// 給 AI agent 的路徑：要等不會再變（搬進 Library、有標題）才能複製（判斷在 ThunderUI，有測試）。
+    private var agentPaths: AgentPaths { AgentPaths.finished(item.directory, meta: item.meta) }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(item.meta.title.isEmpty ? "未命名" : item.meta.title).font(.title2.bold()).lineLimit(2)
                 Spacer()
                 Button("在 Finder 中顯示") { NSWorkspace.shared.activateFileViewerSelecting([item.directory.url]) }
+                if let transcript = agentPaths.transcript {
+                    Button("複製逐字稿路徑") { model.copyPath(transcript, as: "逐字稿") }
+                        .help("複製 transcript.md 的路徑，給 AI agent 讀")
+                }
                 Menu {
                     if actions.showsRetry {
                         Button("重試") { model.retryFinalization(item) }
@@ -232,6 +239,14 @@ struct SessionDetailView: View {
                         .fixedSize()
                 }
                 .font(.callout)
+            } else if agentPaths.waitsForTitle {
+                // 沒有標題的場次在摘要做好時會改名：路徑還會變，先不給複製
+                Label(
+                    "還沒有標題：摘要做好、自動命名之後（或按「⋯」→「重新產生摘要」），才能複製路徑給 AI agent。",
+                    systemImage: "info.circle"
+                )
+                .font(.callout)
+                .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 20)

@@ -6,7 +6,7 @@ import ThunderCore
 public enum FinalizationStep: String, CaseIterable, Sendable {
     /// 基本段落：從日誌產生 `blocks.jsonl`。
     case blocks
-    /// 基本逐字稿：`transcript.md`。
+    /// 基本逐字稿：`transcript.md`；刪除錄音中的即時逐字稿 `live-transcript.txt`（D34）。
     case transcript
     /// 合併錄音：`recording.m4a`，確認時長一致後刪除 CAF 分段。
     case audio
@@ -126,6 +126,8 @@ public struct SessionFinalizer: Sendable {
             case .transcript:
                 try await Self.inBackground {
                     try Self.writeTranscript(in: current)
+                    // 錄音中給 AI agent 讀的即時逐字稿到此為止，之後看 transcript.md（D34）
+                    try? FileManager.default.removeItem(at: current.liveTranscriptURL)
                     try Self.update(current) { Self.complete(.transcript, in: &$0, isLast: isLast) }
                 }
             case .audio:

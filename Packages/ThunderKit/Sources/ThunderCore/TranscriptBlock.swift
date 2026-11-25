@@ -464,8 +464,8 @@ public struct TranscriptInterruption: Sendable, Equatable, Codable {
         }
     }
 
-    /// 大約多久：不到 1 秒；約 N 秒；約 N 分鐘；約 H 小時（M 分鐘）。
-    private static func describe(lostSeconds: Double) -> String {
+    /// 大約多久：不到 1 秒；約 N 秒；約 N 分鐘；約 H 小時（M 分鐘）。即時逐字稿的缺口也用它（`LiveTranscriptWriter`）。
+    static func describe(lostSeconds: Double) -> String {
         guard lostSeconds >= 1 else { return "不到 1 秒" }
         if lostSeconds < 59.5 { return "約 \(Int(lostSeconds.rounded())) 秒" }
         let minutes = Int((lostSeconds / 60).rounded())

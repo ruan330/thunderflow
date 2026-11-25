@@ -62,6 +62,8 @@ public final class RecordingSession: @unchecked Sendable {
     private let engine: any LiveCaptionEngine
     private let initialMeta: SessionMeta
     private let journal: JournalWriter
+    /// 給 AI agent 讀的即時逐字稿（DESIGN.md 5.9 節，D34）。建立失敗也照樣錄音，這時是 nil。
+    private let liveTranscript: LiveTranscriptWriter?
     private let recorder: SegmentedRecorder
     private let encoder: EngineAudioEncoder
     private let waitingArea: WaitingArea
@@ -113,7 +115,8 @@ public final class RecordingSession: @unchecked Sendable {
 
     /// 建立場次：建立資料夾並鎖住、寫入 `session.json`（狀態為 recording）、開啟錄音與日誌。
     ///
-    /// 錄音分段放在 `directory.audioDirectoryURL`，第一個樣本進來時才建立；日誌（空的 `journal.jsonl`）立刻建立。
+    /// 錄音分段放在 `directory.audioDirectoryURL`，第一個樣本進來時才建立；日誌（空的 `journal.jsonl`）立刻建立，
+    /// 即時逐字稿（`live-transcript.txt`，只有兩行說明）也是。即時逐字稿建立失敗不影響錄音。
     /// `startedAt` 以整秒記錄（`session.json` 的日期精確到秒），所以 `finish()` 回傳的內容與檔案一致。
     /// 設定不合理（取樣率、分段長度、每包長度）時，在寫入 `session.json` 之前就丟出錯誤，
     /// 不會留下一個看起來像是「錄音中被中斷」的場次。
@@ -143,6 +146,7 @@ public final class RecordingSession: @unchecked Sendable {
         try directory.saveMeta(meta)
         initialMeta = meta
         journal = try JournalWriter(url: directory.journalURL)
+        liveTranscript = try? LiveTranscriptWriter(url: directory.liveTranscriptURL, title: meta.title, startedAt: meta.startedAt)
         waitingArea = WaitingArea(capacity: Self.bufferedChunkCount(config.engineBufferDuration, config.engineChunkDuration))
     }
 
@@ -242,7 +246,9 @@ public final class RecordingSession: @unchecked Sendable {
         path.withLock { state in
             guard !state.finished else { return }
             try? recorder.beginNewSegment()
-            try? journal.append(.gap(.interruption(at: audioTime, lostSeconds: max(0, lostSeconds), reason: reason)))
+            let gap = AudioGap.interruption(at: audioTime, lostSeconds: max(0, lostSeconds), reason: reason)
+            try? journal.append(.gap(gap))
+            liveTranscript?.append(.gap(gap))
         }
     }
 
@@ -251,6 +257,7 @@ public final class RecordingSession: @unchecked Sendable {
         control.withLock { state in
             guard !state.finished else { return }
             try? journal.append(.marker(at: audioTime))
+            liveTranscript?.append(.marker)
         }
     }
 
@@ -356,6 +363,7 @@ public final class RecordingSession: @unchecked Sendable {
             state.paused = paused
             pausedFlag.store(paused, ordering: .releasing)
             try? journal.append(paused ? .paused(at: audioTime) : .resumed(at: audioTime))
+            liveTranscript?.append(paused ? .paused : .resumed)
         }
     }
 
@@ -363,6 +371,8 @@ public final class RecordingSession: @unchecked Sendable {
         switch event {
         case .source(let text):
             try? journal.append(.source(text))
+            // 即時逐字稿只寫確定的英文（一段一行），增量不寫
+            if text.kind == .segmentEnd { liveTranscript?.append(.speech(text.text, segment: text.segment)) }
         case .translation(let text):
             try? journal.append(.translation(text))
         case .provisional:
@@ -370,6 +380,7 @@ public final class RecordingSession: @unchecked Sendable {
             break
         case .gap(let gap):
             try? journal.append(.gap(gap))
+            liveTranscript?.append(.gap(gap))
             accounting.withLock { $0.engineReportedGapSeconds += gap.duration }
         case .usage(let audioSeconds):
             accounting.withLock { $0.billedAudioSeconds = audioSeconds }
@@ -402,7 +413,10 @@ public final class RecordingSession: @unchecked Sendable {
         // 3. 等引擎收尾，最多 engineDrainTimeout；超過就取消（引擎必須盡快停止）
         if let eventTask { await drain(eventTask, timeout: config.engineDrainTimeout) }
         engineState.store(.ended, ordering: .releasing)
-        defer { journal.close() }
+        defer {
+            journal.close()
+            liveTranscript?.close()
+        }
         // 4. 引擎到這時還沒取走的音訊（例如引擎卡住、被放棄），記成 engineStopped 的缺口
         let gapFrames = path.withLock { state -> Int64 in
             abandonWaitingArea(&state)

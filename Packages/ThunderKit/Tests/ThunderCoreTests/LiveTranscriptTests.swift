@@ -74,7 +74,7 @@ struct LiveTranscriptTests {
             ])
     }
 
-    @Test("同一段又確定一次（補上晚到的標點）時不重寫；下一段照寫")
+    @Test("同一段又確定一次（補上晚到的字或標點）時，以最後一次為準；下一段照寫")
     func amendedSegment() throws {
         let tmp = try TemporaryDirectory()
         defer { tmp.remove() }
@@ -83,7 +83,7 @@ struct LiveTranscriptTests {
         writer.append(.speech("Hello there.", segment: 3))
         writer.append(.speech("Next one.", segment: 4))
         writer.close()
-        #expect(try body(url) == ["[10:30:12] Hello there", "[10:30:12] Next one."])
+        #expect(try body(url) == ["[10:30:12] Hello there.", "[10:30:12] Next one."])
     }
 
     @Test("沒有段號的英文每次都寫")

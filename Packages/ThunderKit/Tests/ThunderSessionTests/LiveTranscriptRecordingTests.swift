@@ -56,7 +56,7 @@ struct LiveTranscriptRecordingTests {
         try await session.finish()
     }
 
-    @Test("只寫一段確定的英文：增量、中文定稿、暫定譯文都不寫；同一段補上標點不重寫")
+    @Test("只寫一段確定的英文：增量、中文定稿、暫定譯文都不寫；同一段再確定一次時以最後一次為準")
     func onlyFinalEnglish() async throws {
         let tmp = try TemporaryDirectory()
         defer { tmp.remove() }
@@ -73,7 +73,7 @@ struct LiveTranscriptRecordingTests {
         session.start()
         #expect(await waitUntil { spokenLines(directory).last == "Next one." })
         try await session.finish()
-        #expect(spokenLines(directory) == ["Hello there", "Next one."])
+        #expect(spokenLines(directory) == ["Hello there.", "Next one."])
         #expect(rawLines(directory).allSatisfy { $0.wholeMatch(of: /\[\d\d:\d\d:\d\d\] .+/) != nil })
     }
 

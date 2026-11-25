@@ -224,7 +224,8 @@ public struct CaptionZoneSync: Sendable {
         }
     }
 
-    /// 正在說的那一段自成一段時的內容：英文區是目前的英文（去掉前後的空白）；中文區是它的暫定譯文（允許時）。沒有時是 nil。
+    /// 正在說的那一段自成一段時的內容：英文區是目前的英文（去掉前後的空白）；中文區是它的暫定譯文（允許時），
+    /// 還沒有譯文（或關掉了暫定譯文）時是「…」，和英文區的這一段一起出現、一起標成還在更新。英文區沒有這一段時是 nil。
     private static func liveParagraph(of board: CaptionBoard, options: CaptionZoneOptions) -> CaptionParagraph? {
         switch options.language {
         case .english:
@@ -234,8 +235,11 @@ public struct CaptionZoneSync: Sendable {
             if options.showsProvisional, let sentence = board.liveSentence, let draft = board.draft(for: sentence) {
                 return trimmed(CaptionParagraph(text: draft.text, kind: .updating, flagged: false), options)
             }
-            guard options.showsProvisional, !board.liveChinese.isEmpty else { return nil }
-            return trimmed(CaptionParagraph(text: board.liveChinese, kind: .updating, flagged: false), options)
+            if options.showsProvisional, !board.liveChinese.isEmpty {
+                return trimmed(CaptionParagraph(text: board.liveChinese, kind: .updating, flagged: false), options)
+            }
+            guard !board.liveEnglish.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+            return CaptionParagraph(text: "…", kind: .updating, flagged: false)
         }
     }
 

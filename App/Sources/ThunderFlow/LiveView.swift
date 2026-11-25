@@ -45,6 +45,8 @@ struct LiveView: View {
                 Label("場次資訊與關鍵詞", systemImage: "text.badge.plus")
             }
             .popover(isPresented: $showsDetails, arrowEdge: .bottom) { SessionDetailsForm() }
+            // 工作坊教材（D34）：教材放在這一場的資料夾裡，所以開始錄音之後才能下載
+            WorkshopButton(sessionID: model.recordingID, directory: model.recordingDirectory)
             Spacer()
             SourcePicker()
                 .disabled(model.liveState != .idle)

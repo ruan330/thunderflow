@@ -90,7 +90,8 @@ public enum SessionLibrary {
     private static let maximumTitleCharacters = 80
     private static let maximumTitleUnits = 200
 
-    private static func fileNameTitle(_ title: String) -> String {
+    /// 標題變成資料夾名稱：去掉檔名不允許的字元、限制長度；空的用「未命名」。工作坊教材的資料夾也用它（`WorkshopDownloader`）。
+    static func fileNameTitle(_ title: String) -> String {
         let cleaned = String(
             title.map { character -> Character in
                 if character == "/" || character == ":" || character.isWhitespace { return " " }

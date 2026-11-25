@@ -235,6 +235,9 @@ final class AppModel {
         observeSleep()
         reloadLibrary()
         resumeUnfinished()
+        // 上次當掉或被強制結束時留下的教材暫存（下載中的教材不會跨過 App 重新開啟）
+        let downloads = settings.downloadsRoot
+        Task.detached(priority: .utility) { WorkshopDownloader.removeLeftovers(in: downloads) }
         SelfTest.runIfRequested(self)
     }
 
@@ -555,6 +558,84 @@ final class AppModel {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(url.path, forType: .string)
         notify(.copied, "已複製\(name)的路徑")
+    }
+
+    /// 錄音中（含暫停）這一場的 id（就是 `session.json` 的 id）；收尾中與沒有錄音時是 nil。
+    var recordingID: UUID? {
+        guard let recording, isRecording else { return nil }
+        return recording.id
+    }
+
+    // MARK: 工作坊教材（DESIGN.md 4.3、4.6、5.9 節，D34）
+
+    /// 這次開啟 App 之後的一次教材下載。下載中與失敗的列在教材的彈出視窗裡；下載好的直接看那一場的 `workshop/`。
+    struct WorkshopDownload: Identifiable, Equatable {
+        enum State: Equatable {
+            case downloading(WorkshopDownloadProgress?)
+            case failed(String)
+        }
+
+        let id = UUID()
+        let address: String
+        var state: State
+    }
+
+    /// 依場次（`SessionMeta.id`）記下這次開啟 App 之後、還在下載或失敗的下載。
+    private(set) var workshopDownloads: [UUID: [WorkshopDownload]] = [:]
+    @ObservationIgnored private var workshopTasks: [UUID: Task<Void, Never>] = [:]
+
+    var workshopDownloader: WorkshopDownloader { WorkshopDownloader(stagingRoot: settings.downloadsRoot) }
+
+    /// 下載教材，下載完放進這一場當下所在的資料夾（錄音中在工作目錄；下載途中按了停止，可能已經搬進 Library）。
+    func downloadWorkshop(_ address: String, for sessionID: UUID) {
+        let download = WorkshopDownload(
+            address: address.trimmingCharacters(in: .whitespacesAndNewlines), state: .downloading(nil))
+        workshopDownloads[sessionID, default: []].append(download)
+        let library = settings.libraryRoot
+        let working = settings.workingRoot
+        // 錄音中的場次（狀態是 recording）不在過去錄音的清單裡，所以兩個位置都直接找
+        let locate: @Sendable () -> SessionDirectory? = {
+            (SessionLibrary.list(root: working) + SessionLibrary.list(root: library)).first { $0.id == sessionID }?.directory
+        }
+        let downloader = workshopDownloader
+        let downloadID = download.id
+        workshopTasks[downloadID] = Task { [weak self] in
+            do {
+                let outcome = try await downloader.download(download.address, into: locate) { progress in
+                    Task { @MainActor in self?.updateWorkshopDownload(downloadID, of: sessionID, to: .downloading(progress)) }
+                }
+                self?.removeWorkshopDownload(downloadID, of: sessionID)
+                switch outcome {
+                case .complete(let folder):
+                    self?.notify(.info, "教材下載好了：\(folder.lastPathComponent)")
+                case .partial(let folder):
+                    self?.notify(.info, "教材下載好了（有些外部參考網頁沒抓到）：\(folder.lastPathComponent)")
+                }
+            } catch WorkshopDownloadError.cancelled {
+                self?.removeWorkshopDownload(downloadID, of: sessionID)
+            } catch {
+                let reason = (error as? WorkshopDownloadError)?.description ?? error.localizedDescription
+                self?.updateWorkshopDownload(downloadID, of: sessionID, to: .failed(reason), force: true)
+            }
+            self?.workshopTasks[downloadID] = nil
+        }
+    }
+
+    func cancelWorkshopDownload(_ downloadID: UUID) {
+        workshopTasks[downloadID]?.cancel()
+    }
+
+    /// 從清單拿掉一筆（下載好、取消，或使用者關掉失敗的那一筆）。
+    func removeWorkshopDownload(_ downloadID: UUID, of sessionID: UUID) {
+        workshopDownloads[sessionID]?.removeAll { $0.id == downloadID }
+        if workshopDownloads[sessionID]?.isEmpty == true { workshopDownloads[sessionID] = nil }
+    }
+
+    /// 更新一筆的狀態。進度可能比結果晚到，所以只有還在下載中的才更新進度（`force` 是結果）。
+    private func updateWorkshopDownload(_ downloadID: UUID, of sessionID: UUID, to state: WorkshopDownload.State, force: Bool = false) {
+        guard let index = workshopDownloads[sessionID]?.firstIndex(where: { $0.id == downloadID }) else { return }
+        if !force, case .failed = workshopDownloads[sessionID]?[index].state { return }
+        workshopDownloads[sessionID]?[index].state = state
     }
 
     private var captureSource: CaptureSource {

@@ -200,6 +200,8 @@ struct SessionDetailView: View {
                     Button("複製逐字稿路徑") { model.copyPath(transcript, as: "逐字稿") }
                         .help("複製 transcript.md 的路徑，給 AI agent 讀")
                 }
+                // 工作坊教材（D34）：處理中也可以下載；複製教材路徑在彈出視窗裡，一樣要等路徑不會再變
+                WorkshopButton(sessionID: item.id, directory: item.directory, meta: item.meta)
                 Menu {
                     if actions.showsRetry {
                         Button("重試") { model.retryFinalization(item) }

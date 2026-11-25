@@ -460,11 +460,13 @@ struct FloatingCaptionsView: View {
 /// 自我檢查：用音檔當來源跑完一整場，並把畫面存成圖檔。只在啟動參數要求時執行，給開發時驗證用。
 ///
 ///     ThunderFlow -selfTestFile <音檔> [-selfTestSeconds 30] [-selfTestSnapshot <路徑前綴>] [-selfTestMark YES]
-///                 [-selfTestQuit YES] [-libraryPath <資料夾>] [-workingPath <資料夾>] [-apiKeyFromStdin YES]
+///                 [-selfTestWorkshop <教材網址>] [-selfTestQuit YES] [-libraryPath <資料夾>] [-workingPath <資料夾>]
+///                 [-apiKeyFromStdin YES]
 ///
 /// 截圖依序是開始前（`-idle.png`）、錄音中（`-live.png`）、結束後的詳細頁（`-detail.png`）、設定頁（`-settings.png`），
 /// 以及從設定頁切回過去錄音、還沒選任何一場時的清單（`-library.png`，同時印出清單有幾列、看得到幾列）。
 /// `-selfTestMark YES` 在錄音中的截圖前 1 秒標記一次重點，截圖裡就看得到提示與字幕的旗子。用法見 CLAUDE.md。
+/// `-selfTestWorkshop <網址>` 開始錄音後下載這份教材、等它下載完才停止，並印出錄音中與結束後可以複製的路徑（D34）。
 @MainActor
 enum SelfTest {
     static func runIfRequested(_ model: AppModel) {
@@ -488,12 +490,17 @@ enum SelfTest {
         let seconds = defaults.double(forKey: "selfTestSeconds")
         let prefix = defaults.string(forKey: "selfTestSnapshot")
         let marks = defaults.bool(forKey: "selfTestMark")
+        let workshop = defaults.string(forKey: "selfTestWorkshop")
         Task {
             model.source = device ?? .file(URL(fileURLWithPath: defaults.string(forKey: "selfTestFile") ?? ""))
             model.title = defaults.string(forKey: "selfTestTitle") ?? ""
             if let prefix { snapshot(to: prefix + "-idle.png") }
             await model.start()
             print("selfTest: started state=\(model.liveState) banner=\(model.banner ?? "-") \(model.captureDiagnostics)")
+            if let workshop, let id = model.recordingID {
+                model.downloadWorkshop(workshop, for: id)
+                print("selfTest: workshop download started")
+            }
             let limit = seconds > 0 ? seconds : 3_600
             let started = ContinuousClock.now
             var lastReport = ContinuousClock.now
@@ -509,6 +516,21 @@ enum SelfTest {
                     print("selfTest: \(model.captureDiagnostics)")
                     fflush(stdout)
                 }
+            }
+            if workshop != nil, let id = model.recordingID {
+                // 等教材下載完（最多 3 分鐘）才停止：驗證錄音中就放進這一場的 workshop/
+                let began = ContinuousClock.now
+                while model.workshopDownloads[id]?.contains(where: { if case .downloading = $0.state { true } else { false } }) == true,
+                    ContinuousClock.now - began < .seconds(180)
+                {
+                    try? await Task.sleep(for: .milliseconds(500))
+                }
+                print("selfTest: workshop pending=\(model.workshopDownloads[id].map { "\($0)" } ?? "none")")
+            }
+            if let directory = model.recordingDirectory {
+                let paths = AgentPaths.recording(directory)
+                let lines = (try? String(contentsOf: directory.liveTranscriptURL, encoding: .utf8))?.split(separator: "\n").count ?? 0
+                print("selfTest: live transcript=\(paths.transcript?.path ?? "-") lines=\(lines) workshop=\(paths.workshop?.path ?? "-")")
             }
             if let prefix { snapshot(to: prefix + "-live.png") }
             await model.stop()
@@ -532,6 +554,14 @@ enum SelfTest {
                     print("selfTest: library sessions=\(model.sessions.count) \(listDiagnostics())")
                 }
                 snapshot(to: prefix + "-library.png")
+            }
+            if let latest = model.sessions.first {
+                let paths = AgentPaths.finished(latest.directory, meta: latest.meta)
+                let leftover = FileManager.default.fileExists(atPath: latest.directory.liveTranscriptURL.path)
+                print(
+                    "selfTest: finished transcript=\(paths.transcript?.path ?? "-") workshop=\(paths.workshop?.path ?? "-") "
+                        + "waitsForTitle=\(paths.waitsForTitle) liveTranscriptLeft=\(leftover) "
+                        + "materials=\(WorkshopPanel.materials(in: latest.directory))")
             }
             let states = model.sessions.map { "\($0.meta.title.isEmpty ? "未命名" : $0.meta.title)｜\($0.meta.state.rawValue)｜\(Int($0.meta.durationSeconds)) 秒｜失敗的步驟 \($0.meta.failedSteps)" }
             print("selfTest: done banner=\(model.banner ?? "-") sessions=\(states)")

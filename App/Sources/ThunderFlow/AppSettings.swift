@@ -96,6 +96,9 @@ final class AppSettings {
             .appendingPathComponent("ThunderFlow/Working", isDirectory: true)
     }
 
+    /// 工作坊教材下載中的暫存位置：工作目錄旁的 `Downloads/`（DESIGN.md 5.9 節，D34）。下載完才搬進那一場。
+    var downloadsRoot: URL { workingRoot.deletingLastPathComponent().appendingPathComponent("Downloads", isDirectory: true) }
+
     var textBaseURL: URL { URL(string: baseURL) ?? URL(string: "https://api.openai.com/v1")! }
 
     /// 轉錄連線的網址：和文字模型同一個主機，改用 WebSocket。

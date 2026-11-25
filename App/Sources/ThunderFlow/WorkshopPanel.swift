@@ -17,7 +17,11 @@ struct WorkshopButton: View {
         Button {
             shows.toggle()
         } label: {
-            Label("教材", systemImage: "books.vertical")
+            // 空間不夠時只留圖示（即時翻譯頁錄音中，右邊多了「停止」）
+            ViewThatFits(in: .horizontal) {
+                Label("教材", systemImage: "books.vertical").fixedSize()
+                Label("教材", systemImage: "books.vertical").labelStyle(.iconOnly).fixedSize()
+            }
         }
         .disabled(sessionID == nil)
         .help(sessionID == nil ? "開始錄音之後才能下載教材" : "下載工作坊教材、複製教材資料夾的路徑（給 AI agent 讀）")

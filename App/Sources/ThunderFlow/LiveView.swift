@@ -50,7 +50,9 @@ struct LiveView: View {
             Spacer()
             SourcePicker()
                 .disabled(model.liveState != .idle)
+            // 開始、暫停、停止永遠不被擠（錄音中左邊多了「停止」）：空間不夠時，先截短標題與其他按鈕上的字
             TransportControls()
+                .fixedSize()
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -213,14 +215,17 @@ private struct StatusStrip: View {
                 .help("標記重點（⌘B）")
                 .fixedSize()
                 // 給 AI agent 讀的即時逐字稿（D34）：按停止之後改到詳細頁複製 transcript.md 的路徑
+                // 空間不夠時只留圖示，不擠掉左邊的狀態（滑鼠移上去看得到名稱）
                 Button {
                     model.copyLiveTranscriptPath()
                 } label: {
-                    Label("複製逐字稿路徑", systemImage: "doc.on.clipboard")
+                    ViewThatFits(in: .horizontal) {
+                        Label("複製逐字稿路徑", systemImage: "doc.on.clipboard").fixedSize()
+                        Label("複製逐字稿路徑", systemImage: "doc.on.clipboard").labelStyle(.iconOnly).fixedSize()
+                    }
                 }
                 .buttonStyle(NeutralButtonStyle())
-                .help("複製即時逐字稿（live-transcript.txt）的路徑，給 AI agent 讀")
-                .fixedSize()
+                .help("複製逐字稿路徑：即時逐字稿（live-transcript.txt），給 AI agent 讀")
             }
             FloatingCaptionsToggle()
             DisplayOptionsButton()

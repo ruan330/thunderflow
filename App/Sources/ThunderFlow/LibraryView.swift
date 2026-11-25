@@ -196,12 +196,6 @@ struct SessionDetailView: View {
                 Text(item.meta.title.isEmpty ? "未命名" : item.meta.title).font(.title2.bold()).lineLimit(2)
                 Spacer()
                 Button("在 Finder 中顯示") { NSWorkspace.shared.activateFileViewerSelecting([item.directory.url]) }
-                if let transcript = agentPaths.transcript {
-                    Button("複製逐字稿路徑") { model.copyPath(transcript, as: "逐字稿") }
-                        .help("複製 transcript.md 的路徑，給 AI agent 讀")
-                }
-                // 工作坊教材（D34）：處理中也可以下載；複製教材路徑在彈出視窗裡，一樣要等路徑不會再變
-                WorkshopButton(sessionID: item.id, directory: item.directory, meta: item.meta)
                 Menu {
                     if actions.showsRetry {
                         Button("重試") { model.retryFinalization(item) }
@@ -224,6 +218,21 @@ struct SessionDetailView: View {
                 .fixedSize()
             }
             Text(infoLine).font(.callout).foregroundStyle(.secondary)
+            // 給 AI agent（D34）：自成一行，不和標題搶位置。教材處理中也可以下載；
+            // 複製的按鈕要等路徑不會再變才出現（複製教材路徑在「教材」的彈出視窗裡）
+            HStack(spacing: 8) {
+                if let transcript = agentPaths.transcript {
+                    Button {
+                        model.copyPath(transcript, as: "逐字稿")
+                    } label: {
+                        Label("複製逐字稿路徑", systemImage: "doc.on.clipboard")
+                    }
+                    .help("複製 transcript.md 的路徑，給 AI agent 讀")
+                }
+                WorkshopButton(sessionID: item.id, directory: item.directory, meta: item.meta)
+            }
+            .controlSize(.small)
+            .padding(.top, 4)
             if let note = integrityNote {
                 Label(note, systemImage: "exclamationmark.triangle").font(.callout).foregroundStyle(.orange)
             }

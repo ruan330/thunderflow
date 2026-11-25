@@ -14,8 +14,11 @@ extension SessionDirectory {
 public enum LiveTranscriptEntry: Sendable, Equatable {
     /// 一段英文確定了（`segment` 是段號）。同一段之後可能再確定一次（補上晚到的字或標點），以最後一次為準。
     case speech(String, segment: Int?)
-    /// 這一段開始有字了（增量）：前一段不會再補字，可以寫出去。
+    /// 這一段開始有字了，而且前一段確定不會再補字：前一段可以寫出去。
     case speaking(segment: Int?)
+    /// 這一段新增的字（增量）。晚到的尾巴（最多 2 個字）會先以下一段的增量送出、之後併回上一段，
+    /// 所以要看下一段累積了幾個字，才知道上一段是不是確定了。
+    case words(String, segment: Int?)
     /// 使用者標記的重點。
     case marker
     case paused
@@ -147,6 +150,8 @@ public final class LiveTranscriptWriter: Sendable {
             // 下一段開始有字了：前一段不會再補字
             if let segment, let pending = state.pendingSegment, segment > pending { flush(&state) }
             return nil
+        case .words:
+            return nil
         case .marker, .paused, .resumed, .gap:
             guard let text = Self.text(for: entry) else { return nil }
             let line = Line(time: clock(), text: text)
@@ -188,7 +193,7 @@ public final class LiveTranscriptWriter: Sendable {
     /// 標記、暫停、繼續、缺口的那一行。
     private static func text(for entry: LiveTranscriptEntry) -> String? {
         switch entry {
-        case .speech, .speaking:
+        case .speech, .speaking, .words:
             return nil
         case .marker:
             return "⚑ 標記"

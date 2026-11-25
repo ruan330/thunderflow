@@ -12,8 +12,10 @@ extension SessionDirectory {
 
 /// 即時逐字稿的一行。
 public enum LiveTranscriptEntry: Sendable, Equatable {
-    /// 一段英文確定了（`segment` 是段號；同一段之後再確定一次，例如補上晚到的標點，不再寫）。
+    /// 一段英文確定了（`segment` 是段號）。同一段之後可能再確定一次（補上晚到的字或標點），以最後一次為準。
     case speech(String, segment: Int?)
+    /// 這一段開始有字了（增量）：前一段不會再補字，可以寫出去。
+    case speaking(segment: Int?)
     /// 使用者標記的重點。
     case marker
     case paused
@@ -52,9 +54,10 @@ public final class LiveTranscriptWriter: Sendable {
     ///   - title: 場次的標題（空的就不寫）。
     ///   - startedAt: 開始的時間，寫在說明裡。
     ///   - timeZone: 時刻用的時區。
+    ///   - settleDelay: 一段確定之後，這麼久沒有變化（也沒有下一段）就寫出去。
     ///   - clock: 每一行前面的時刻（寫入當下）。
     public init(
-        url: URL, title: String, startedAt: Date, timeZone: TimeZone = .current,
+        url: URL, title: String, startedAt: Date, timeZone: TimeZone = .current, settleDelay: Duration = .seconds(2),
         clock: @escaping @Sendable () -> Date = { Date() }
     ) throws {
         var calendar = Calendar(identifier: .gregorian)
@@ -105,6 +108,8 @@ public final class LiveTranscriptWriter: Sendable {
                 state.lastSegment = segment
             }
             return line
+        case .speaking:
+            return nil
         case .marker:
             return "⚑ 標記"
         case .paused:

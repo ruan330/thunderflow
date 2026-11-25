@@ -371,8 +371,11 @@ public final class RecordingSession: @unchecked Sendable {
         switch event {
         case .source(let text):
             try? journal.append(.source(text))
-            // 即時逐字稿只寫確定的英文（一段一行），增量不寫
-            if text.kind == .segmentEnd { liveTranscript?.append(.speech(text.text, segment: text.segment)) }
+            // 即時逐字稿只寫確定的英文（一段一行）；增量只用來知道下一段開始了，前一段可以寫出去
+            switch text.kind {
+            case .segmentEnd: liveTranscript?.append(.speech(text.text, segment: text.segment))
+            case .delta: liveTranscript?.append(.speaking(segment: text.segment))
+            }
         case .translation(let text):
             try? journal.append(.translation(text))
         case .provisional:

@@ -33,20 +33,35 @@ public enum LiveTranscriptEntry: Sendable, Equatable {
 ///     [10:30:12] So today each team gets its own AWS account.
 ///     [10:42:05] ⚑ 標記
 ///
-/// 每一行前面是寫入當下的時刻（不是音訊時間：暫停前後才對得上牆上的時鐘），一行用一次 write(2) 寫出。
-/// 寫入失敗不丟出錯誤：這個檔只是給 agent 讀的副本，不能影響錄音。資料來源永遠是日誌。
+/// 一段英文要等它真的確定了才寫：真的引擎常在一段確定之後 0.2–0.8 秒再確定一次、補上最後一兩個字，
+/// 所以先放著、以最後一次為準；下一段開始有字（引擎保證之後不會再補前一段）、`settleDelay` 內沒有變化、
+/// 或關檔時才寫出去。它還沒寫出去時發生的標記等跟在它後面，照發生的順序寫。
+///
+/// 每一行前面是發生當下的時刻（不是音訊時間：暫停前後才對得上牆上的時鐘）；一段英文用第一次確定的時刻。
+/// 一行用一次 write(2) 寫出。寫入失敗不丟出錯誤：這個檔只是給 agent 讀的副本，不能影響錄音。資料來源永遠是日誌。
 public final class LiveTranscriptWriter: Sendable {
+    private struct Line {
+        var time: Date
+        var text: String
+    }
+
     private struct State {
         /// 檔案描述子；關檔之後是 -1。
         var descriptor: Int32
-        /// 最後寫過的段號。段號只增不減，同一段（或更早的段）再確定一次就不再寫。
+        /// 最後寫出去的段號。段號只增不減，已經寫出去的段（或更早的段）再確定一次就不再寫。
         var lastSegment: Int?
+        /// 還沒寫出去的那一段的段號。有的時候，`pending` 的第一行就是它，後面是之後發生的標記等。
+        var pendingSegment: Int?
+        var pending: [Line] = []
+        /// 每次重新計時加一：計時到了，只有還是最後一次計時才寫出去。
+        var generation = 0
     }
 
     private let state: Mutex<State>
     private let path: String
     private let calendar: Calendar
     private let clock: @Sendable () -> Date
+    private let settleDelay: Duration
 
     /// 建立檔案（已經存在就從頭寫）並寫入兩行說明。
     ///
@@ -55,7 +70,7 @@ public final class LiveTranscriptWriter: Sendable {
     ///   - startedAt: 開始的時間，寫在說明裡。
     ///   - timeZone: 時刻用的時區。
     ///   - settleDelay: 一段確定之後，這麼久沒有變化（也沒有下一段）就寫出去。
-    ///   - clock: 每一行前面的時刻（寫入當下）。
+    ///   - clock: 每一行前面的時刻（發生當下）。
     public init(
         url: URL, title: String, startedAt: Date, timeZone: TimeZone = .current, settleDelay: Duration = .seconds(2),
         clock: @escaping @Sendable () -> Date = { Date() }
@@ -64,6 +79,7 @@ public final class LiveTranscriptWriter: Sendable {
         calendar.timeZone = timeZone
         self.calendar = calendar
         self.clock = clock
+        self.settleDelay = settleDelay
         let path = url.path
         self.path = path
         let fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND | O_CLOEXEC, 0o644)
@@ -79,18 +95,20 @@ public final class LiveTranscriptWriter: Sendable {
 
     deinit { close() }
 
-    /// 寫一行。關檔之後、沒有內容（只有空白的英文、同一段的第二次）時什麼都不做。
+    /// 記下一筆。關檔之後、沒有內容（只有空白的英文、已經寫出去的段）時什麼都不做。
     public func append(_ entry: LiveTranscriptEntry) {
-        state.withLock { state in
-            guard state.descriptor >= 0, let text = Self.text(for: entry, &state) else { return }
-            try? Self.write("[\(Self.clockTime(clock(), calendar: calendar))] \(text)\n", to: state.descriptor, path: path)
+        let timer = state.withLock { state -> Int? in
+            guard state.descriptor >= 0 else { return nil }
+            return apply(entry, &state)
         }
+        if let timer { settle(after: timer) }
     }
 
-    /// 關檔。重複呼叫不算錯；關檔之後的 `append` 什麼都不做。
+    /// 關檔：先把還沒寫出去的寫出去。重複呼叫不算錯；關檔之後的 `append` 什麼都不做。
     public func close() {
         state.withLock { state in
             guard state.descriptor >= 0 else { return }
+            flush(&state)
             Darwin.close(state.descriptor)
             state.descriptor = -1
         }
@@ -98,17 +116,79 @@ public final class LiveTranscriptWriter: Sendable {
 
     // MARK: 內容
 
-    private static func text(for entry: LiveTranscriptEntry, _ state: inout State) -> String? {
+    /// 處理一筆。回傳要重新計時的編號（一段剛確定或補上字的時候），其他是 nil。
+    private func apply(_ entry: LiveTranscriptEntry, _ state: inout State) -> Int? {
         switch entry {
         case .speech(let text, let segment):
-            let line = oneLine(text)
+            let line = Self.oneLine(text)
             guard !line.isEmpty else { return nil }
-            if let segment {
-                if let last = state.lastSegment, segment <= last { return nil }
-                state.lastSegment = segment
+            guard let segment else {
+                // 不分段的引擎：沒有「再確定一次」，直接寫
+                flush(&state)
+                write(Line(time: clock(), text: line), &state)
+                return nil
             }
-            return line
-        case .speaking:
+            if let last = state.lastSegment, segment <= last { return nil }
+            if let pending = state.pendingSegment {
+                if segment < pending { return nil }
+                if segment == pending {
+                    // 同一段再確定一次（補上最後的字或標點）：以這一次為準，時間維持第一次確定的時刻
+                    state.pending[0].text = line
+                    state.generation += 1
+                    return state.generation
+                }
+                flush(&state)
+            }
+            state.pendingSegment = segment
+            state.pending = [Line(time: clock(), text: line)]
+            state.generation += 1
+            return state.generation
+        case .speaking(let segment):
+            // 下一段開始有字了：前一段不會再補字
+            if let segment, let pending = state.pendingSegment, segment > pending { flush(&state) }
+            return nil
+        case .marker, .paused, .resumed, .gap:
+            guard let text = Self.text(for: entry) else { return nil }
+            let line = Line(time: clock(), text: text)
+            if state.pending.isEmpty {
+                write(line, &state)
+            } else {
+                state.pending.append(line)
+            }
+            return nil
+        }
+    }
+
+    /// `settleDelay` 之後，如果這段期間沒有再變（還是這一次計時），就寫出去。
+    private func settle(after timer: Int) {
+        let delay = settleDelay.components
+        let seconds = Double(delay.seconds) + Double(delay.attoseconds) / 1e18
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + seconds) { [weak self] in
+            guard let self else { return }
+            state.withLock { state in
+                guard state.descriptor >= 0, state.generation == timer else { return }
+                flush(&state)
+            }
+        }
+    }
+
+    /// 把還沒寫出去的照順序寫出去。
+    private func flush(_ state: inout State) {
+        for line in state.pending { write(line, &state) }
+        if let segment = state.pendingSegment { state.lastSegment = segment }
+        state.pending = []
+        state.pendingSegment = nil
+    }
+
+    private func write(_ line: Line, _ state: inout State) {
+        guard state.descriptor >= 0 else { return }
+        try? Self.write("[\(Self.clockTime(line.time, calendar: calendar))] \(line.text)\n", to: state.descriptor, path: path)
+    }
+
+    /// 標記、暫停、繼續、缺口的那一行。
+    private static func text(for entry: LiveTranscriptEntry) -> String? {
+        switch entry {
+        case .speech, .speaking:
             return nil
         case .marker:
             return "⚑ 標記"

@@ -111,7 +111,7 @@ struct CaptionDraftTests {
         board.apply(ended("we did was this.", 1, sentence: 0))
         board.apply(sentenceFinal("我們做的第一件事就是這個。", sentence: 0, first: 0, last: 1))
         board.apply(delta(" And then", 2, sentence: 1))
-        #expect(paragraphs(board, chinese) == [settled("我們做的第一件事就是這個。")], "下一句還沒有暫定譯文：不顯示上一句的")
+        #expect(paragraphs(board, chinese) == [settled("我們做的第一件事就是這個。"), updating("…")], "下一句還沒有暫定譯文：先顯示「…」，不顯示上一句的")
         board.apply(draft("然後", sentence: 1, first: 2, segment: 2))
         #expect(paragraphs(board, chinese) == [settled("我們做的第一件事就是這個。"), updating("然後")])
         #expect(

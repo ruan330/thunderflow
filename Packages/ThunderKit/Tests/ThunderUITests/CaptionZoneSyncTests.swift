@@ -82,14 +82,14 @@ struct CaptionParagraphTests {
             CaptionZoneSync.paragraphs(board: waiting, marked: [], options: chinese) == [updating("零"), updating("…")])
     }
 
-    @Test("中文區：正在說的那一段有暫定譯文時加在最後；關閉暫定譯文時不顯示，定稿還沒到的行只顯示「…」")
+    @Test("中文區：正在說的那一段有暫定譯文時加在最後；關閉暫定譯文時是「…」（和英文區的這一段一起出現），定稿還沒到的行也是「…」")
     func chineseLive() {
         let board = makeBoard([ended("Zero.", 0), provisional("零", 0), delta(" One", 1), provisional("一", 1)])
         #expect(
             CaptionZoneSync.paragraphs(board: board, marked: [], options: chinese) == [updating("零"), updating("一")])
 
         let hidden = CaptionZoneOptions(language: .chinese, showsProvisional: false, showsFlags: true)
-        #expect(CaptionZoneSync.paragraphs(board: board, marked: [], options: hidden) == [updating("…")])
+        #expect(CaptionZoneSync.paragraphs(board: board, marked: [], options: hidden) == [updating("…"), updating("…")])
     }
 
     @Test("英文區：每一行是英文；正在說的那一段去掉前後的空白加在最後，沒有字時不加")
@@ -198,7 +198,7 @@ struct CaptionZoneSyncTests {
         let edits = sync.update(board: board, marked: [], options: hidden)
         #expect(edits.first == .truncate(0))
         apply(edits, to: &shown)
-        #expect(shown == [updating("…")])
+        #expect(shown == [updating("…"), updating("…")])
     }
 
     @Test("換了一份字幕（下一場）：整區從頭重畫")

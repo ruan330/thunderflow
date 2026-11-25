@@ -139,7 +139,7 @@ struct CaptionZoneSentenceTests {
             delta(" And", 1, sentence: 1),
         ])
         #expect(paragraphs(board, english) == [settled("Hello there."), updating("And")])
-        #expect(paragraphs(board, chinese) == [settled("哈囉。")])
+        #expect(paragraphs(board, chinese) == [settled("哈囉。"), updating("…")])
     }
 
     @Test("中文區可以不顯示句尾的「。」：只拿掉最後一個（後面可以跟著引號或括號），中間的不動；英文區與沒翻到的段落不受影響")

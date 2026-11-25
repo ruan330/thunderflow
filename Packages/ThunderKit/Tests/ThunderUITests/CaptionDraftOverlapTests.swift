@@ -95,10 +95,10 @@ struct CaptionDraftOverlapTests {
         #expect(paragraphs(board, english) == [settled("So the first thing we did was this."), updating("And then")])
     }
 
-    @Test("關掉暫定譯文：照舊顯示各段自己的定稿接起來")
+    @Test("關掉暫定譯文：照舊顯示各段自己的定稿接起來；正在說的下一句是「…」")
     func provisionalOff() {
         let board = makeBoard(twoSegments)
-        #expect(paragraphs(board, chineseNoProvisional) == [updating("所以第一件事情")])
+        #expect(paragraphs(board, chineseNoProvisional) == [updating("所以第一件事情"), updating("…")])
     }
 
     @Test("連續兩句都說完了、整句定稿都還沒到：每一句各自顯示自己的暫定譯文")

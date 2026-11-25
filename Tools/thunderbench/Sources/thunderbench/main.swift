@@ -15,6 +15,8 @@ case "analyze":
     try analyze(arguments)
 case "live":
     try await live(arguments)
+case "local":
+    try await local(arguments)
 default:
     fail(
         """
@@ -36,6 +38,10 @@ default:
                             [--sentences] [--events <事件.jsonl>]
               用正式的引擎（TranscribeTranslateEngine）以即時速度處理音檔，印出每個字幕事件與時間（會產生 API 費用）。
               --sentences 用整句模式（和 App 一樣）。--events 把每個事件（含英文的增量）寫成一行 JSON，給分析腳本用。
+          thunderbench local <音檔.wav> [--events <事件.jsonl>] [--module speech|dictation] [--speed 1] [--fast] [--keywords <一行一個的檔案>] [--seconds N] [--locale en-US]
+              用 macOS 內建的本機語音辨識（SpeechAnalyzer）以即時速度處理音檔，記下每個結果出現的時間（免費、不連網路）。
+              --module speech 是 SpeechTranscriber（預設），dictation 是 DictationTranscriber（開標點）。
+              --fast：speech 要求更快的暫時結果（fastResults），dictation 更常確定（frequentFinalization）。--speed 0 是能多快就多快（只看準確度時用）。
           thunderbench analyze <translate 的輸出資料夾> [--terms <terms.json> --name keynote]
               分析譯文：簡體或繁體、中國大陸用語、術語與數字的正確率。
         """)

@@ -45,8 +45,11 @@ public struct CaptionBoard: Sendable, Equatable {
 
     /// 字幕改過幾版：每一次改到 `lines`（新增一行，或改到已經有的行）就加一。正在說的那一段改變不算。
     public private(set) var revision = 0
-    /// 整句的暫定譯文（DESIGN.md 5.6.2 節）：正在說的那一句目前聽到的部分的譯文。整句定稿到了就清掉。
-    public private(set) var draft: Draft?
+    /// 整句的暫定譯文（DESIGN.md 5.6.2 節）：每一句目前聽到的部分的譯文，以句子的編號存放。
+    /// 一句說完之後，整句定稿到之前仍然顯示它自己的暫定譯文，下一句的暫定譯文不會取代它；整句定稿到了就清掉。
+    private var drafts: [Int: Draft] = [:]
+    /// 最近一句（編號最大的那一句）的整句暫定譯文；沒有時是 nil。
+    public var draft: Draft? { drafts.max { $0.key < $1.key }?.value }
     /// 最近一句有整句定稿的句子：比它早的句子的暫定譯文是晚到的，不採用。
     private var lastFinishedSentence: Int?
     /// 這一份字幕的識別：複製的是同一份，清空重來（`CaptionBoard()`）的是另一份。
@@ -79,7 +82,7 @@ public struct CaptionBoard: Sendable, Equatable {
     public static func == (lhs: CaptionBoard, rhs: CaptionBoard) -> Bool {
         lhs.lines == rhs.lines && lhs.liveSegment == rhs.liveSegment && lhs.liveEnglish == rhs.liveEnglish
             && lhs.liveChinese == rhs.liveChinese && lhs.liveChineseSegment == rhs.liveChineseSegment
-            && lhs.liveSentence == rhs.liveSentence && lhs.draft == rhs.draft
+            && lhs.liveSentence == rhs.liveSentence && lhs.drafts == rhs.drafts
     }
 
     /// 從 `revision` 那一版到現在，最前面改到（或新增）的是第幾行；沒有改到任何一行時是 nil。
@@ -99,6 +102,11 @@ public struct CaptionBoard: Sendable, Equatable {
     /// 段號是 `id` 的那一行在 `lines` 裡的位置；沒有這一行時是 nil。從後面找：要找的通常是最近的幾行。
     public func index(ofLine id: Int) -> Int? {
         index(of: id)
+    }
+
+    /// 第 `sentence` 句的整句暫定譯文；還沒有，或那一句的整句定稿已經到了時是 nil。
+    public func draft(for sentence: Int) -> Draft? {
+        drafts[sentence]
     }
 
     /// 套用一個引擎事件。狀態、缺口、用量不影響字幕，會被忽略。
@@ -160,7 +168,7 @@ public struct CaptionBoard: Sendable, Equatable {
 
     /// 引擎結束了：還沒有中文的段不會再有定稿。整句模式時，還沒有整句定稿的句子用各段的定稿接起來當成整句定稿。
     public mutating func engineEnded() {
-        draft = nil
+        drafts = [:]
         var first: Int?
         var start = 0
         while start < lines.count {
@@ -226,11 +234,18 @@ public struct CaptionBoard: Sendable, Equatable {
 
     /// 整句定稿：第 `first` 段到第 `last` 段是同一句，整句的中文放在最後一段，這幾段都算有定稿。
     private mutating func finishSentence(_ text: CaptionText, first: Int, last: Int) {
+        // 這一句和比它早的句子的暫定譯文都用不到了（定稿依句子的順序送出）；那些句子的段落要重畫
+        var dropped: Int?
         if let sentence = text.sentence {
             lastFinishedSentence = max(lastFinishedSentence ?? sentence, sentence)
-            if let draft, draft.sentence <= sentence { self.draft = nil }
+            dropped = drafts.keys.filter { $0 <= sentence }.min()
+            drafts = drafts.filter { $0.key > sentence }
         }
-        guard let end = index(of: last) else { return }
+        let droppedLine = dropped.map { firstLine(ofSentence: $0) ?? lines.count }
+        guard let end = index(of: last) else {
+            if let droppedLine { changed(from: droppedLine) }
+            return
+        }
         var start = end
         while start > 0, lines[start - 1].id >= first { start -= 1 }
         for index in start...end {
@@ -247,18 +262,33 @@ public struct CaptionBoard: Sendable, Equatable {
             lines[earlier].provisional = ""
             earlier -= 1
         }
-        changed(from: earlier + 1)
+        changed(from: min(earlier + 1, droppedLine ?? earlier + 1))
+    }
+
+    /// 整句的暫定譯文：存在那一句底下，取代那一句上一次的；已經有整句定稿的句子的不採用。
+    private mutating func applyDraft(_ next: Draft) {
+        if let finished = lastFinishedSentence, next.sentence <= finished { return }
+        guard drafts[next.sentence] != next else { return }
+        drafts[next.sentence] = next
+        changed(from: firstLine(ofSentence: next.sentence) ?? lines.count)
+    }
+
+    /// 第 `sentence` 句的第一行在 `lines` 裡的位置；還沒有這一句的行時是 nil。
+    /// 句子依序加進去，要找的通常是最近的幾句：從後面找，遇到更早的句子就停（成本不隨場次變長）。
+    private func firstLine(ofSentence sentence: Int) -> Int? {
+        var found: Int?
+        var index = lines.count - 1
+        while index >= 0 {
+            if let current = lines[index].sentence {
+                if current < sentence { break }
+                if current == sentence { found = index }
+            }
+            index -= 1
+        }
+        return found
     }
 
     /// 記一版：這一版從第 `line` 行開始有改變。
-    /// 整句的暫定譯文：正在說的那一句的，取代上一次的；已經有整句定稿的句子的不採用。
-    private mutating func applyDraft(_ next: Draft) {
-        if let finished = lastFinishedSentence, next.sentence <= finished { return }
-        guard draft != next else { return }
-        draft = next
-        changed(from: lines.firstIndex { $0.sentence == next.sentence } ?? lines.count)
-    }
-
     private mutating func changed(from line: Int) {
         revision += 1
         changes.append(Change(revision: revision, line: line))

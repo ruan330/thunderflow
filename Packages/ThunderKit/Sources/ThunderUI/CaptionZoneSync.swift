@@ -190,7 +190,7 @@ public struct CaptionZoneSync: Sendable {
                 return trimmed(CaptionParagraph(text: final, kind: .settled, flagged: flagged), options)
             }
             // 整句的暫定譯文：這一句還沒有整句定稿，顯示它（取代各段自己的定稿與逐段的暫定譯文）
-            if options.showsProvisional, let draft = board.draft, let sentence = group.first?.sentence, draft.sentence == sentence,
+            if options.showsProvisional, let sentence = group.first?.sentence, let draft = board.draft(for: sentence),
                 !group.contains(where: \.coveredBySentence)
             {
                 return trimmed(CaptionParagraph(text: draft.text, kind: .updating, flagged: flagged), options)
@@ -231,7 +231,7 @@ public struct CaptionZoneSync: Sendable {
             let text = board.liveEnglish.trimmingCharacters(in: .whitespaces)
             return text.isEmpty ? nil : CaptionParagraph(text: text, kind: .updating, flagged: false)
         case .chinese:
-            if options.showsProvisional, let draft = board.draft, draft.sentence == board.liveSentence {
+            if options.showsProvisional, let sentence = board.liveSentence, let draft = board.draft(for: sentence) {
                 return trimmed(CaptionParagraph(text: draft.text, kind: .updating, flagged: false), options)
             }
             guard options.showsProvisional, !board.liveChinese.isEmpty else { return nil }

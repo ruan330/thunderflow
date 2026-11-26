@@ -174,6 +174,8 @@ final class AppModel {
     private var sleeping = false
     private var restartingCapture = false
     private var pendingRestart: GapReason?
+    /// 錄音中正在換來源（D35）：換好之前來源選單不能用。
+    private(set) var switchingSource = false
     private var stallRestartUsed = false
     private var lastCallbackProgress = ContinuousClock.now
     /// 錄音中經過的 tick 數（每 0.25 秒一次），用來每 10 秒檢查一次剩餘空間。
@@ -192,6 +194,82 @@ final class AppModel {
     }
 
     var isRecording: Bool { liveState == .recording || liveState == .paused }
+
+    /// 來源選單能不能用（D35；判斷在 ThunderUI，有測試）：錄音中、暫停中也能換來源，接著錄同一場。
+    var sourceMenuEnabled: Bool {
+        var fromFile = false
+        if let recording, isRecording, case .file = recording.source { fromFile = true }
+        return SourceMenu.isEnabled(phase: recorderPhase, switching: switchingSource, recordingFromFile: fromFile)
+    }
+
+    /// 能不能選音檔當來源（測試用）：只有還沒開始時。
+    var offersFileSource: Bool { SourceMenu.offersFile(phase: recorderPhase) }
+
+    /// 來源選單換了（DESIGN.md 4.3 節）：記住使用者的選擇；錄音中、暫停中就換成新的來源，接著錄同一場（D35）。
+    func sourceChanged(to choice: SourceChoice) {
+        switch choice {
+        case .system: settings.sourceKey = "system"
+        case .microphone(let uid): settings.sourceKey = uid
+        case .file: break
+        }
+        guard let recording, isRecording else { return }
+        let target = Self.captureSource(for: choice)
+        // 選單改回實際在用的來源時（換不了、或收音正在重新開始）也會走到這裡：和正在用的一樣就什麼都不做
+        guard target != recording.source || recording.isCaptureInterrupted else { return }
+        guard !restartingCapture else {
+            source = Self.choice(for: recording.source)
+            banner = "收音正在重新開始，請稍後再換來源。"
+            return
+        }
+        let wanted = sourceName(choice)
+        restartingCapture = true
+        switchingSource = true
+        Task { [weak self] in
+            let result = await Task.detached(priority: .userInitiated) { () -> Result<TimeInterval, any Error> in
+                Result { try recording.switchSource(to: target) }
+            }.value
+            guard let self else { return }
+            self.restartingCapture = false
+            self.switchingSource = false
+            guard self.recording === recording, self.isRecording else { return }
+            switch result {
+            case .success:
+                self.captureResumed(recording, newSource: true)
+                self.banner = recording.captureNotice ?? "已改用「\(recording.sourceDescription)」收音，接著錄同一場。"
+            case .failure(let error):
+                // 選單改回實際在用的來源
+                self.source = Self.choice(for: recording.source)
+                if recording.isCaptureInterrupted {
+                    self.pendingRestart = .captureStalled
+                    self.banner = "沒辦法改用「\(wanted)」，原本的來源也停了。接上裝置之後會自動接著錄同一場；已經錄下的部分不受影響。"
+                } else {
+                    self.captureResumed(recording, newSource: false)
+                    let why: String
+                    if let captureError = error as? AudioCaptureError, case .systemAudioNotStarted = captureError {
+                        why = "還沒有允許 ThunderFlow 錄製系統音訊。macOS 跳出授權視窗時請按「允許」，再選一次「系統音訊」"
+                    } else {
+                        why = String(describing: error)
+                    }
+                    self.banner = "沒辦法改用「\(wanted)」：\(why)。現在繼續用「\(recording.sourceDescription)」錄同一場。"
+                }
+            }
+        }
+    }
+
+    /// 收音重新開始之後（接著錄同一場、換了來源）：從頭觀察新的收音有沒有在送聲音。
+    /// 換成新的來源時，收不到聲音的提醒也重新來過（例如系統音訊沒有權限時只會收到靜音）。
+    private func captureResumed(_ recording: LiveRecording, newSource: Bool) {
+        pendingRestart = nil
+        sourceDescription = recording.sourceDescription
+        silentTicks = 0
+        lastCallbackCount = recording.captureCallbackCount
+        lastCallbackProgress = .now
+        guard newSource else { return }
+        quietTicks = 0
+        heardSound = false
+        warnedSilence = false
+        othersPlayingSince = nil
+    }
 
     /// 錄音的階段：狀態的表示與開始／停止的按鈕照它顯示（判斷在 ThunderUI，有測試）。
     var recorderPhase: RecorderPhase {
@@ -279,11 +357,7 @@ final class AppModel {
             guard self.recording === recording, self.isRecording else { return }
             switch result {
             case .success(let lost):
-                self.pendingRestart = nil
-                self.sourceDescription = recording.sourceDescription
-                self.silentTicks = 0
-                self.lastCallbackCount = recording.captureCallbackCount
-                self.lastCallbackProgress = .now
+                self.captureResumed(recording, newSource: false)
                 self.banner = Self.restartedMessage(reason, lostSeconds: lost, source: recording.sourceDescription)
             case .failure:
                 self.pendingRestart = reason
@@ -309,7 +383,7 @@ final class AppModel {
             restartCapture(pending)
             return
         }
-        let source = captureSource
+        let source = recording.source
         let deviceInUse = recording.captureDeviceUID
         let inputUIDs = devices.map(\.uid)
         Task { [weak self] in
@@ -638,11 +712,31 @@ final class AppModel {
         workshopDownloads[sessionID]?[index].state = state
     }
 
-    private var captureSource: CaptureSource {
-        switch source {
+    private var captureSource: CaptureSource { Self.captureSource(for: source) }
+
+    private static func captureSource(for choice: SourceChoice) -> CaptureSource {
+        switch choice {
         case .system: .systemAudio
         case .microphone(let uid): .microphone(deviceUID: uid.isEmpty ? nil : uid)
         case .file(let url): .file(url)
+        }
+    }
+
+    private static func choice(for source: CaptureSource) -> SourceChoice {
+        switch source {
+        case .systemAudio: .system
+        case .microphone(let uid): .microphone(uid: uid ?? "")
+        case .file(let url): .file(url)
+        }
+    }
+
+    /// 選項的名稱（橫幅說明用）。
+    private func sourceName(_ choice: SourceChoice) -> String {
+        switch choice {
+        case .system: "系統音訊"
+        case .microphone(let uid) where uid.isEmpty: "麥克風（系統預設）"
+        case .microphone(let uid): devices.first { $0.uid == uid }?.name ?? "先前選擇的麥克風"
+        case .file(let url): url.lastPathComponent
         }
     }
 
@@ -699,7 +793,7 @@ final class AppModel {
                 if !self.sleeping, !self.restartingCapture, !recording.isCaptureInterrupted,
                     CaptureWatch.reason(
                         CaptureWatch.Snapshot(
-                            source: self.captureSource, deviceInUse: recording.captureDeviceUID,
+                            source: recording.source, deviceInUse: recording.captureDeviceUID,
                             secondsWithoutCallbacks: Double(self.silentTicks) / 4)) != nil
                 {
                     if !self.stallRestartUsed {
@@ -720,7 +814,7 @@ final class AppModel {
                 guard !self.warnedSilence, !self.heardSound, !recording.isPaused else { continue }
                 // 系統音訊：每 2 秒在背景問一次別的程式有沒有在出聲（不需要權限，一次約幾毫秒）。
                 // 收到過聲音、或已經提醒過之後就不再問
-                if self.source == .system, self.ticks % 8 == 0 {
+                if case .systemAudio = recording.source, self.ticks % 8 == 0 {
                     let playing = await Task.detached(priority: .utility) { AudioDevices.isAnotherProcessPlaying() }.value
                     guard self.recording === recording else { return }
                     if playing == true {
@@ -743,8 +837,8 @@ final class AppModel {
 
     /// 收不到聲音的提醒要看的來源種類。
     private var silenceSource: SilenceWarning.Source {
-        switch source {
-        case .system: .systemAudio
+        switch recording?.source ?? captureSource {
+        case .systemAudio: .systemAudio
         case .microphone: .microphone
         case .file: .file
         }

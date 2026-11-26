@@ -238,7 +238,9 @@ public final class LiveTranscriptWriter: Sendable {
             return "—— 繼續 ——"
         case .gap(let gap):
             if gap.isInterruption {
-                return TranscriptInterruption(at: gap.from.seconds, reason: gap.reason, lostSeconds: gap.lostSeconds).label
+                return TranscriptInterruption(
+                    at: gap.from.seconds, reason: gap.reason, lostSeconds: gap.lostSeconds, source: gap.source
+                ).label
             }
             return "〔\(TranscriptInterruption.describe(lostSeconds: gap.duration))沒有字幕：\(describe(gap.reason))〕"
         }

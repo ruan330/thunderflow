@@ -55,6 +55,8 @@ public final class LiveRecording: @unchecked Sendable {
 
     private struct CaptureState {
         var capture: any AudioCapturing
+        /// 目前收音用的來源設定：開始時是 `Options.source`，換過來源之後是新選的（D35）。重新開始收音時用它。
+        var source: CaptureSource
         var pump: Pump?
         var converter: ConverterBox?
         /// 收音中斷（`suspendCapture()`，或重新開始失敗）從什麼時候開始；收音中是 nil。
@@ -84,7 +86,7 @@ public final class LiveRecording: @unchecked Sendable {
         let ring = RingBuffer(minimumCapacity: 1 << 20)
         self.ring = ring
         self.makeCapture = makeCapture
-        state = Mutex(CaptureState(capture: makeCapture(options.source, ring)))
+        state = Mutex(CaptureState(capture: makeCapture(options.source, ring), source: options.source))
     }
 
     /// 來源的說明，例如裝置名稱或「系統音訊」。開始之後才有值；重新開始收音之後是新的來源。
@@ -98,7 +100,7 @@ public final class LiveRecording: @unchecked Sendable {
     public var captureDeviceUID: String? { state.withLock { $0.capture.deviceUID } }
 
     /// 目前收音用的來源設定：開始時是 `Options.source`，換過來源（`switchSource(to:)`）之後是新選的。
-    public var source: CaptureSource { options.source }
+    public var source: CaptureSource { state.withLock { $0.source } }
 
     /// 收音中斷中（`suspendCapture()` 之後、或重新開始失敗），還沒有接著錄。
     public var isCaptureInterrupted: Bool { state.withLock { $0.interruptedAt != nil } }
@@ -193,42 +195,41 @@ public final class LiveRecording: @unchecked Sendable {
             guard let session, !state.withLock({ $0.finished }) else { throw RecordingSessionError.alreadyFinished }
             let interruptedAt = since ?? state.withLock { $0.interruptedAt } ?? .now
             stopCapture()
-            // 換掉的來源的計數併進累計；重新開始失敗時維持中斷中，下次從原本中斷的時間算起
-            state.withLock { current in
-                current.pastCallbacks += current.capture.callbackCount
-                current.pastDiscontinuities += current.capture.discontinuityCount
-                current.firstSample = current.firstSample ?? current.capture.firstSampleUptimeNanoseconds
-                current.interruptedAt = interruptedAt
-            }
-            let capture = makeCapture(options.source, ring)
-            state.withLock { $0.capture = capture }
-            let rate = try capture.start()
-            let sessionRate = state.withLock { $0.sessionRate }
-            let converter: ConverterBox?
-            do {
-                converter = rate == sessionRate ? nil : ConverterBox(try SampleRateConverter(from: rate, to: sessionRate))
-            } catch {
-                capture.stop()
-                throw error
-            }
-            // 中斷之前的聲音都錄完了（stopCapture），在這裡記下中斷、開新的分段，再開始收新的聲音
-            let lostSeconds = max(0, (ContinuousClock.now - interruptedAt) / .seconds(1))
-            session.recordInterruption(reason: reason, lostSeconds: lostSeconds)
-            let pump = makePump(for: session, converter: converter)
-            state.withLock { current in
-                current.pump = pump
-                current.converter = converter
-                current.interruptedAt = nil
-            }
-            pump.start()
-            return lostSeconds
+            // 重新開始失敗時維持中斷中，下次從原本中斷的時間算起
+            state.withLock { $0.interruptedAt = interruptedAt }
+            return try startCapture(state.withLock { $0.source }, reason: reason, interruptedAt: interruptedAt, for: session)
         }
     }
 
-    /// 換一個收音來源，接著錄同一場（D35）。還沒實作。
+    /// 換一個收音來源，接著錄同一場（D35，DESIGN.md 5.4 節）：使用者在錄音中或暫停中選了別的來源。
+    ///
+    /// 和 `resumeCapture(reason:)` 走同一條路：停掉原本的收音、把收到的聲音錄完，再開始新選的來源（兩個來源不能同時寫
+    /// 同一個 RingBuffer），日誌在這裡記一筆 `sourceChanged`（帶新來源的說明），錄音檔開新的分段。
+    /// 之後重新開始收音（裝置不見、睡眠醒來）也用新的來源。暫停中換也可以，場次維持暫停。
+    ///
+    /// - Returns: 換的空檔沒有錄到的時間（秒）。選的就是正在用的來源、而且沒有中斷時什麼都不做，回傳 0；
+    ///   收音中斷中時，從中斷開始算。
+    /// - Throws: 新的來源開始不了（例如還沒有系統音訊的權限）：改回原本的來源接著錄（一樣記一筆，寫的是原本的來源），
+    ///   丟出新來源的錯誤讓畫面說明。原本的也開始不了時維持中斷中，之後可以再換、重新開始，或停止。
+    ///   已經停止之後呼叫丟出 `RecordingSessionError.alreadyFinished`。
     @discardableResult
     public func switchSource(to source: CaptureSource) throws -> TimeInterval {
-        0
+        try operation.withLock {
+            guard let session, !state.withLock({ $0.finished }) else { throw RecordingSessionError.alreadyFinished }
+            let (current, interrupted) = state.withLock { ($0.source, $0.interruptedAt) }
+            if source == current, interrupted == nil { return 0 }
+            let interruptedAt = interrupted ?? .now
+            stopCapture()
+            state.withLock { $0.interruptedAt = interruptedAt }
+            do {
+                return try startCapture(source, reason: .sourceChanged, interruptedAt: interruptedAt, for: session)
+            } catch {
+                if source != current {
+                    _ = try? startCapture(current, reason: .sourceChanged, interruptedAt: interruptedAt, for: session)
+                }
+                throw error
+            }
+        }
     }
 
     /// 結束：停止收音，把剩下的樣本錄完，等引擎收尾，並把完整性計數寫進 `session.json`。
@@ -248,6 +249,41 @@ public final class LiveRecording: @unchecked Sendable {
     }
 
     // MARK: 收音（持有 `operation`）
+
+    /// 用 `source` 建立新的收音並開始（原本的收音已經停了）：記下中斷、開新的分段、開始新的 Pump，並把 `source` 當成
+    /// 之後的來源。換掉的來源的計數併進累計。開始不了時維持中斷中、丟出錯誤，來源不變。
+    private func startCapture(
+        _ source: CaptureSource, reason: GapReason, interruptedAt: ContinuousClock.Instant, for session: RecordingSession
+    ) throws -> TimeInterval {
+        let capture = makeCapture(source, ring)
+        state.withLock { current in
+            current.pastCallbacks += current.capture.callbackCount
+            current.pastDiscontinuities += current.capture.discontinuityCount
+            current.firstSample = current.firstSample ?? current.capture.firstSampleUptimeNanoseconds
+            current.capture = capture
+        }
+        let rate = try capture.start()
+        let sessionRate = state.withLock { $0.sessionRate }
+        let converter: ConverterBox?
+        do {
+            converter = rate == sessionRate ? nil : ConverterBox(try SampleRateConverter(from: rate, to: sessionRate))
+        } catch {
+            capture.stop()
+            throw error
+        }
+        // 中斷之前的聲音都錄完了（stopCapture），在這裡記下中斷、開新的分段，再開始收新的聲音
+        let lostSeconds = max(0, (ContinuousClock.now - interruptedAt) / .seconds(1))
+        session.recordInterruption(reason: reason, lostSeconds: lostSeconds, source: capture.sourceDescription)
+        let pump = makePump(for: session, converter: converter)
+        state.withLock { current in
+            current.pump = pump
+            current.converter = converter
+            current.interruptedAt = nil
+            current.source = source
+        }
+        pump.start()
+        return lostSeconds
+    }
 
     /// 停止目前的收音，把 RingBuffer 裡剩下的樣本錄完（取樣率轉換器裡剩下的也是）。已經停了就不做任何事。
     private func stopCapture() {

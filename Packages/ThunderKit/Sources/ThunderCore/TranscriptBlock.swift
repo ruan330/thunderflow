@@ -304,7 +304,8 @@ extension TranscriptBlocks {
             case .gap(let gap):
                 if gap.isInterruption {
                     collected.interruptions.append(
-                        TranscriptInterruption(at: gap.from.seconds, reason: gap.reason, lostSeconds: gap.lostSeconds))
+                        TranscriptInterruption(
+                            at: gap.from.seconds, reason: gap.reason, lostSeconds: gap.lostSeconds, source: gap.source))
                 }
             case .resumed:
                 break
@@ -400,6 +401,10 @@ private enum BlockLine {
             appendString(interruption.reason.rawValue, to: &line)
             line.append(contentsOf: #","lost":"#.utf8)
             line.append(contentsOf: number(interruption.lostSeconds).utf8)
+            if let source = interruption.source {
+                line.append(contentsOf: #","src":"#.utf8)
+                appendString(source, to: &line)
+            }
             line.append(UInt8(ascii: "}"))
         }
         line.append(UInt8(ascii: "]"))
@@ -435,7 +440,7 @@ private enum BlockLine {
     }
 }
 
-/// 逐字稿裡的一次錄音中斷（DESIGN.md 5.4 節）：日誌裡原因是 sleep、deviceLost、outputChanged、captureStalled 的缺口。
+/// 逐字稿裡的一次錄音中斷（DESIGN.md 5.4 節）：日誌裡原因是 sleep、deviceLost、outputChanged、captureStalled、sourceChanged 的缺口。
 public struct TranscriptInterruption: Sendable, Equatable, Codable {
     /// 中斷的音訊時間（秒）。
     public var at: Double
@@ -453,8 +458,14 @@ public struct TranscriptInterruption: Sendable, Equatable, Codable {
     }
 
     /// 逐字稿裡的標示，例如「〔錄音中斷：電腦睡眠，約 14 分鐘沒有錄到〕」。
+    /// 換了音訊來源（D35）寫出之後用的來源：「〔音訊來源：MacBook Pro 麥克風〕」；換的空檔通常不到 1 秒，1 秒以上才寫出沒有錄到多久。
     public var label: String {
-        "〔錄音中斷：\(Self.describe(reason))，\(Self.describe(lostSeconds: lostSeconds))沒有錄到〕"
+        guard reason == .sourceChanged else {
+            return "〔錄音中斷：\(Self.describe(reason))，\(Self.describe(lostSeconds: lostSeconds))沒有錄到〕"
+        }
+        let lost = lostSeconds >= 1 ? "，\(Self.describe(lostSeconds: lostSeconds))沒有錄到" : ""
+        guard let source else { return "〔換了音訊來源\(lost)〕" }
+        return "〔音訊來源：\(source)\(lost)〕"
     }
 
     private static func describe(_ reason: GapReason) -> String {
@@ -478,7 +489,7 @@ public struct TranscriptInterruption: Sendable, Equatable, Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case at, reason = "why", lostSeconds = "lost"
+        case at, reason = "why", lostSeconds = "lost", source = "src"
     }
 
     /// 讀到不認識的原因當成 unknown。
@@ -487,6 +498,7 @@ public struct TranscriptInterruption: Sendable, Equatable, Codable {
         at = try container.decode(Double.self, forKey: .at)
         reason = GapReason(rawValue: try container.decode(String.self, forKey: .reason)) ?? .unknown
         lostSeconds = try container.decodeIfPresent(Double.self, forKey: .lostSeconds) ?? 0
+        source = try container.decodeIfPresent(String.self, forKey: .source)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -494,5 +506,6 @@ public struct TranscriptInterruption: Sendable, Equatable, Codable {
         try container.encode(at, forKey: .at)
         try container.encode(reason.rawValue, forKey: .reason)
         try container.encode(lostSeconds, forKey: .lostSeconds)
+        try container.encodeIfPresent(source, forKey: .source)
     }
 }

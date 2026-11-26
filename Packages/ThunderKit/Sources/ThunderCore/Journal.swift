@@ -32,7 +32,7 @@ public enum JournalEntry: Sendable, Equatable {
 
 extension JournalEntry: Codable {
     private enum Key: String, CodingKey {
-        case kind = "k", time = "t", text = "x", end, from, to, why, lost, segment = "seg", sentence = "sen",
+        case kind = "k", time = "t", text = "x", end, from, to, why, lost, source = "src", segment = "seg", sentence = "sen",
             sentenceStart = "first"
     }
 
@@ -76,7 +76,8 @@ extension JournalEntry: Codable {
                     from: try container.decode(AudioTime.self, forKey: .from),
                     to: try container.decode(AudioTime.self, forKey: .to),
                     reason: why.flatMap(GapReason.init(rawValue:)) ?? .unknown,
-                    lostSeconds: (try? container.decodeIfPresent(Double.self, forKey: .lost)) ?? 0))
+                    lostSeconds: (try? container.decodeIfPresent(Double.self, forKey: .lost)) ?? 0,
+                    source: (try? container.decodeIfPresent(String.self, forKey: .source)) ?? nil))
         case .marker:
             self = .marker(at: try container.decode(AudioTime.self, forKey: .time))
         case .paused:
@@ -102,6 +103,7 @@ extension JournalEntry: Codable {
             try container.encode(gap.to, forKey: .to)
             try container.encode(gap.reason.rawValue, forKey: .why)
             if gap.lostSeconds > 0 { try container.encode(gap.lostSeconds, forKey: .lost) }
+            try container.encodeIfPresent(gap.source, forKey: .source)
         case .marker(let time), .paused(let time), .resumed(let time):
             try container.encode(time, forKey: .time)
         }
@@ -263,6 +265,11 @@ enum JournalLine {
             if gap.lostSeconds > 0 {
                 append(#","lost":"#, to: &line)
                 try appendNumber(gap.lostSeconds, to: &line)
+            }
+            // 換了音訊來源才有：之後用的來源（D35）
+            if let source = gap.source {
+                append(#","src":"#, to: &line)
+                appendString(source, to: &line)
             }
         case .marker(let time), .paused(let time), .resumed(let time):
             append(#","t":"#, to: &line)

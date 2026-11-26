@@ -96,11 +96,11 @@ public struct AudioGap: Sendable, Equatable {
         AudioGap(from: time, to: time, reason: reason, lostSeconds: lostSeconds, source: source)
     }
 
-    /// 這是一筆錄音中斷（睡眠、裝置不見、換了輸出裝置、收音停了）。
+    /// 這是一筆錄音中斷（睡眠、裝置不見、換了輸出裝置、收音停了、換了音訊來源）。
     public var isInterruption: Bool {
         switch reason {
-        case .sleep, .deviceLost, .outputChanged, .captureStalled: true
-        case .network, .backpressure, .engineStopped, .sourceChanged, .unknown: false
+        case .sleep, .deviceLost, .outputChanged, .captureStalled, .sourceChanged: true
+        case .network, .backpressure, .engineStopped, .unknown: false
         }
     }
 

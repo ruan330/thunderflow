@@ -48,8 +48,9 @@ struct LiveView: View {
             // 工作坊教材（D34）：教材放在這一場的資料夾裡，所以開始錄音之後才能下載
             WorkshopButton(sessionID: model.recordingID, directory: model.recordingDirectory)
             Spacer()
+            // 錄音中、暫停中也能換來源，接著錄同一場（D35）
             SourcePicker()
-                .disabled(model.liveState != .idle)
+                .disabled(!model.sourceMenuEnabled)
             // 開始、暫停、停止永遠不被擠（錄音中左邊多了「停止」）：空間不夠時，先截短標題與其他按鈕上的字
             TransportControls()
                 .fixedSize()
@@ -418,22 +419,18 @@ struct SourcePicker: View {
             }
         }
         .frame(maxWidth: 260)
-        .onChange(of: model.source) { _, new in
-            switch new {
-            case .system: model.settings.sourceKey = "system"
-            case .microphone(let uid): model.settings.sourceKey = uid
-            case .file: break
-            }
-        }
+        .onChange(of: model.source) { _, new in model.sourceChanged(to: new) }
+        .help(model.isRecording ? "換來源之後接著錄同一場" : "收音的來源")
         .contextMenu {
             Button("重新整理裝置清單") { model.refreshDevices() }
-            Button("用音檔當來源…（測試用）") { chooseFile() }
+            Button("用音檔當來源…（測試用）") { chooseFile() }.disabled(!model.offersFileSource)
         }
         Button {
             chooseFile()
         } label: {
             Image(systemName: "doc.badge.plus")
         }
+        .disabled(!model.offersFileSource)
         .help("用音檔當來源（測試用）：以即時速度播放，不需要麥克風")
     }
 

@@ -61,6 +61,8 @@ public final class RecordingSession: @unchecked Sendable {
     private let directory: SessionDirectory
     private let engine: any LiveCaptionEngine
     private let initialMeta: SessionMeta
+    /// 這一場用過的音訊來源，照第一次用的順序、不重複（D35）。結束時寫成 `session.json` 的來源，例如「系統音訊、MacBook Pro 麥克風」。
+    private let sourceNames: Mutex<[String]>
     private let journal: JournalWriter
     /// 給 AI agent 讀的即時逐字稿（DESIGN.md 5.9 節，D34）。建立失敗也照樣錄音，這時是 nil。
     private let liveTranscript: LiveTranscriptWriter?
@@ -145,6 +147,7 @@ public final class RecordingSession: @unchecked Sendable {
             provisionalTranslation: config.provisionalTranslation)
         try directory.saveMeta(meta)
         initialMeta = meta
+        sourceNames = Mutex(config.source.isEmpty ? [] : [config.source])
         journal = try JournalWriter(url: directory.journalURL)
         liveTranscript = try? LiveTranscriptWriter(url: directory.liveTranscriptURL, title: meta.title, startedAt: meta.startedAt)
         waitingArea = WaitingArea(capacity: Self.bufferedChunkCount(config.engineBufferDuration, config.engineChunkDuration))
@@ -242,13 +245,21 @@ public final class RecordingSession: @unchecked Sendable {
     /// 並結束目前的錄音分段，之後的聲音寫進新的分段。錄音不補靜音。結束之後呼叫不做任何事。
     ///
     /// 中斷之前收到的聲音要已經全部送進 `process`，中斷的位置才對。
+    ///
+    /// 換了音訊來源（`sourceChanged`，D35）時 `source` 是之後用的來源：記進日誌，也加進 `session.json` 的來源。
     public func recordInterruption(reason: GapReason, lostSeconds: TimeInterval, source: String? = nil) {
+        let source = reason == .sourceChanged ? source : nil
         path.withLock { state in
             guard !state.finished else { return }
             try? recorder.beginNewSegment()
-            let gap = AudioGap.interruption(at: audioTime, lostSeconds: max(0, lostSeconds), reason: reason)
+            let gap = AudioGap.interruption(at: audioTime, lostSeconds: max(0, lostSeconds), reason: reason, source: source)
             try? journal.append(.gap(gap))
             liveTranscript?.append(.gap(gap))
+            if let source, !source.isEmpty {
+                sourceNames.withLock { names in
+                    if !names.contains(source) { names.append(source) }
+                }
+            }
         }
     }
 
@@ -430,6 +441,7 @@ public final class RecordingSession: @unchecked Sendable {
         let totals = accounting.withLock { $0 }
         var meta = initialMeta
         meta.state = .finalizing
+        meta.source = sourceNames.withLock { $0.joined(separator: "、") }
         meta.durationSeconds = durationSeconds
         meta.billedAudioSeconds = totals.billedAudioSeconds
         // 完整性計數一次寫齊（包括收音端的），在交出鎖之前：交出之後別的程式就可能開始改寫 session.json

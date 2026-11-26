@@ -1036,6 +1036,7 @@ So today we're going to talk about building production-ready agents...
 - **自動測試的實例**（用啟動參數 `-workingPath` 換掉工作目錄）只看啟動參數 `-inboxPath` 給的收件匣，不會收走使用者收件匣裡的場次。
 
 - **建置與簽章**：iPhone 版用 Xcode 專案（`iOS/`）建置，ThunderKit 是本地 package，畫面只放 SwiftUI 與組裝。簽章用負責人明確指定的開發團隊（`DEVELOPMENT_TEAM` 放在不進 git 的設定檔），從命令列用 `xcodebuild` 建置、`devicectl` 裝到手機，不需要打開 Xcode。Mac 版仍然 ad-hoc。
+- **發佈給負責人**：經 TestFlight（`make phone-testflight`，只給團隊內部測試，不用等審核），之後更新不用接線，每個版本可以用 90 天；用線裝（`make phone-install`）留著開發時用。版號（`CFBundleVersion`）用上傳的時間，每次都比上一次大。App Store Connect 要先由負責人建好這個 App（Apple 不讓命令列代建）。隱私清單（`PrivacyInfo.xcprivacy`）寫明用到的系統功能與理由（設定、檔案時間、剩餘空間）；上架 App Store 之前要再確認隱私標籤。
 
 ## 6. 隱私與安全
 

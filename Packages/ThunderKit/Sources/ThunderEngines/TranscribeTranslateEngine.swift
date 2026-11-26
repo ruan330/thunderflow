@@ -377,8 +377,7 @@ private final class EngineRun {
     private func startRequest(_ request: Int, _ content: TextRequest) {
         let feed = feed
         let textModel = textModel
-        // 先放進區域變數再存進字典：直接把 `Task { … }` 指定給字典的元素，Swift 6.3 的並行檢查看不懂而編不過（CI）
-        let task = Task {
+        requests[request] = Task {
             var total = ""
             do {
                 for try await piece in textModel.stream(content) {
@@ -387,10 +386,11 @@ private final class EngineRun {
                 }
                 if !Task.isCancelled { feed.yield(.completed(request: request, total)) }
             } catch {
-                if !Task.isCancelled { feed.yield(.failed(request: request, reason: Self.describe(error))) }
+                // 寫型別名稱，不寫 `Self`：在 class 的方法裡 `Self` 是 self 的實際型別，等於在背景工作裡用到 self，
+                // Swift 6.3 的並行檢查看不懂而編不過（CI，macOS 26）
+                if !Task.isCancelled { feed.yield(.failed(request: request, reason: EngineRun.describe(error))) }
             }
         }
-        requests[request] = task
     }
 
     // MARK: 時間

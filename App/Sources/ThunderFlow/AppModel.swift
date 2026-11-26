@@ -675,8 +675,7 @@ final class AppModel {
         }
         let downloader = workshopDownloader
         let downloadID = download.id
-        // 先放進區域變數再存進字典（Swift 6.3 的並行檢查看不懂直接指定給字典元素的寫法）
-        let task = Task { [weak self] in
+        workshopTasks[downloadID] = Task { [weak self] in
             do {
                 let outcome = try await downloader.download(download.address, into: locate) { progress in
                     Task { @MainActor in self?.updateWorkshopDownload(downloadID, of: sessionID, to: .downloading(progress)) }
@@ -696,7 +695,6 @@ final class AppModel {
             }
             self?.workshopTasks[downloadID] = nil
         }
-        workshopTasks[downloadID] = task
     }
 
     func cancelWorkshopDownload(_ downloadID: UUID) {

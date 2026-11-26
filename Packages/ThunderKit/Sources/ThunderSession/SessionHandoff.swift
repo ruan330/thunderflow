@@ -125,6 +125,16 @@ public enum SessionHandoff {
         container.appendingPathComponent("Inbox", isDirectory: true)
     }
 
+    /// 放 Library 的位置（D38）：container 的 `Documents/`。
+    public static func library(inContainer container: URL) -> URL {
+        container
+    }
+
+    /// 同一個 Library 在 Mac 上的位置。
+    public static func macLibrary(home: URL) -> URL {
+        home
+    }
+
     /// 同一個收件匣在 Mac 上的位置：iCloud 把每個 container 放在 `~/Library/Mobile Documents/<識別碼，「.」換成「~」>/`。
     /// Mac 版是 ad-hoc 簽章、沒有 iCloud 的 entitlement，直接用路徑讀寫（iCloud 照樣同步）。
     public static func macInbox(home: URL) -> URL {

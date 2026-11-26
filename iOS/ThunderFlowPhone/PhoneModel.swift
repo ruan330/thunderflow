@@ -28,11 +28,14 @@ final class PhoneModel {
     private(set) var interrupted = false
     var banner: String?
     var showsSettings = false
-    var showsHandoffs = false
-    /// 雙語：中文下面再顯示英文。預設只顯示中文（字大）。
+    var showsLibrary = false
+    /// 過去錄音裡目前打開的場次（資料夾）：自動測試的截圖用它直接打開一場。
+    var libraryPath: [URL] = []
+    /// 雙語：中文下面再顯示英文（預設，和 Mac 一樣）；關掉時只顯示中文。
     var bilingual: Bool { didSet { UserDefaults.standard.set(bilingual, forKey: "bilingual") } }
     private(set) var hasKey = false
     let handoff = PhoneHandoff()
+    let library = PhoneLibrary()
 
     @ObservationIgnored private var recording: LiveRecording?
     @ObservationIgnored private var ticker: Task<Void, Never>?
@@ -328,6 +331,34 @@ final class PhoneModel {
         Self.log("selfTest: stopped banner=\(banner ?? "-")")
         for line in handoff.report() { Self.log("selfTest: \(line)") }
         if defaults.bool(forKey: "selfTestQuit") { exit(0) }
+    }
+
+    /// `-selfTestLibrary <資料夾> [-selfTestLibraryOpen summary|transcript] [-selfTestQuit YES]`：
+    /// 用那個資料夾當 Library（模擬器沒有 iCloud），印出清單與第一場讀到的內容；有 `-selfTestLibraryOpen` 就打開
+    /// 第一場的那一頁（截圖用），不然停在清單。幾秒之後結束。不連線、不需要 Key。
+    func runLibrarySelfTestIfRequested() async {
+        let defaults = UserDefaults.standard
+        guard defaults.string(forKey: "selfTestLibrary") != nil else { return }
+        await library.refresh()
+        Self.log("library: items=\(library.items.count) pending=\(library.pending) problem=\(library.problem ?? "-")")
+        for item in library.items { Self.log("library: \(item.meta.displayTitle) state=\(item.meta.state.rawValue)") }
+        if let first = library.items.first {
+            let detail = PhoneSessionDetail(item: first)
+            await detail.load()
+            Self.log(
+                "library: blocks=\(detail.blocks.count) summary=\(detail.summary != nil) chapters=\(detail.summary?.chapters.count ?? 0) problem=\(detail.problem ?? "-")"
+            )
+            if defaults.string(forKey: "selfTestLibraryOpen") != nil { libraryPath = [first.directory.url] }
+        }
+        showsLibrary = true
+        try? await Task.sleep(for: .seconds(8))
+        if defaults.bool(forKey: "selfTestQuit") { exit(0) }
+    }
+
+    /// 過去錄音的清單：還沒交給 Mac 的場次與 Mac 上的紀錄一起重新讀。
+    func refreshLibrary() async {
+        await handoff.refresh()
+        await library.refresh()
     }
 
     nonisolated static func log(_ line: String) {

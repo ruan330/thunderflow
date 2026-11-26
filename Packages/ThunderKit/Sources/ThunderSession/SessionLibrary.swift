@@ -6,23 +6,30 @@ import ThunderCore
 /// 檔案就是資料：清單只靠掃描資料夾建立，沒有資料庫也沒有快取。場次用 `session.json` 裡的 `id` 識別，
 /// 資料夾名稱只是給人看的，使用者在 Finder 裡改名或搬移都不會出問題。
 public enum SessionLibrary {
-    /// 預設的 Library 位置（D37）。`home` 是使用者的家目錄。
+    /// 預設的 Library 位置（D37、D38）。`home` 是使用者的家目錄。依序：
     ///
-    /// - 舊的預設位置「文件/ThunderFlow」裡已經有場次：繼續用它。不替使用者搬檔案，過去錄音也不會突然變空。
-    /// - 這台 Mac 有 iCloud 雲碟（`~/Library/Mobile Documents/com~apple~CloudDocs` 存在）：iCloud 雲碟裡的「ThunderFlow」。
-    ///   錄音中只寫本機的工作目錄（5.9 節），按停止、搬進 Library 之後才上傳。
-    /// - 否則：「文件/ThunderFlow」。
+    /// 1. 舊的預設位置裡已經有場次：繼續用它（先看「文件/ThunderFlow」，再看「iCloud 雲碟/ThunderFlow」）。
+    ///    不替使用者搬檔案，過去錄音也不會突然變空。
+    /// 2. iPhone 版在這個 Apple 帳號用過（App 的 iCloud 空間在這台 Mac 上）：那個空間的 `Documents/`。
+    ///    在 iCloud 雲碟裡顯示成帶 App 圖示的「ThunderFlow」，手機不用選資料夾就看得到過去錄音。
+    /// 3. 這台 Mac 有 iCloud 雲碟（`~/Library/Mobile Documents/com~apple~CloudDocs` 存在）：iCloud 雲碟裡的「ThunderFlow」。
+    /// 4. 否則：「文件/ThunderFlow」。
     ///
+    /// 錄音中只寫本機的工作目錄（5.9 節），按停止、搬進 Library 之後才上傳。
     /// App 第一次決定之後就記下來（設定裡的資料夾），之後不會因為 iCloud 雲碟暫時不在而換位置。
     public static func defaultRoot(home: URL) -> URL {
         let documents = home.appendingPathComponent("Documents/ThunderFlow", isDirectory: true)
-        if !list(root: documents).isEmpty { return documents }
         let drive = home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
-        var isDirectory: ObjCBool = false
-        if FileManager.default.fileExists(atPath: drive.path, isDirectory: &isDirectory), isDirectory.boolValue {
-            return drive.appendingPathComponent("ThunderFlow", isDirectory: true)
-        }
+        let driveLibrary = drive.appendingPathComponent("ThunderFlow", isDirectory: true)
+        for existing in [documents, driveLibrary] where !list(root: existing).isEmpty { return existing }
+        if isDirectory(SessionHandoff.macContainer(home: home)) { return SessionHandoff.macLibrary(home: home) }
+        if isDirectory(drive) { return driveLibrary }
         return documents
+    }
+
+    private static func isDirectory(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 
     public struct Item: Sendable, Equatable, Identifiable {

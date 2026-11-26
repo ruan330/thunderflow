@@ -2,7 +2,7 @@
 
 PKG := Packages/ThunderKit
 
-.PHONY: build test test-tsan test-perf test-soak check app run measure-app measure-recording phone phone-selftest phone-install phone-testflight
+.PHONY: build test test-tsan test-perf test-soak check app run measure-app measure-recording phone phone-selftest phone-library-check phone-install phone-testflight
 
 ## 編譯全部（含測試）
 build:
@@ -44,6 +44,10 @@ phone:
 ## iPhone 版的自我檢查：在看不到的模擬器上用音檔跑一整場（會連線，30 秒約 US$0.01）
 phone-selftest:
 	Scripts/phone-selftest.sh build/phone-selftest
+
+## iPhone 版「過去錄音」的畫面檢查：清單、摘要、逐字稿三張截圖（要先跑過 phone-selftest；不連線）
+phone-library-check:
+	Scripts/phone-library-check.sh build/phone-library
 
 ## 把 iPhone 版裝到接著的 iPhone（要先有 iOS/Local.xcconfig 的 DEVELOPMENT_TEAM，Scripts/phone-install.sh 的說明）
 phone-install:

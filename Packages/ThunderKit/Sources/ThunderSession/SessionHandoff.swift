@@ -119,29 +119,34 @@ public enum SessionHandoff {
     /// iPhone 版自己的 iCloud 空間（D37）：收件匣放在這裡，使用者不用選資料夾。和 `iOS/ThunderFlowPhone.entitlements` 一致。
     public static let containerIdentifier = "iCloud.io.github.ruan330.thunderflow"
 
-    /// 收件匣在 container 裡的位置：`Inbox/`。不放在 `Documents/` 裡，也不公開 container：使用者在 iCloud 雲碟裡看不到，
-    /// 不會誤動。iPhone 用 `FileManager.url(forUbiquityContainerIdentifier:)` 拿到 container。
+    /// 收件匣在 container 裡的位置：`Inbox/`。不放在 `Documents/` 裡：iCloud 雲碟只顯示 `Documents/`，
+    /// 使用者看不到收件匣，不會誤動。iPhone 用 `FileManager.url(forUbiquityContainerIdentifier:)` 拿到 container。
     public static func inbox(inContainer container: URL) -> URL {
         container.appendingPathComponent("Inbox", isDirectory: true)
     }
 
-    /// 放 Library 的位置（D38）：container 的 `Documents/`。
+    /// 放 Library 的位置（D38）：container 的 `Documents/`。container 是公開的（iPhone 版的 Info.plist），
+    /// 在 iCloud 雲碟裡顯示成帶 App 圖示的「ThunderFlow」資料夾：Mac 寫進去、手機讀得到，兩邊都不用選資料夾。
     public static func library(inContainer container: URL) -> URL {
-        container
+        container.appendingPathComponent("Documents", isDirectory: true)
     }
 
     /// 同一個 Library 在 Mac 上的位置。
     public static func macLibrary(home: URL) -> URL {
-        home
+        library(inContainer: macContainer(home: home))
     }
 
     /// 同一個收件匣在 Mac 上的位置：iCloud 把每個 container 放在 `~/Library/Mobile Documents/<識別碼，「.」換成「~」>/`。
     /// Mac 版是 ad-hoc 簽章、沒有 iCloud 的 entitlement，直接用路徑讀寫（iCloud 照樣同步）。
     public static func macInbox(home: URL) -> URL {
-        let folder = containerIdentifier.replacingOccurrences(of: ".", with: "~")
-        return inbox(
-            inContainer: home.appendingPathComponent("Library/Mobile Documents", isDirectory: true)
-                .appendingPathComponent(folder, isDirectory: true))
+        inbox(inContainer: macContainer(home: home))
+    }
+
+    /// App 的 iCloud 空間在 Mac 上的位置：iCloud 把每個 container 放在 `~/Library/Mobile Documents/<識別碼，「.」換成「~」>/`。
+    /// iPhone 版在這個 Apple 帳號用過之後才會出現。
+    public static func macContainer(home: URL) -> URL {
+        home.appendingPathComponent("Library/Mobile Documents", isDirectory: true)
+            .appendingPathComponent(containerIdentifier.replacingOccurrences(of: ".", with: "~"), isDirectory: true)
     }
 
     /// 把 `directory` 複製到 `<inbox>/<場次 id>/`，**最後**才寫 `.thunderflow/handoff.json`。回傳收件匣裡的那一份的位置。

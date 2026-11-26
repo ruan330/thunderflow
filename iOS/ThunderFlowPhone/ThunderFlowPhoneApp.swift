@@ -18,6 +18,7 @@ struct ThunderFlowPhoneApp: App {
                     await model.handoff.processPending()
                     model.showHandoffNotice()
                     await model.runSelfTestIfRequested()
+                    await model.runLibrarySelfTestIfRequested()
                 }
         }
         .onChange(of: scenePhase) { _, phase in model.scenePhaseChanged(phase) }

@@ -215,10 +215,16 @@ struct SettingsView: View {
     }
 
     /// 資料夾給人看的寫法：iCloud 雲碟裡的寫成「iCloud 雲碟/…」，不顯示系統內部的路徑。
+    /// App 的 iCloud 空間（D38）在 iCloud 雲碟裡顯示成「ThunderFlow」。
     static func displayPath(_ path: String) -> String {
-        let drive = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs").path
-        guard path == drive || path.hasPrefix(drive + "/") else { return path }
-        return "iCloud 雲碟" + path.dropFirst(drive.count)
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let names = [
+            (SessionHandoff.macLibrary(home: home).path, "iCloud 雲碟/ThunderFlow"),
+            (home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs").path, "iCloud 雲碟"),
+        ]
+        for (prefix, name) in names where path == prefix || path.hasPrefix(prefix + "/") {
+            return name + path.dropFirst(prefix.count)
+        }
+        return path
     }
 }

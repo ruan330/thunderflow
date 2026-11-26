@@ -18,7 +18,7 @@ struct LiveScreen: View {
         }
         .background(Theme.background.ignoresSafeArea())
         .sheet(isPresented: $model.showsSettings) { SettingsScreen().environment(model) }
-        .sheet(isPresented: $model.showsHandoffs) { HandoffScreen().environment(model) }
+        .sheet(isPresented: $model.showsLibrary) { LibraryScreen().environment(model) }
     }
 }
 
@@ -47,11 +47,11 @@ private struct StatusBar: View {
             }
             Spacer()
             Button {
-                model.showsHandoffs = true
+                model.showsLibrary = true
             } label: {
-                Image(systemName: "tray.and.arrow.up")
+                Image(systemName: "clock.arrow.circlepath")
             }
-            .accessibilityLabel("交給 Mac 的錄音")
+            .accessibilityLabel("過去錄音")
             Button {
                 model.showsSettings = true
             } label: {

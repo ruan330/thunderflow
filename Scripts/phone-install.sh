@@ -43,11 +43,13 @@ if [ -z "$device" ] || [ -z "$udid" ]; then
     exit 1
 fi
 
-# 指定這一支 iPhone（不是「任何 iOS 裝置」）：Xcode 才會把它登記到團隊、放進描述檔，否則裝不上去
+# 指定這一支 iPhone（不是「任何 iOS 裝置」）：Xcode 才會把它登記到團隊、放進描述檔，否則裝不上去。
+# 版號用建置的時間，每次都比上一次大：iCloud 只在版號變了的時候重新讀 Info.plist 裡 iCloud 資料夾的設定（D38）
+version="$(date +%Y%m%d%H%M)"
 build() {
     xcodebuild -project "$root/iOS/ThunderFlowPhone.xcodeproj" -scheme ThunderFlowPhone -configuration Release \
         -destination "platform=iOS,id=$udid" -derivedDataPath "$derived" \
-        -allowProvisioningUpdates -allowProvisioningDeviceRegistration -quiet build
+        -allowProvisioningUpdates -allowProvisioningDeviceRegistration CURRENT_PROJECT_VERSION="$version" -quiet build
 }
 build
 app="$derived/Build/Products/Release-iphoneos/ThunderFlowPhone.app"

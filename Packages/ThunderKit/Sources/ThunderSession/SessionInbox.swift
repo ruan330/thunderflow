@@ -79,8 +79,11 @@ public struct InboxReport: Sendable, Equatable {
 
     /// 收進新的場次時給人看的一句話，例如「收到 iPhone 錄的 2 場，正在處理。」；沒有收進任何一場時是 nil。
     public var announcement: String? {
-        // 空殼：還沒有實作
-        nil
+        guard !received.isEmpty else { return nil }
+        var sources: [String] = []
+        for item in received where !item.from.isEmpty && !sources.contains(item.from) { sources.append(item.from) }
+        let from = sources.isEmpty ? "收到手機錄的" : "收到 \(sources.joined(separator: "、")) 錄的"
+        return "\(from) \(received.count) 場，正在處理。"
     }
 }
 
@@ -116,11 +119,22 @@ public struct SessionInbox: Sendable {
         try FileManager.default.trashItem(at: url, resultingItemURL: nil)
     }
 
-    /// 這個資料夾能不能當收件匣：不能是 Library 本身，也不能在 Library 裡面。
-    /// 可以時回傳 nil，不行時回傳給人看的原因（句尾不加句號）。
+    /// 這個資料夾能不能當收件匣：不能是 Library 本身，也不能在 Library 裡面（兩邊都解析成實際的路徑再比較，
+    /// 所以經過符號連結也認得出來）。可以時回傳 nil，不行時回傳給人看的原因（句尾不加句號）。
     public static func problem(inbox: URL, library: URL) -> String? {
-        // 空殼：還沒有實作
-        nil
+        let inboxPath = realPath(inbox)
+        let libraryPath = realPath(library)
+        let prefix = libraryPath.hasSuffix("/") ? libraryPath : libraryPath + "/"
+        guard inboxPath == libraryPath || inboxPath.hasPrefix(prefix) else { return nil }
+        return "收件匣不能是儲存錄音的資料夾（Library）本身，也不能在它裡面"
+    }
+
+    /// 實際的路徑（解析符號連結，例如 /tmp → /private/tmp）；不存在時是整理過的路徑。
+    private static func realPath(_ url: URL) -> String {
+        let path = url.standardizedFileURL.path
+        guard let resolved = realpath(path, nil) else { return path }
+        defer { free(resolved) }
+        return String(cString: resolved)
     }
 
     /// 看一次收件匣：每個場次資料夾（名稱以「.」開頭的、不是資料夾的東西不算）現在的狀況，依名稱排序。不複製、不移動任何東西。
@@ -131,8 +145,74 @@ public struct SessionInbox: Sendable {
     /// 狀態不是 `recording`。檔案還沒到齊或還讀不到是 `waiting`，其他不符合的是 `rejected`。
     /// 收件匣讀不到（例如不存在）時丟出錯誤。
     public func scan() throws -> [InboxEntry] {
-        // 空殼：還沒有實作
-        []
+        var entries: [InboxEntry] = []
+        for name in try FileManager.default.contentsOfDirectory(atPath: inbox.path).sorted() where !name.hasPrefix(".") {
+            let folder = inbox.appendingPathComponent(name, isDirectory: true)
+            guard HandoffFiles.item(at: folder)?.type == .typeDirectory else { continue }
+            entries.append(InboxEntry(folder: folder, status: Self.status(of: folder)))
+        }
+        return entries
+    }
+
+    /// `session.json` 在場次資料夾裡的位置（`handoff.json` 一定要列出它）。
+    private static let metaPath = ".thunderflow/session.json"
+
+    /// 一個場次資料夾現在的狀況（`scan` 的說明）。只讀 `handoff.json` 與 `session.json` 兩個小檔，
+    /// 其他檔案只看檔案系統的資料（大小），不讀內容：還沒從 iCloud 下載的大檔不會因此被下載。
+    private static func status(of folder: URL) -> InboxEntry.Status {
+        // 還沒到，或還讀不到（例如還在從 iCloud 下載）：下次再看
+        guard let data = try? Data(contentsOf: folder.appendingPathComponent(HandoffManifest.relativePath)) else {
+            return .waiting
+        }
+        let manifest: HandoffManifest
+        do {
+            manifest = try HandoffManifest.decode(data)
+        } catch let error as SessionHandoffError {
+            return .rejected(error.description)
+        } catch {
+            return .rejected("handoff.json 讀不懂")
+        }
+        if let problem = problem(with: manifest, in: folder) { return .rejected(problem) }
+        for file in manifest.files {
+            guard let item = HandoffFiles.item(at: folder.appendingPathComponent(file.path)) else { return .waiting }
+            guard item.type == .typeRegular else { return .rejected("handoff.json 列出的「\(file.path)」不是一般的檔案") }
+            guard item.size == file.size else { return .waiting }
+        }
+        // 列出的檔案都到齊了：最後看它是不是收得進來的場次
+        let directory = SessionDirectory(url: folder)
+        guard (try? Data(contentsOf: directory.metaURL)) != nil else { return .waiting }
+        let meta: SessionMeta
+        do {
+            meta = try directory.loadMeta()
+        } catch let error as SessionStoreError {
+            return .rejected(error.description)
+        } catch {
+            return .rejected("session.json 讀不懂")
+        }
+        guard meta.id == manifest.id else { return .rejected("session.json 的 id 和 handoff.json 的不一樣") }
+        guard meta.state != .recording else { return .rejected("這一場在手機上還沒有結束錄音") }
+        return .ready(manifest)
+    }
+
+    /// `handoff.json` 本身的問題：`id` 和資料夾名稱對不上、路徑跑出場次資料夾、列出自己、沒有列出 `session.json`。
+    private static func problem(with manifest: HandoffManifest, in folder: URL) -> String? {
+        guard UUID(uuidString: folder.lastPathComponent) == manifest.id else {
+            return "handoff.json 的 id（\(manifest.id.uuidString)）和資料夾名稱（\(folder.lastPathComponent)）對不上"
+        }
+        for file in manifest.files {
+            guard staysInside(file.path) else { return "handoff.json 列出的路徑「\(file.path)」跑出了場次資料夾" }
+            guard file.path != HandoffManifest.relativePath else { return "handoff.json 不應該列出它自己" }
+        }
+        guard manifest.files.contains(where: { $0.path == metaPath }) else {
+            return "handoff.json 沒有列出 \(metaPath)"
+        }
+        return nil
+    }
+
+    /// 相對路徑是不是在場次資料夾裡面：不是空的、不是絕對路徑，每一段都不是空的、「.」或「..」。
+    private static func staysInside(_ path: String) -> Bool {
+        guard !path.isEmpty, !path.hasPrefix("/"), !path.contains("\0") else { return false }
+        return !path.split(separator: "/", omittingEmptySubsequences: false).contains { $0.isEmpty || $0 == "." || $0 == ".." }
     }
 
     /// 收進一份（`scan` 回報可以收的資料夾與它的 `handoff.json`）。
@@ -145,14 +225,124 @@ public struct SessionInbox: Sendable {
     /// - 複製失敗、大小對不上、磁碟空間不夠時丟出錯誤：暫存的複製刪掉，收件匣裡的那一份留著，下次再試。
     /// - 收的期間鎖住收件匣裡的那一份：另一個 ThunderFlow 正在收它時回傳 `busy`，什麼都不做。
     public func receive(_ folder: URL, manifest: HandoffManifest) throws -> InboxReceipt {
-        // 空殼：還沒有實作
-        .busy
+        guard let lock = try SessionLock.acquire(SessionDirectory(url: folder)) else { return .busy }
+        // 拿到鎖之後才看收過了沒有：另一個 ThunderFlow 可能剛收完
+        let ids = SessionLibrary.list(root: workingRoot).map(\.id) + SessionLibrary.list(root: libraryRoot).map(\.id)
+        let received: SessionDirectory?
+        do {
+            received = ids.contains(manifest.id) ? nil : try copyIn(folder, manifest: manifest)
+        } catch {
+            lock.release()
+            throw error
+        }
+        lock.release()
+        guard let received else {
+            do { try remove(folder) } catch { throw SessionHandoffError.cannotRemove(error.userFacingDescription) }
+            return .alreadyReceived
+        }
+        // 移不走也不影響收進來的場次：下次看到時當成已經收過，再移一次
+        try? remove(folder)
+        return .received(received)
+    }
+
+    /// 暫存位置：工作目錄裡的 `.receiving/`。多一層，所以複製到一半就中斷時，
+    /// 不會被當成工作目錄裡還沒做完結束處理的場次（那些只看工作目錄底下一層）。
+    static let stagingFolderName = ".receiving"
+
+    /// 複製到暫存位置、核對大小，再改名成 `<工作目錄>/<場次 id>/`（名稱被占用時加序號）。回傳收進來的場次。
+    /// 失敗時刪掉暫存的複製；暫存位置空了就一起刪。
+    private func copyIn(_ folder: URL, manifest: HandoffManifest) throws -> SessionDirectory {
+        let fileManager = FileManager.default
+        let stagingRoot = workingRoot.appendingPathComponent(Self.stagingFolderName, isDirectory: true)
+        let staging = stagingRoot.appendingPathComponent(manifest.id.uuidString, isDirectory: true)
+        try fileManager.createDirectory(at: stagingRoot, withIntermediateDirectories: true)
+        defer {
+            // 成功時暫存的複製已經改名搬走了
+            try? fileManager.removeItem(at: staging)
+            rmdir(stagingRoot.path)  // 空的才刪得掉
+        }
+        // 上次複製到一半就中斷留下的
+        try? fileManager.removeItem(at: staging)
+
+        let needed = manifest.files.reduce(Int64(0)) { $0 + $1.size }
+        if let available = try? stagingRoot.resourceValues(forKeys: [.volumeAvailableCapacityKey]).volumeAvailableCapacity,
+            Int64(available) - needed < reservedSpace
+        {
+            throw SessionHandoffError.notEnoughSpace(needed: needed, available: Int64(available), reserved: reservedSpace)
+        }
+        // 只複製列出的檔案，加上 handoff.json 本身（說明這一場是從手機來的）
+        for path in manifest.files.map(\.path) + [HandoffManifest.relativePath] {
+            let target = staging.appendingPathComponent(path)
+            try fileManager.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try fileManager.copyItem(at: folder.appendingPathComponent(path), to: target)
+        }
+        // 帶過來的 handoff.json 和看過的那一份不一樣：手機剛好又交了一次，這次不收，下次再看
+        let copiedManifest = try? HandoffManifest.decode(
+            Data(contentsOf: staging.appendingPathComponent(HandoffManifest.relativePath)))
+        guard copiedManifest == manifest else { throw SessionHandoffError.changedDuringCopy }
+        for file in manifest.files {
+            let size = HandoffFiles.item(at: staging.appendingPathComponent(file.path))?.size ?? -1
+            guard size == file.size else {
+                throw SessionHandoffError.sizeMismatch(path: file.path, expected: file.size, found: size)
+            }
+        }
+        let destination = try SessionLibrary.move(
+            staging, into: workingRoot, named: manifest.id.uuidString,
+            stagingName: "\(Self.stagingFolderName)-\(manifest.id.uuidString)")
+        return SessionDirectory(url: destination)
     }
 
     /// 看一次收件匣，收進每一份可以收的（`scan`、`receive`）。不會丟出錯誤：收件匣本身有問題（不存在、讀不到、
     /// 在 Library 裡面）與每一份沒收進來的原因都記在 `problems`。
     public func collect() -> InboxReport {
-        // 空殼：還沒有實作
-        InboxReport()
+        var report = InboxReport()
+        if let problem = Self.problem(inbox: inbox, library: libraryRoot) {
+            report.problems.append(InboxReport.Problem(folder: inbox, reason: "\(problem)，請到「設定」重新選擇收件匣"))
+            return report
+        }
+        let entries: [InboxEntry]
+        do {
+            entries = try scan()
+        } catch {
+            report.problems.append(InboxReport.Problem(folder: inbox, reason: Self.unreadable(error)))
+            return report
+        }
+        for entry in entries {
+            switch entry.status {
+            case .waiting:
+                report.waiting.append(entry.folder)
+            case .rejected(let reason):
+                report.problems.append(InboxReport.Problem(folder: entry.folder, reason: reason))
+            case .ready(let manifest):
+                do {
+                    switch try receive(entry.folder, manifest: manifest) {
+                    case .received(let directory):
+                        report.received.append(
+                            InboxReport.Received(id: manifest.id, directory: directory, from: manifest.from))
+                    case .alreadyReceived:
+                        report.alreadyReceived.append(manifest.id)
+                    case .busy:
+                        break
+                    }
+                } catch {
+                    let reason: String
+                    if case SessionHandoffError.cannotRemove = error {
+                        reason = error.userFacingDescription
+                    } else {
+                        reason = "沒有收進來（\(error.userFacingDescription)），下次會再試"
+                    }
+                    report.problems.append(InboxReport.Problem(folder: entry.folder, reason: reason))
+                }
+            }
+        }
+        return report
+    }
+
+    /// 收件匣讀不到時的說明。
+    private static func unreadable(_ error: any Error) -> String {
+        if let code = (error as? CocoaError)?.code, code == .fileReadNoSuchFile || code == .fileNoSuchFile {
+            return "找不到收件匣（可能被搬走、改名或刪掉了），請到「設定」重新選擇"
+        }
+        return "讀不到收件匣（\(error.userFacingDescription)）"
     }
 }

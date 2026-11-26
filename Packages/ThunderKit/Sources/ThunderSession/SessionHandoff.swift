@@ -38,6 +38,36 @@ public struct HandoffManifest: Sendable, Equatable, Codable {
         self.from = from
         self.files = files
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case version, id, from, files
+    }
+
+    /// 先看 `version`：不是這一版認識的格式就丟出 `SessionHandoffError.unsupportedVersion`，不再往下讀
+    /// （其他欄位的意義可能已經不同）。`from` 缺少時是空字串。
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let version = try container.decode(Int.self, forKey: .version)
+        guard version == Self.currentVersion else { throw SessionHandoffError.unsupportedVersion(found: version) }
+        self.init(
+            id: try container.decode(UUID.self, forKey: .id),
+            from: try container.decodeIfPresent(String.self, forKey: .from) ?? "",
+            files: try container.decode([File].self, forKey: .files))
+    }
+
+    static func decode(_ data: Data) throws -> HandoffManifest {
+        try JSONDecoder().decode(HandoffManifest.self, from: data)
+    }
+
+    /// 原子寫進 `folder` 的 `.thunderflow/handoff.json`：一行 JSON，欄位依字母排序，斜線不跳脫。
+    func write(in folder: URL) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        let json = String(decoding: try encoder.encode(self), as: UTF8.self) + "\n"
+        let url = folder.appendingPathComponent(Self.relativePath)
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try SessionDirectory(url: folder).writeText(json, to: url)
+    }
 }
 
 public enum SessionHandoffError: Error, Equatable {
@@ -53,6 +83,8 @@ public enum SessionHandoffError: Error, Equatable {
     case notEnoughSpace(needed: Int64, available: Int64, reserved: Int64)
     /// 這一場已經收進來了（或早就收過），但收件匣裡的那一份移不走（附上原因）。
     case cannotRemove(String)
+    /// `handoff.json` 的格式版本不是這一版認識的。
+    case unsupportedVersion(found: Int)
 }
 
 extension SessionHandoffError: CustomStringConvertible, LocalizedError {
@@ -68,6 +100,10 @@ extension SessionHandoffError: CustomStringConvertible, LocalizedError {
             "磁碟空間不夠：收進來要 \(Self.megabytes(needed))，收完之後要留下 \(Self.megabytes(reserved)) 給錄音用，"
                 + "現在只剩 \(Self.megabytes(available))"
         case .cannotRemove(let reason): "這一場已經收進來了，但收件匣裡的那一份移不走（\(reason)），可以自己把它移到垃圾桶"
+        case .unsupportedVersion(let found) where found > HandoffManifest.currentVersion:
+            "handoff.json 是比較新版的 ThunderFlow 寫的（格式第 \(found) 版，這一版只讀得懂第 \(HandoffManifest.currentVersion) 版），"
+                + "請更新 ThunderFlow"
+        case .unsupportedVersion(let found): "handoff.json 的格式（第 \(found) 版）不認識"
         }
     }
 
@@ -96,7 +132,90 @@ public enum SessionHandoff {
     /// - 手機上的那一份不動：交好之後由呼叫端刪掉（DESIGN.md 5.10 節）。
     @discardableResult
     public static func export(_ directory: SessionDirectory, to inbox: URL, from device: String = "iPhone") throws -> URL {
-        // 空殼：還沒有實作
-        inbox.appendingPathComponent((try? directory.loadMeta().id.uuidString) ?? "", isDirectory: true)
+        guard let lock = try SessionLock.acquire(directory) else {
+            let state = try? directory.loadMeta().state
+            throw state == .recording ? SessionHandoffError.stillRecording : SessionHandoffError.inProgress
+        }
+        defer { lock.release() }
+        let meta = try directory.loadMeta()
+        guard meta.state != .recording else { throw SessionHandoffError.stillRecording }
+        let files = try HandoffFiles.list(in: directory.url)
+        let destination = inbox.appendingPathComponent(meta.id.uuidString, isDirectory: true)
+        try HandoffFiles.coordinatedWrite(at: destination) { destination in
+            let fileManager = FileManager.default
+            do {
+                try HandoffFiles.removeEarlierCopy(at: destination)
+                // 收件匣本身不存在（被搬走、刪掉）時失敗，不在原處另建一個
+                try fileManager.createDirectory(at: destination, withIntermediateDirectories: false)
+                for file in files {
+                    let target = destination.appendingPathComponent(file.path)
+                    try fileManager.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try fileManager.copyItem(at: directory.url.appendingPathComponent(file.path), to: target)
+                    let copied = HandoffFiles.item(at: target)?.size ?? -1
+                    guard copied == file.size else {
+                        throw SessionHandoffError.sizeMismatch(path: file.path, expected: file.size, found: copied)
+                    }
+                }
+                // 最後才寫：寫好之前 Mac 不會收
+                try HandoffManifest(id: meta.id, from: device, files: files).write(in: destination)
+            } catch {
+                try? fileManager.removeItem(at: destination)
+                throw error
+            }
+        }
+        return destination
+    }
+}
+
+/// 交接用到的檔案操作。
+enum HandoffFiles {
+    /// 場次資料夾裡要交出去的檔案，依路徑排序：一般的檔案（不跟著符號連結走），包括子資料夾裡的；
+    /// 名稱以「.」開頭的不算（`.thunderflow/` 例外），`handoff.json` 自己也不算。
+    static func list(in root: URL) throws -> [HandoffManifest.File] {
+        var files: [HandoffManifest.File] = []
+        func walk(_ relative: String) throws {
+            let folder = relative.isEmpty ? root : root.appendingPathComponent(relative, isDirectory: true)
+            for name in try FileManager.default.contentsOfDirectory(atPath: folder.path) {
+                guard !name.hasPrefix(".") || (relative.isEmpty && name == ".thunderflow") else { continue }
+                let path = relative.isEmpty ? name : "\(relative)/\(name)"
+                guard path != HandoffManifest.relativePath, let item = item(at: folder.appendingPathComponent(name)) else {
+                    continue
+                }
+                if item.type == .typeDirectory {
+                    try walk(path)
+                } else if item.type == .typeRegular {
+                    files.append(HandoffManifest.File(path: path, size: item.size))
+                }
+            }
+        }
+        try walk("")
+        return files.sorted { $0.path < $1.path }
+    }
+
+    /// 這個位置上的東西的種類與大小（不跟著符號連結走）；不存在時是 nil。只看檔案系統的資料，不讀內容：
+    /// iCloud 雲碟裡還沒下載的檔案也看得到大小，不會觸發下載。
+    static func item(at url: URL) -> (type: FileAttributeType, size: Int64)? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+            let type = attributes[.type] as? FileAttributeType
+        else { return nil }
+        return (type, (attributes[.size] as? NSNumber)?.int64Value ?? 0)
+    }
+
+    /// 刪掉收件匣裡同一場上次的那一份。先拿掉舊的 `handoff.json`：刪除途中 Mac 不會把新舊混在一起的資料夾當成收到。
+    static func removeEarlierCopy(at destination: URL) throws {
+        let manifest = destination.appendingPathComponent(HandoffManifest.relativePath)
+        if item(at: manifest) != nil { try FileManager.default.removeItem(at: manifest) }
+        if item(at: destination) != nil { try FileManager.default.removeItem(at: destination) }
+    }
+
+    /// 以 `NSFileCoordinator` 協調的寫入：iCloud 雲碟（以及其他檔案提供者）因此知道這個位置的東西換了。
+    static func coordinatedWrite(at url: URL, _ work: (URL) throws -> Void) throws {
+        var coordinationError: NSError?
+        var workError: (any Error)?
+        NSFileCoordinator(filePresenter: nil).coordinate(writingItemAt: url, options: [], error: &coordinationError) { url in
+            do { try work(url) } catch { workError = error }
+        }
+        if let workError { throw workError }
+        if let coordinationError { throw coordinationError }
     }
 }

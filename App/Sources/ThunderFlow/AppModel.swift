@@ -313,6 +313,8 @@ final class AppModel {
         observeSleep()
         reloadLibrary()
         resumeUnfinished()
+        // 手機錄音的收件匣（DESIGN.md 5.10 節）：現在看一次，之後回到前景時與每 30 秒再看一次
+        watchInbox()
         // 上次當掉或被強制結束時留下的教材暫存（下載中的教材不會跨過 App 重新開啟）
         let downloads = settings.downloadsRoot
         Task.detached(priority: .utility) { WorkshopDownloader.removeLeftovers(in: downloads) }
@@ -1029,6 +1031,75 @@ final class AppModel {
                 }
             }
         }
+    }
+
+    // MARK: 手機錄音的收件匣（DESIGN.md 5.10 節，D36）
+
+    /// 收件匣上一次看的結果：還沒到齊的、沒收進來的與原因（設定頁顯示）。沒有設定收件匣、或還沒看過時是 nil。
+    var inboxReport: InboxReport?
+    /// 正在看收件匣（例如正在從 iCloud 複製一場很長的錄音）時不同時再看一次；做完之後補看一次。
+    @ObservationIgnored private var checkingInbox = false
+    @ObservationIgnored private var inboxRecheck = false
+    @ObservationIgnored private var inboxTimer: Task<Void, Never>?
+
+    /// 開始注意收件匣：現在看一次，之後 App 回到前景時與每 30 秒再看一次。
+    private func watchInbox() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkInbox() }
+        }
+        inboxTimer = Task { [weak self] in
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(30), tolerance: .seconds(5)) } catch { return }
+                guard let self else { return }
+                self.checkInbox()
+            }
+        }
+        checkInbox()
+    }
+
+    /// 看一次收件匣：收進手機錄好的場次，接著走一般的結束處理（搬進 Library、摘要與自動命名）。
+    ///
+    /// 在背景、低優先權做（讀 iCloud 雲碟裡的檔案可能要等它下載，複製一整場也要時間），和結束處理一樣不影響錄音。
+    /// 錄音中也照樣收，只是不跳橫幅、不蓋掉錄音的提醒；收到的場次照樣出現在過去錄音裡。
+    func checkInbox() {
+        guard let inbox = settings.inboxRoot else {
+            if inboxReport != nil { inboxReport = nil }
+            return
+        }
+        guard !checkingInbox else {
+            inboxRecheck = true
+            return
+        }
+        checkingInbox = true
+        let reader = SessionInbox(inbox: inbox, workingRoot: settings.workingRoot, libraryRoot: settings.libraryRoot)
+        Task.detached(priority: .utility) { [weak self] in
+            let report = reader.collect()
+            await MainActor.run {
+                guard let self else { return }
+                self.checkingInbox = false
+                // 沒有變化時不更新：每 30 秒一次，設定頁開著時不用每次重畫
+                if self.inboxReport != report { self.inboxReport = report }
+                self.receivedFromInbox(report)
+                if self.inboxRecheck {
+                    self.inboxRecheck = false
+                    self.checkInbox()
+                }
+            }
+        }
+    }
+
+    /// 收進來的場次接著做結束處理，並說明收到了幾場。
+    private func receivedFromInbox(_ report: InboxReport) {
+        guard !report.received.isEmpty else { return }
+        // 錄音中（含開始中、收尾中）不跳橫幅，處理失敗也不跳：不打擾錄音。失敗的場次在過去錄音裡標「處理失敗」
+        let quiet = liveState != .idle
+        for session in report.received where processing[session.id] == nil {
+            finalize(session.directory, id: session.id, showWhenReady: false, resumed: quiet)
+        }
+        if !quiet, let announcement = report.announcement { banner = announcement }
+        reloadLibrary()
     }
 
     func regenerateSummary(_ item: SessionLibrary.Item) {

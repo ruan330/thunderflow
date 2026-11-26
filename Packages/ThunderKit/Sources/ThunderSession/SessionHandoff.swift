@@ -116,6 +116,19 @@ extension SessionHandoffError: CustomStringConvertible, LocalizedError {
 
 /// 手機交給 Mac（DESIGN.md 5.10 節，D36）：手機把場次複製到收件匣，Mac 收走之後接著做結束處理。
 public enum SessionHandoff {
+    /// iPhone 版自己的 iCloud 空間（D37）：收件匣放在這裡，使用者不用選資料夾。和 `iOS/ThunderFlowPhone.entitlements` 一致。
+    public static let containerIdentifier = ""
+
+    /// 收件匣在 container 裡的位置（iPhone 用 `FileManager.url(forUbiquityContainerIdentifier:)` 拿到 container）。
+    public static func inbox(inContainer container: URL) -> URL {
+        container
+    }
+
+    /// 同一個收件匣在 Mac 上的位置。
+    public static func macInbox(home: URL) -> URL {
+        home
+    }
+
     /// 把 `directory` 複製到 `<inbox>/<場次 id>/`，**最後**才寫 `.thunderflow/handoff.json`。回傳收件匣裡的那一份的位置。
     ///
     /// - 通常在結束處理做到 `audio`（`FinalizationOptions.lastStep`）之後呼叫：狀態是 `finalizing`，

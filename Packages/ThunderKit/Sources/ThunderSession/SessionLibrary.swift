@@ -6,6 +6,11 @@ import ThunderCore
 /// 檔案就是資料：清單只靠掃描資料夾建立，沒有資料庫也沒有快取。場次用 `session.json` 裡的 `id` 識別，
 /// 資料夾名稱只是給人看的，使用者在 Finder 裡改名或搬移都不會出問題。
 public enum SessionLibrary {
+    /// 預設的 Library 位置（D37）。`home` 是使用者的家目錄。
+    public static func defaultRoot(home: URL) -> URL {
+        home
+    }
+
     public struct Item: Sendable, Equatable, Identifiable {
         /// 場次的 id（`session.json` 裡的 `id`）。
         public var id: UUID

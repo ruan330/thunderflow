@@ -2,7 +2,7 @@
 
 > 由 `Scripts/list-tests.py` 從測試原始碼產生，請勿手動編輯。
 > 測試就是規格：每一行是一個必須成立的行為。流程與分層見 [DESIGN.md](DESIGN.md) 第 9 節。
-> 目前共 728 個測試。
+> 目前共 734 個測試。
 
 ## ThunderAudioTests（63 個測試）
 
@@ -590,7 +590,7 @@
 - 內容沒有變的暫定譯文不重複送出
 - 中文來源：每 2 個中文字算一個字
 
-## ThunderSessionTests（166 個測試）
+## ThunderSessionTests（172 個測試）
 
 ### RecordingSession：收音端的完整性計數
 
@@ -841,6 +841,15 @@
 - 收音中斷中（例如找不到裝置）換來源：用新選的來源接著錄，沒有錄到的時間從中斷算起
 - 收音中斷中選回原本的來源：也會重新開始收音，不是什麼都不做
 - 停止之後換來源：丟出 alreadyFinished，不建立新的來源
+
+### 儲存位置：Library 預設在 iCloud 雲碟，收件匣在 App 自己的 iCloud 空間（D37）
+
+- 這台 Mac 有 iCloud 雲碟時，Library 預設是 iCloud 雲碟裡的「ThunderFlow」
+- 沒有 iCloud 雲碟（沒登入 iCloud、或關掉 iCloud 雲碟）時，Library 預設是「文件」裡的「ThunderFlow」
+- 舊的預設位置（「文件」裡的 ThunderFlow）已經有場次時繼續用它：不替使用者搬檔案，過去錄音也不會突然變空
+- 舊的預設位置只是沒有場次的資料夾（例如按過「在 Finder 中顯示」）時，照樣用 iCloud 雲碟
+- 收件匣在 App 的 iCloud container 裡（不在 Documents，看不到）；Mac 上的路徑和 iPhone 用的是同一個位置
+- container 的識別碼和 iPhone 版的 entitlements 一樣：不一樣時手機會交到 Mac 看不到的地方
 
 ### 工作坊教材的下載：呼叫 workshop-archive，完成後放進這一場（D34）
 

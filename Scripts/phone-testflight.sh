@@ -5,7 +5,9 @@
 # 需要（第一次）：
 #   1. iOS/Local.xcconfig 寫著 `DEVELOPMENT_TEAM = <團隊 ID>`（和 phone-install 一樣；不進 git）。
 #   2. Xcode → Settings → Accounts 登入了這個團隊的 Apple ID（xcodebuild 用它簽章、上傳）。
-#   3. App Store Connect 裡已經有這個 App（套件 ID io.github.ruan330.thunderflow）。
+#   3. App Store Connect 裡已經有這個 App，「套件識別碼」是 io.github.ruan330.thunderflow：建立時在下拉選單選
+#      「XC io github ruan330 thunderflow - io.github.ruan330.thunderflow」（Xcode 自動註冊的），不要另外註冊新的。
+#      選錯時上傳會說找不到這個 App；還沒上傳過任何版本之前，可以在「App 資訊」裡改回來。
 #
 # 版號（CFBundleVersion）用上傳的時間（例如 202611252130），每次都比上一次大；給人看的版本是專案裡的 MARKETING_VERSION。
 #

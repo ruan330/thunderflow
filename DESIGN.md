@@ -1042,7 +1042,7 @@ So today we're going to talk about building production-ready agents...
 
 - **畫面檢查**：`Scripts/phone-library-check.sh`（`make phone-library-check`）在看不到的模擬器上，用合成的場次加上一份假的摘要當 Library，存清單、摘要、逐字稿三張截圖。不連線、不需要 Key。
 - **建置與簽章**：iPhone 版用 Xcode 專案（`iOS/`）建置，ThunderKit 是本地 package，畫面只放 SwiftUI 與組裝。簽章用負責人明確指定的開發團隊（`DEVELOPMENT_TEAM` 放在不進 git 的設定檔），從命令列用 `xcodebuild` 建置、`devicectl` 裝到手機，不需要打開 Xcode。Mac 版仍然 ad-hoc。
-- **發佈給負責人**：經 TestFlight（`make phone-testflight`，只給團隊內部測試，不用等審核），之後更新不用接線，每個版本可以用 90 天；用線裝（`make phone-install`）留著開發時用。版號（`CFBundleVersion`）用上傳的時間，每次都比上一次大。App Store Connect 要先由負責人建好這個 App（Apple 不讓命令列代建）。隱私清單（`PrivacyInfo.xcprivacy`）寫明用到的系統功能與理由（設定、檔案時間、剩餘空間）；上架 App Store 之前要再確認隱私標籤。
+- **發佈給負責人**：經 TestFlight（`make phone-testflight`，只給團隊內部測試，不用等審核），之後更新不用接線，每個版本可以用 90 天；用線裝（`make phone-install`）留著開發時用。版號（`CFBundleVersion`）用上傳的時間，每次都比上一次大。App Store Connect 要先由負責人建好這個 App（Apple 不讓命令列代建），「套件識別碼」要選 Xcode 註冊的 `io.github.ruan330.thunderflow`（2026-11-25 第一次選成另外註冊的 `ThunderFlow`，上傳時找不到 App；還沒上傳過版本，在「App 資訊」裡改回來就好）。第一版 2026-11-25 上傳成功。隱私清單（`PrivacyInfo.xcprivacy`）寫明用到的系統功能與理由（設定、檔案時間、剩餘空間）；上架 App Store 之前要再確認隱私標籤。
 
 ## 6. 隱私與安全
 

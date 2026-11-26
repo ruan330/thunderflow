@@ -27,6 +27,12 @@ public struct FinalizationOptions: Sendable {
     public var summarize: Bool
     /// 產生摘要時最多等文字模型多久；超過就算摘要失敗（可以重試），不會讓場次一直停在處理中。
     public var summaryTimeout: Duration
+    /// 做到這一步就停（包含這一步）；nil 時做完全部的步驟。
+    ///
+    /// 手機（DESIGN.md 5.10 節，D36）做到 `.audio`：段落、逐字稿、合併錄音都不需要網路，做完交給 Mac 接著做
+    /// 發布與摘要，所以狀態維持 `finalizing`。停在最後一步（摘要）之前時，狀態不會變成 `complete`；
+    /// 這時用不到 `libraryRoot`（發布之前的步驟不碰 Library）。
+    public var lastStep: FinalizationStep?
 
     public init(libraryRoot: URL) {
         self.libraryRoot = libraryRoot
@@ -34,6 +40,7 @@ public struct FinalizationOptions: Sendable {
         summaryModel = "gpt-6-luna"
         summarize = true
         summaryTimeout = .seconds(300)
+        lastStep = nil
     }
 }
 
@@ -100,6 +107,8 @@ public struct SessionFinalizer: Sendable {
     /// - 摘要：`summarize` 是 false、沒有文字模型、或逐字稿沒有任何文字時略過（不算完成也不算失敗，
     ///   下次呼叫會再看一次）；失敗時記進 `failedSteps`。兩種情況場次都照樣完成。
     /// - 這一次要處理的最後一步記錄時，狀態同時改為 `complete`；在那之前（包含發布之後）都是 `finalizing`。
+    /// - `lastStep` 停在最後一步（摘要）之前時（手機，DESIGN.md 5.10 節），只做到那一步，之後的步驟不做也不回報，
+    ///   狀態維持 `finalizing`；回傳的是場次資料夾當下的位置。
     /// - 狀態還是 `recording` 的場次（還在錄音，或中斷了還沒復原）丟出 `SessionFinalizerError.stillRecording`，什麼都不動。
     /// - 呼叫端的工作被取消時，做完目前這一步就停下來（丟出 `CancellationError`），之後可以再呼叫接著做。
     /// - 處理期間持有場次的鎖（`SessionLock`），所以同一個場次同時只會有一個結束處理：
@@ -115,10 +124,13 @@ public struct SessionFinalizer: Sendable {
         guard meta.state != .recording else { throw SessionFinalizerError.stillRecording }
         let libraryRoot = options.libraryRoot
         var directory = directory
-        let pending = FinalizationStep.allCases.filter { !meta.completedSteps.contains($0.rawValue) }
+        let steps = Self.steps(through: options.lastStep)
+        // 做到最後一步（摘要）才算做完；停在之前的（手機）狀態維持 finalizing
+        let finishes = steps.last == FinalizationStep.allCases.last
+        let pending = steps.filter { !meta.completedSteps.contains($0.rawValue) }
         for (index, step) in pending.enumerated() {
             try Task.checkCancellation()
-            let isLast = index == pending.count - 1
+            let isLast = finishes && index == pending.count - 1
             let current = directory
             switch step {
             case .blocks:
@@ -140,11 +152,18 @@ public struct SessionFinalizer: Sendable {
             if directory != current { lock = Self.relock(lock, at: directory) }
             onProgress?(step, directory)
         }
-        if pending.isEmpty, meta.state != .complete {
+        if pending.isEmpty, finishes, meta.state != .complete {
             let current = directory
             try await Self.inBackground { try Self.update(current) { $0.state = .complete } }
         }
         return directory
+    }
+
+    /// 從第一步做到 `last`（包含）的步驟；nil 是全部。
+    private static func steps(through last: FinalizationStep?) -> [FinalizationStep] {
+        let all = FinalizationStep.allCases
+        guard let last, let end = all.firstIndex(of: last) else { return Array(all) }
+        return Array(all[...end])
     }
 
     /// 重新產生摘要：覆寫 `summary.md` 與 `.thunderflow/summary.json`，更新 `session.json` 的一句話總結，

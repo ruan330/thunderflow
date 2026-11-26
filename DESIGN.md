@@ -1015,6 +1015,15 @@ So today we're going to talk about building production-ready agents...
 - 讀到不認識的 `version`、`id` 和資料夾名稱對不上、或路徑跑出場次資料夾（`..`、絕對路徑）時，不收這一份，留在收件匣裡並在設定頁說明。
 - 收進來之後 `handoff.json` 留在 `.thunderflow/` 裡，說明這一場是從手機來的。
 
+實作補充的細節（`SessionHandoff`、`SessionInbox`；手機的結束處理是 `FinalizationOptions.lastStep = .audio`）：
+
+- **手機寫收件匣**：整個複製包在 `NSFileCoordinator` 的協調寫入裡（用資料夾選擇器拿到的 iCloud 雲碟資料夾要這樣寫，iCloud 才知道檔案變了）。同一場再交一次時，先刪掉收件匣裡上次的那一份（先刪它的 `handoff.json`）；複製到一半失敗時刪掉這一次的那一份。錄音中、或結束處理正持有場次的鎖時不交。
+- **Mac 也不收的情況**（留在收件匣裡，設定頁說明原因）：`files` 沒有列出 `.thunderflow/session.json`、列出的是資料夾或符號連結；列出的檔案都到齊之後，`session.json` 讀不懂（比較新版的 App 寫的就說明要更新）、`id` 和 `handoff.json` 不一樣、或狀態還是 `recording`。讀不到的檔案（例如還在從 iCloud 下載）當成還沒到，下次再看。看收件匣只讀 `handoff.json` 與 `session.json` 兩個小檔，其他檔案只看大小，不會因此把大檔下載下來。
+- **Mac 收的時候**：只複製 `handoff.json` 列出的檔案（加上它自己），多出來的雜檔不帶進來。暫存位置是工作目錄裡的 `.receiving/<場次 id>/`：多一層，複製到一半就中斷時不會被當成還沒做完結束處理的場次。收完之後工作目錄所在的磁碟至少要留 1 GB 給錄音用，不夠就不收。收的期間鎖住收件匣裡的那一份（`SessionLock`），兩個 ThunderFlow 不會同時收同一份。收進來了、但收件匣裡的那一份移不走時，下次看到就當成已經收過，再移一次。
+- **錄音中照樣收**（低優先權，和結束處理一樣），只是不跳「收到 iPhone 錄的 N 場」的橫幅。
+- **收件匣不能在 Library 裡面**：設定頁選的時候就擋下；之後改了 Library 造成這種情況時，不看收件匣並在設定頁說明。
+- **自動測試的實例**（用啟動參數 `-workingPath` 換掉工作目錄）只看啟動參數 `-inboxPath` 給的收件匣，不會收走使用者收件匣裡的場次。
+
 - **建置與簽章**：iPhone 版用 Xcode 專案（`iOS/`）建置，ThunderKit 是本地 package，畫面只放 SwiftUI 與組裝。簽章用負責人明確指定的開發團隊（`DEVELOPMENT_TEAM` 放在不進 git 的設定檔），從命令列用 `xcodebuild` 建置、`devicectl` 裝到手機，不需要打開 Xcode。Mac 版仍然 ad-hoc。
 
 ## 6. 隱私與安全

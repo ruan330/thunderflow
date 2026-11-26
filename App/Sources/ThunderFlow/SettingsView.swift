@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import ThunderCore
+import ThunderSession
 import ThunderUI
 
 /// 設定頁（DESIGN.md 4.7 節）。
@@ -12,6 +13,8 @@ struct SettingsView: View {
     @State private var isTesting = false
     /// 正在存入或刪除 Key（鑰匙圈可能正跳出授權視窗等使用者回答）：這時不能再按。
     @State private var isWorking = false
+    /// 選的收件匣不能用時的說明（例如選了 Library 裡面的資料夾）。
+    @State private var inboxNotice = ""
 
     var body: some View {
         @Bindable var settings = model.settings
@@ -77,6 +80,48 @@ struct SettingsView: View {
                         }
                     }
                 }
+            }
+            // DESIGN.md 5.10 節（D36）。能不能用、看收件匣、收進來的規則都在 ThunderKit（SessionInbox）
+            Section("手機錄音的收件匣") {
+                LabeledContent("資料夾") {
+                    HStack {
+                        Text(settings.inboxPath.isEmpty ? "還沒有選" : settings.inboxPath)
+                            .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                            .foregroundStyle(settings.inboxPath.isEmpty ? .secondary : .primary)
+                        Button(settings.inboxPath.isEmpty ? "選擇…" : "更改…") { chooseInbox() }
+                        if !settings.inboxPath.isEmpty {
+                            Button("在 Finder 中顯示") {
+                                NSWorkspace.shared.activateFileViewerSelecting([
+                                    URL(fileURLWithPath: settings.inboxPath, isDirectory: true)
+                                ])
+                            }
+                            Button("不使用") {
+                                settings.inboxPath = ""
+                                inboxNotice = ""
+                                model.checkInbox()
+                            }
+                        }
+                    }
+                }
+                if !inboxNotice.isEmpty {
+                    Label(inboxNotice, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                }
+                if let report = model.inboxReport {
+                    if !report.waiting.isEmpty {
+                        Text("有 \(report.waiting.count) 場還沒到齊（iCloud 還在同步），到齊之後會自動收進來。")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(report.problems, id: \.folder) { problem in
+                        Label("\(problem.folder.lastPathComponent)：\(problem.reason)。", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                }
+                Text(
+                    "iPhone 錄完的場次會放進這個資料夾，這台 Mac 收進來之後接著處理（搬進上面的資料夾、產生摘要），"
+                        + "收件匣裡的那一份移到垃圾桶。請在 iCloud 雲碟裡建一個專用的資料夾（例如「ThunderFlow 收件匣」），"
+                        + "iPhone 與這台 Mac 各選一次；不能是上面的資料夾，也不能在它裡面。"
+                )
+                .font(.caption).foregroundStyle(.secondary)
             }
             Section("進階") {
                 TextField("Base URL", text: $settings.baseURL)
@@ -189,6 +234,25 @@ struct SettingsView: View {
         if panel.runModal() == .OK, let url = panel.url {
             model.settings.libraryPath = url.path
             model.reloadLibrary()
+            // 收件匣要和新的 Library 對照：已經收過的不再收；收件匣變成在 Library 裡面時說明
+            model.checkInbox()
         }
+    }
+
+    /// 選收件匣（DESIGN.md 5.10 節）：不能是 Library 本身，也不能在 Library 裡面。
+    private func chooseInbox() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.message = "選一個 iCloud 雲碟裡專用的資料夾：iPhone 錄完的場次會放在這裡"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        if let problem = SessionInbox.problem(inbox: url, library: model.settings.libraryRoot) {
+            inboxNotice = "沒有改用「\(url.lastPathComponent)」：\(problem)。"
+            return
+        }
+        inboxNotice = ""
+        model.settings.inboxPath = url.path
+        model.checkInbox()
     }
 }

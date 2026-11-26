@@ -57,6 +57,8 @@ final class AppSettings {
     /// 預設的來源：`system`，或麥克風裝置的識別字串（空字串是系統預設的麥克風）。
     var sourceKey: String { didSet { defaults.set(sourceKey, forKey: "sourceKey") } }
     var libraryPath: String { didSet { defaults.set(libraryPath, forKey: "libraryPath") } }
+    /// 手機錄音的收件匣（DESIGN.md 5.10 節，D36）：iCloud 雲碟裡的一個資料夾。空字串是還沒有設定（不看收件匣）。
+    var inboxPath: String { didSet { defaults.set(inboxPath, forKey: "inboxPath") } }
     /// 鑰匙圈裡有沒有 Key。只是一個記號，讓畫面不用在啟動時就去讀鑰匙圈。
     var hasKey: Bool { didSet { defaults.set(hasKey, forKey: "hasKey") } }
 
@@ -81,10 +83,21 @@ final class AppSettings {
         libraryPath =
             defaults.string(forKey: "libraryPath")
             ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("ThunderFlow").path
+        inboxPath = defaults.string(forKey: "inboxPath") ?? ""
         hasKey = defaults.bool(forKey: "hasKey")
     }
 
     var libraryRoot: URL { URL(fileURLWithPath: libraryPath, isDirectory: true) }
+
+    /// 要看的收件匣；沒有設定時是 nil。
+    ///
+    /// 自動測試的實例（用啟動參數 `-workingPath` 換掉工作目錄）只看啟動參數 `-inboxPath` 給的收件匣：
+    /// 不會把使用者收件匣裡的場次收進暫存的工作目錄，再把收件匣裡的那一份移到垃圾桶。
+    var inboxRoot: URL? {
+        let arguments = defaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        if arguments["workingPath"] != nil, arguments["inboxPath"] == nil { return nil }
+        return inboxPath.isEmpty ? nil : URL(fileURLWithPath: inboxPath, isDirectory: true)
+    }
 
     /// 錄音中的暫存位置。不放在「文件」裡，避免 iCloud 在錄音途中上傳暫存檔。
     /// 自動測試用啟動參數 `-workingPath <資料夾>` 換掉，和使用者自己開著的 App 分開。

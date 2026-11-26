@@ -377,7 +377,8 @@ private final class EngineRun {
     private func startRequest(_ request: Int, _ content: TextRequest) {
         let feed = feed
         let textModel = textModel
-        requests[request] = Task {
+        // 先放進區域變數再存進字典：直接把 `Task { … }` 指定給字典的元素，Swift 6.3 的並行檢查看不懂而編不過（CI）
+        let task = Task {
             var total = ""
             do {
                 for try await piece in textModel.stream(content) {
@@ -389,6 +390,7 @@ private final class EngineRun {
                 if !Task.isCancelled { feed.yield(.failed(request: request, reason: Self.describe(error))) }
             }
         }
+        requests[request] = task
     }
 
     // MARK: 時間

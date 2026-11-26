@@ -48,7 +48,8 @@ final class PhoneModel {
     nonisolated static let keychain = KeychainStore(service: "io.github.ruan330.thunderflow")
 
     init() {
-        bilingual = UserDefaults.standard.bool(forKey: "bilingual")
+        // 預設雙語（中文下面再顯示英文），和 Mac 一樣（2026-11-25 負責人決定）
+        bilingual = UserDefaults.standard.object(forKey: "bilingual") as? Bool ?? true
         observeAudioSession()
     }
 

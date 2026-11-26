@@ -12,14 +12,29 @@ import Synchronization
 /// - 資料夾在同一個磁碟上改名或搬移時，鎖跟著走；搬到別的磁碟（複製後刪除）時不會，要在新的位置重新鎖。
 /// - 持有鎖的程式結束（包括當機、被強制結束）時由系統釋放，所以真正中斷的場次一定找得回來。
 /// - 鎖屬於這一次開啟的資料夾，所以同一個程式裡的其他地方也拿不到。
-/// - 描述子設 close-on-fork（`O_CLOFORK`）：別的執行緒啟動子程式（例如 workshop-archive）時，子程式不會拿到它的複本。
-///   只設 close-on-exec 的話，子程式要等到 exec 才關掉複本，這段時間裡放掉的鎖還被占著，馬上再拿會被誤報正在處理中。
+/// - 系統支援時（`isForkSafe`），描述子設 close-on-fork（`O_CLOFORK`）：別的執行緒啟動子程式（例如 workshop-archive）時，
+///   子程式不會拿到它的複本。只設 close-on-exec 的話，子程式要等到 exec 才關掉複本，這段時間裡放掉的鎖還被占著，
+///   馬上再拿會被誤報正在處理中。不支援的系統照舊（只設 close-on-exec）。
 public final class SessionLock: Sendable {
     /// 鎖住的資料夾的描述子；釋放之後是 -1。
     private let descriptor: Mutex<Int32>
 
-    /// 開資料夾的方式：唯讀、只能是資料夾，子程式不繼承（close-on-exec 與 close-on-fork）。
-    private static let openFlags = O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_CLOFORK
+    /// close-on-fork 的兩個數值（`sys/fcntl.h` 的 `O_CLOFORK`、`FD_CLOFORK`）。macOS 27、iOS 27 的 SDK 才有這兩個名稱，
+    /// 舊的 SDK（例如 CI 用的 macOS 26）編不過，所以直接寫數值。
+    private static let openCloseOnFork: Int32 = 0x0800_0000
+    private static let descriptorCloseOnFork: Int32 = 2
+
+    /// 這個系統支不支援 close-on-fork：開一次暫存資料夾，看描述子有沒有真的設上（不支援的系統可能直接忽略這個旗標）。
+    /// 不支援時鎖照樣能用，只是別的執行緒啟動子程式的那一瞬間，剛放掉的鎖可能被多占一下（誤報正在處理中，實測約 1%）。
+    public static let isForkSafe: Bool = {
+        let descriptor = open(NSTemporaryDirectory(), O_RDONLY | O_DIRECTORY | O_CLOEXEC | openCloseOnFork)
+        guard descriptor >= 0 else { return false }
+        defer { close(descriptor) }
+        return fcntl(descriptor, F_GETFD) & descriptorCloseOnFork != 0
+    }()
+
+    /// 開資料夾的方式：唯讀、只能是資料夾，子程式不繼承（close-on-exec；系統支援時再加 close-on-fork）。
+    private static let openFlags = O_RDONLY | O_DIRECTORY | O_CLOEXEC | (isForkSafe ? openCloseOnFork : 0)
 
     private init(descriptor: Int32) {
         self.descriptor = Mutex(descriptor)

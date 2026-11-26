@@ -64,6 +64,8 @@ public enum GapReason: String, Sendable {
     case captureStalled
     /// 換了音訊來源：使用者在錄音中或暫停中選了別的來源，用新的來源接著錄同一場（D35）。
     case sourceChanged
+    /// 錄音中斷：iPhone 被來電、Siri 或別的 App 用了麥克風，iOS 停掉收音；打斷結束後接著錄同一場（D36）。
+    case interrupted
     case unknown
 }
 
@@ -100,7 +102,7 @@ public struct AudioGap: Sendable, Equatable {
     public var isInterruption: Bool {
         switch reason {
         case .sleep, .deviceLost, .outputChanged, .captureStalled, .sourceChanged: true
-        case .network, .backpressure, .engineStopped, .unknown: false
+        case .network, .backpressure, .engineStopped, .interrupted, .unknown: false
         }
     }
 

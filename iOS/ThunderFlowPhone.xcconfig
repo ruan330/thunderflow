@@ -1,0 +1,4 @@
+// iPhone 版的建置設定（DESIGN.md 5.10 節，D36）。
+// 簽章用的開發團隊放在不進 git 的 Local.xcconfig（DEVELOPMENT_TEAM = 你的團隊 ID）：
+// 這個 repo 是公開的，而且簽章一律由負責人明確指定，不自動挑選（CLAUDE.md）。
+#include? "Local.xcconfig"

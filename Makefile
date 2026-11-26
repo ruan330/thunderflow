@@ -2,7 +2,7 @@
 
 PKG := Packages/ThunderKit
 
-.PHONY: build test test-tsan test-perf test-soak check app run measure-app measure-recording
+.PHONY: build test test-tsan test-perf test-soak check app run measure-app measure-recording phone phone-selftest
 
 ## 編譯全部（含測試）
 build:
@@ -36,6 +36,14 @@ app:
 ## 編好之後直接開啟
 run: app
 	open build/ThunderFlow.app
+
+## iPhone 版（DESIGN.md 5.10 節）：編譯給模擬器，不需要簽章
+phone:
+	xcodebuild -project iOS/ThunderFlowPhone.xcodeproj -scheme ThunderFlowPhone -destination 'generic/platform=iOS Simulator' -derivedDataPath build/phone-dd -quiet build
+
+## iPhone 版的自我檢查：在看不到的模擬器上用音檔跑一整場（會連線，30 秒約 US$0.01）
+phone-selftest:
+	Scripts/phone-selftest.sh build/phone-selftest
 
 ## 量測整個 App：啟動時間、閒置的 CPU 與記憶體、App 大小，和空白的 SwiftUI App 比較（約 3 分鐘，不花 API 費用）
 measure-app:

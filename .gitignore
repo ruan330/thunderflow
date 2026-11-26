@@ -34,3 +34,6 @@ Benchmarks/private/
 # Claude Code 的本機工作目錄與個人設定
 .claude/worktrees/
 .claude/settings.local.json
+
+# iPhone 版的簽章團隊（DESIGN.md 5.10 節）：每個人自己的，不進 repo
+iOS/Local.xcconfig

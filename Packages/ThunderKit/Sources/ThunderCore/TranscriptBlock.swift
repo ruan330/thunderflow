@@ -474,7 +474,8 @@ public struct TranscriptInterruption: Sendable, Equatable, Codable {
         case .deviceLost: "收音裝置不見了"
         case .outputChanged: "輸出裝置換了"
         case .captureStalled: "收音停了"
-        case .network, .backpressure, .engineStopped, .sourceChanged, .interrupted, .unknown: "原因不明"
+        case .interrupted: "來電或其他 App 用了麥克風"
+        case .network, .backpressure, .engineStopped, .sourceChanged, .unknown: "原因不明"
         }
     }
 

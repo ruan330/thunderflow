@@ -14,7 +14,9 @@ struct ThunderFlowPhoneApp: App {
                 .tint(Theme.phosphor)
                 .task {
                     await model.refreshKeyState()
-                    await model.handoff.refresh()
+                    // 上次留在手機上的場次（沒選收件匣、App 被關掉）：收尾、交出去
+                    await model.handoff.processPending()
+                    model.showHandoffNotice()
                     await model.runSelfTestIfRequested()
                 }
         }

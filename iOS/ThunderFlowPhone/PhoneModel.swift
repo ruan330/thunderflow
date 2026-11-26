@@ -116,7 +116,12 @@ final class PhoneModel {
         interrupted = false
         phase = .idle
         updateIdleTimer()
+        // 收尾（合併錄音）與交接要幾秒到十幾秒：使用者按完停止就鎖螢幕時，向系統多要一點時間做完；
+        // 做不完也沒關係，下次打開或回到 App 時接著做
+        let task = BackgroundTask()
+        task.begin()
         await handoff.finish(recording.directory)
+        task.end()
         if let problem = handoff.problem { banner = problem }
     }
 
@@ -225,7 +230,17 @@ final class PhoneModel {
         updateIdleTimer()
         guard phase == .active else { return }
         if interrupted, let recording, recording.isCaptureInterrupted { resumeCapture() }
-        Task { await handoff.refresh() }
+        Task {
+            await handoff.processPending()
+            showHandoffNotice()
+        }
+    }
+
+    /// 交接要告訴使用者的事（例如上次的錄音沒有正常結束，已經收尾）顯示成橫幅。
+    func showHandoffNotice() {
+        guard let notice = handoff.notice else { return }
+        banner = notice
+        handoff.notice = nil
     }
 
     /// 錄音中、而且字幕畫面在前景時，螢幕不自動鎖定（DESIGN.md 5.10 節）。不看的時候按側邊鍵鎖螢幕，錄音照常。
@@ -317,5 +332,23 @@ final class PhoneModel {
     nonisolated static func log(_ line: String) {
         print(line)
         fflush(stdout)
+    }
+}
+
+/// 向系統多要一點背景時間（按停止之後的收尾與交接）。
+@MainActor
+private final class BackgroundTask {
+    private var id: UIBackgroundTaskIdentifier = .invalid
+
+    func begin() {
+        id = UIApplication.shared.beginBackgroundTask(withName: "ThunderFlow 收尾") { [weak self] in
+            MainActor.assumeIsolated { self?.end() }
+        }
+    }
+
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
     }
 }

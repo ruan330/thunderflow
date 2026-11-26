@@ -74,6 +74,11 @@ open -W -n -g -j build/ThunderFlow.app --stdout $S/out --args -ApplePersistenceI
 加上 `-reportPerf YES` 會在每一場印出 `perf.startToCapture.ms`（按下開始到第一個樣本）與 `perf.mainThreadHitch.ms`（錄音中主執行緒最長的卡頓）。隱藏執行時畫面不會真的畫，卡頓要在看得到的視窗量。
 實驗報告在 `Benchmarks/results/`，錄下來的 API 事件在 `Benchmarks/fixtures/`（給引擎測試重播）。
 
+iPhone 版（D36）：`make phone-selftest` 在看不到的模擬器上跑一整場，交到 App 自己資料夾裡的收件匣，跑完複製到 `build/phone-selftest/inbox`。
+要檢查 Mac 收得進來：把那個收件匣複製一份、`chmod -R a-w`（收好之後移不走，不會把東西丟進使用者的垃圾桶），
+再用隱藏的 Mac 版加上 `-inboxPath <那一份> -hasKey NO`（和 `-workingPath`、`-libraryPath` 一起；有 `-workingPath` 的實例不看設定裡的收件匣，
+除非也給 `-inboxPath`）開一個實例，等 Library 出現 `complete` 的場次之後結束它。
+
 ## 目前進度
 
 見 DESIGN.md 第 12.1 節的里程碑表。

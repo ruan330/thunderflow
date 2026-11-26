@@ -1,6 +1,8 @@
 #!/bin/sh
 # iPhone 版的自我檢查（DESIGN.md 5.10 節，D36）：在看不到的模擬器上（不開 Simulator 的視窗）用音檔跑一整場
 # （開始、中間標記一次、停止、交接），印出結果，並在錄到四分之三時存一張截圖。會連線，30 秒約 US$0.01。
+# 交接用 App 自己資料夾裡的一個收件匣（`-selfTestInbox`），跑完複製到 <輸出資料夾>/inbox：
+# 可以再用隱藏的 Mac 版（`-inboxPath`）收進來，檢查整條路（CLAUDE.md）。
 #
 # Key 經由 App 自己資料夾裡的 FIFO 傳進去：不寫進檔案、不出現在命令列（CLAUDE.md）。
 #
@@ -35,6 +37,9 @@ cp "$root/Benchmarks/data/keynote.wav" "$data/tmp/keynote.wav"
 fifo="$data/tmp/key"
 rm -f "$fifo"
 mkfifo -m 600 "$fifo"
+inbox="$data/tmp/inbox"
+rm -rf "$inbox" "$out/inbox"
+mkdir -p "$inbox"
 
 writer=""
 shooter=""
@@ -55,8 +60,11 @@ writer=$!
 shooter=$!
 
 xcrun simctl launch --console --terminate-running-process "$sim" "$bundle" \
-    -selfTestFile "$data/tmp/keynote.wav" -selfTestSeconds "$seconds" -apiKeyFIFO "$fifo" -selfTestQuit YES 2>&1 |
+    -selfTestFile "$data/tmp/keynote.wav" -selfTestSeconds "$seconds" -apiKeyFIFO "$fifo" -selfTestInbox "$inbox" \
+    -selfTestQuit YES 2>&1 |
     grep -E "^selfTest" | tee "$out/selftest.txt"
 wait "$shooter" 2>/dev/null || true
 shooter=""
+cp -R "$inbox" "$out/inbox"
+echo "收件匣：$(find "$out/inbox" -name handoff.json | wc -l | tr -d ' ') 場（$out/inbox）"
 echo "截圖：$out/recording.png"

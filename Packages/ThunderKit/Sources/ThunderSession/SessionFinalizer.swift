@@ -27,6 +27,12 @@ public struct FinalizationOptions: Sendable {
     public var summarize: Bool
     /// 產生摘要時最多等文字模型多久；超過就算摘要失敗（可以重試），不會讓場次一直停在處理中。
     public var summaryTimeout: Duration
+    /// 做到這一步就停（包含這一步）；nil 時做完全部的步驟。
+    ///
+    /// 手機（DESIGN.md 5.10 節，D36）做到 `.audio`：段落、逐字稿、合併錄音都不需要網路，做完交給 Mac 接著做
+    /// 發布與摘要，所以狀態維持 `finalizing`。停在最後一步（摘要）之前時，狀態不會變成 `complete`；
+    /// 這時用不到 `libraryRoot`（發布之前的步驟不碰 Library）。
+    public var lastStep: FinalizationStep?
 
     public init(libraryRoot: URL) {
         self.libraryRoot = libraryRoot
@@ -34,6 +40,7 @@ public struct FinalizationOptions: Sendable {
         summaryModel = "gpt-6-luna"
         summarize = true
         summaryTimeout = .seconds(300)
+        lastStep = nil
     }
 }
 

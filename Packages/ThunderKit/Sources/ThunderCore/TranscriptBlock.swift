@@ -442,11 +442,14 @@ public struct TranscriptInterruption: Sendable, Equatable, Codable {
     public var reason: GapReason
     /// 沒有錄到的時間（秒，實際經過的時間）。
     public var lostSeconds: Double
+    /// 換了音訊來源（`sourceChanged`）時，之後用的來源。其他是 nil。
+    public var source: String? = nil
 
-    public init(at: Double, reason: GapReason, lostSeconds: Double) {
+    public init(at: Double, reason: GapReason, lostSeconds: Double, source: String? = nil) {
         self.at = at
         self.reason = reason
         self.lostSeconds = lostSeconds
+        self.source = source
     }
 
     /// 逐字稿裡的標示，例如「〔錄音中斷：電腦睡眠，約 14 分鐘沒有錄到〕」。
@@ -460,7 +463,7 @@ public struct TranscriptInterruption: Sendable, Equatable, Codable {
         case .deviceLost: "收音裝置不見了"
         case .outputChanged: "輸出裝置換了"
         case .captureStalled: "收音停了"
-        case .network, .backpressure, .engineStopped, .unknown: "原因不明"
+        case .network, .backpressure, .engineStopped, .sourceChanged, .unknown: "原因不明"
         }
     }
 

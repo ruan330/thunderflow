@@ -62,6 +62,8 @@ public enum GapReason: String, Sendable {
     case outputChanged
     /// 錄音中斷：收音停了（一段時間沒有收到任何聲音資料），重新開始收音接著錄。
     case captureStalled
+    /// 換了音訊來源：使用者在錄音中或暫停中選了別的來源，用新的來源接著錄同一場（D35）。
+    case sourceChanged
     case unknown
 }
 
@@ -75,24 +77,30 @@ public struct AudioGap: Sendable, Equatable {
     public var reason: GapReason
     /// 錄音中斷時，中斷期間沒有錄到的時間（實際經過的秒數）。其他缺口是 0。
     public var lostSeconds: TimeInterval
+    /// 換了音訊來源（`sourceChanged`）時，之後用的來源，例如「MacBook Pro 麥克風」。其他缺口是 nil。
+    public var source: String?
 
-    public init(from: AudioTime, to: AudioTime, reason: GapReason, lostSeconds: TimeInterval = 0) {
+    public init(from: AudioTime, to: AudioTime, reason: GapReason, lostSeconds: TimeInterval = 0, source: String? = nil) {
         self.from = from
         self.to = to
         self.reason = reason
         self.lostSeconds = lostSeconds
+        self.source = source
     }
 
     /// 錄音中斷：在音訊時間 `time` 這裡，有 `lostSeconds` 秒（實際經過的時間）沒有錄到。
-    public static func interruption(at time: AudioTime, lostSeconds: TimeInterval, reason: GapReason) -> AudioGap {
-        AudioGap(from: time, to: time, reason: reason, lostSeconds: lostSeconds)
+    /// 換了音訊來源時，`source` 是之後用的來源。
+    public static func interruption(
+        at time: AudioTime, lostSeconds: TimeInterval, reason: GapReason, source: String? = nil
+    ) -> AudioGap {
+        AudioGap(from: time, to: time, reason: reason, lostSeconds: lostSeconds, source: source)
     }
 
     /// 這是一筆錄音中斷（睡眠、裝置不見、換了輸出裝置、收音停了）。
     public var isInterruption: Bool {
         switch reason {
         case .sleep, .deviceLost, .outputChanged, .captureStalled: true
-        case .network, .backpressure, .engineStopped, .unknown: false
+        case .network, .backpressure, .engineStopped, .sourceChanged, .unknown: false
         }
     }
 

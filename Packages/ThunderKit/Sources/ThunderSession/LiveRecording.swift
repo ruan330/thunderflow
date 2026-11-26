@@ -97,6 +97,9 @@ public final class LiveRecording: @unchecked Sendable {
     /// 收音用的裝置（麥克風的 UID，或系統音訊開始時的預設輸出裝置的 UID）。用來判斷裝置是不是不見了。
     public var captureDeviceUID: String? { state.withLock { $0.capture.deviceUID } }
 
+    /// 目前收音用的來源設定：開始時是 `Options.source`，換過來源（`switchSource(to:)`）之後是新選的。
+    public var source: CaptureSource { options.source }
+
     /// 收音中斷中（`suspendCapture()` 之後、或重新開始失敗），還沒有接著錄。
     public var isCaptureInterrupted: Bool { state.withLock { $0.interruptedAt != nil } }
 
@@ -220,6 +223,12 @@ public final class LiveRecording: @unchecked Sendable {
             pump.start()
             return lostSeconds
         }
+    }
+
+    /// 換一個收音來源，接著錄同一場（D35）。還沒實作。
+    @discardableResult
+    public func switchSource(to source: CaptureSource) throws -> TimeInterval {
+        0
     }
 
     /// 結束：停止收音，把剩下的樣本錄完，等引擎收尾，並把完整性計數寫進 `session.json`。

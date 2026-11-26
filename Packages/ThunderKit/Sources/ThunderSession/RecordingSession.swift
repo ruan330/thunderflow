@@ -242,7 +242,7 @@ public final class RecordingSession: @unchecked Sendable {
     /// 並結束目前的錄音分段，之後的聲音寫進新的分段。錄音不補靜音。結束之後呼叫不做任何事。
     ///
     /// 中斷之前收到的聲音要已經全部送進 `process`，中斷的位置才對。
-    public func recordInterruption(reason: GapReason, lostSeconds: TimeInterval) {
+    public func recordInterruption(reason: GapReason, lostSeconds: TimeInterval, source: String? = nil) {
         path.withLock { state in
             guard !state.finished else { return }
             try? recorder.beginNewSegment()

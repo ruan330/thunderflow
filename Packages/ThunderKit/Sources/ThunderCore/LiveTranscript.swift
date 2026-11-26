@@ -249,7 +249,7 @@ public final class LiveTranscriptWriter: Sendable {
         case .network: "網路中斷"
         case .backpressure: "辨識跟不上"
         case .engineStopped: "辨識停止"
-        case .sleep, .deviceLost, .outputChanged, .captureStalled, .unknown: "原因不明"
+        case .sleep, .deviceLost, .outputChanged, .captureStalled, .sourceChanged, .unknown: "原因不明"
         }
     }
 

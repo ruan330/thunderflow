@@ -1,3 +1,5 @@
+#if os(macOS)
+// 工作坊教材的下載只在 Mac 上（D34）：要執行外部工具（Process）。
 import Foundation
 import ThunderCore
 
@@ -309,3 +311,4 @@ private final class ProgressReader: @unchecked Sendable {
         return WorkshopDownloadProgress(savedPages: saved, plannedPages: planned)
     }
 }
+#endif

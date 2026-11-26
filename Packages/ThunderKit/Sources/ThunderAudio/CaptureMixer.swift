@@ -1,3 +1,4 @@
+#if os(macOS)
 import CoreAudio
 import Foundation
 import Synchronization
@@ -117,3 +118,4 @@ public final class CaptureMixer: @unchecked Sendable {
         expectedSampleTime.store(Self.none, ordering: .relaxed)
     }
 }
+#endif

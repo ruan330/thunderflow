@@ -1,3 +1,4 @@
+#if os(macOS)
 import CoreAudio
 import Foundation
 
@@ -34,3 +35,4 @@ public final class AudioDeviceWatcher: @unchecked Sendable {
         }
     }
 }
+#endif

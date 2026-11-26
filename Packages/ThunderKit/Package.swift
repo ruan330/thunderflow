@@ -5,7 +5,7 @@ import PackageDescription
 // v1 不依賴任何第三方套件（DESIGN.md 決策 D4）。請不要在這裡加入 dependencies。
 let package = Package(
     name: "ThunderKit",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v26), .iOS(.v26)],
     products: [
         .library(name: "ThunderCore", targets: ["ThunderCore"]),
         .library(name: "ThunderAudio", targets: ["ThunderAudio"]),

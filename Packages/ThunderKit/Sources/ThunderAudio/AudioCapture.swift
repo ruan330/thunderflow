@@ -1,3 +1,4 @@
+#if os(macOS)
 import AVFoundation
 import CoreAudio
 import Foundation
@@ -50,37 +51,6 @@ public struct MicrophoneChoice: Sendable, Equatable {
     public var notice: String? {
         guard missingUID != nil else { return nil }
         return "先前選擇的麥克風找不到（可能被拔掉了），這一場改用「\(device.name)」錄音。原本的麥克風接回來之後，下一場會再用它。"
-    }
-}
-
-/// 收音的來源。
-public enum CaptureSource: Sendable, Equatable {
-    /// 麥克風。`deviceUID` 是 nil 時用系統預設的輸入裝置。
-    case microphone(deviceUID: String?)
-    /// 系統音訊：所有 App 的聲音，不包含 ThunderFlow 自己。
-    case systemAudio
-    /// 把音檔當成來源，以即時速度播放（不出聲）。用來測試，不需要麥克風。
-    case file(URL)
-}
-
-public enum AudioCaptureError: Error, CustomStringConvertible {
-    case noInputDevice
-    case coreAudio(operation: String, status: OSStatus)
-    /// 系統音訊的裝置建立了，卻沒辦法開始收音。實機上看到的原因：還沒有允許「錄製系統音訊」
-    /// （第一次使用、或開發版重新打包之後）。macOS 跳出授權視窗的同時，開始收音就直接失敗，不會等使用者回答。
-    case systemAudioNotStarted(status: OSStatus)
-    case unreadableFile(String)
-
-    public var description: String {
-        switch self {
-        case .noInputDevice: "找不到可以收音的裝置"
-        case .coreAudio(let operation, let status): "\(operation) 失敗（Core Audio 錯誤 \(status)）"
-        case .systemAudioNotStarted(let status):
-            "系統音訊沒辦法開始（Core Audio 錯誤 \(status)），通常是還沒有允許 ThunderFlow 錄製系統音訊。"
-                + "第一次使用時 macOS 會跳出授權視窗：請按「允許」，然後再按一次開始。"
-                + "沒有看到視窗的話，請到「系統設定 → 隱私權與安全性」，在錄製系統音訊的項目裡允許 ThunderFlow。"
-        case .unreadableFile(let detail): "音檔讀不出來：\(detail)"
-        }
     }
 }
 
@@ -415,98 +385,6 @@ public final class AudioCapture: @unchecked Sendable {
     }
 }
 
-/// 把音檔當成來源：用一條專用執行緒，以即時速度把樣本寫進 RingBuffer。
-final class FilePlayer: @unchecked Sendable {
-    // @unchecked Sendable：`stopped` 由鎖保護；`file`、`buffer` 只在播放的那一條執行緒上使用。
-    let sampleRate: Double
-    var onEnded: (@Sendable () -> Void)?
-    private let file: AVAudioFile
-    private let ring: RingBuffer
-    private let lock = NSLock()
-    private var stopped = false
-
-    init(url: URL, ring: RingBuffer) throws {
-        do {
-            file = try AVAudioFile(forReading: url)
-        } catch {
-            throw AudioCaptureError.unreadableFile(error.localizedDescription)
-        }
-        sampleRate = file.processingFormat.sampleRate
-        self.ring = ring
-    }
-
-    func start() {
-        let thread = Thread { [self] in run() }
-        thread.name = "ThunderFlow.FilePlayer"
-        thread.qualityOfService = .userInitiated
-        thread.start()
-    }
-
-    func stop() {
-        lock.lock()
-        stopped = true
-        lock.unlock()
-    }
-
-    private var isStopped: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return stopped
-    }
-
-    private func run() {
-        let format = file.processingFormat
-        let framesPerTick = AVAudioFrameCount(max(1, Int(sampleRate / 100)))  // 10 ms
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: framesPerTick) else { return }
-        var mono = [Float](repeating: 0, count: Int(framesPerTick))
-        let started = ContinuousClock.now
-        var played = 0
-        while !isStopped {
-            do { try file.read(into: buffer, frameCount: framesPerTick) } catch { break }
-            let frames = Int(buffer.frameLength)
-            guard frames > 0, let channels = buffer.floatChannelData else { break }
-            let channelCount = Int(format.channelCount)
-            for index in 0..<frames {
-                var sum: Float = 0
-                for channel in 0..<channelCount { sum += channels[channel][index] }
-                mono[index] = sum / Float(channelCount)
-            }
-            _ = mono.withUnsafeBufferPointer { ring.write(UnsafeBufferPointer(rebasing: $0[0..<frames])) }
-            played += frames
-            // 照音檔的時間走：播到哪裡，就等到那個時間
-            let due = started + .seconds(Double(played) / sampleRate)
-            let wait = due - ContinuousClock.now
-            if wait > .zero { Thread.sleep(forTimeInterval: Double(wait.components.seconds) + Double(wait.components.attoseconds) * 1e-18) }
-        }
-        if !isStopped { onEnded?() }
-    }
-}
-
-/// 收音的來源：真正的裝置（`AudioCapture`），或測試用的假來源。
-///
-/// 錄音中途可以換掉（`LiveRecording.resumeCapture`）：裝置不見、睡眠醒來、換了輸出裝置時，建立新的來源接著錄同一場。
-public protocol AudioCapturing: AnyObject, Sendable {
-    /// 開始收音，把單聲道樣本寫進建立時給的 RingBuffer。回傳取樣率。
-    func start() throws -> Double
-    /// 停止收音。返回之後不會再寫入 RingBuffer。可以重複呼叫。
-    func stop()
-    /// 來源的說明（裝置名稱或「系統音訊」）。開始之後才有值。
-    var sourceDescription: String { get }
-    /// 和使用者選的不一樣時給使用者的說明（記住的麥克風不在了，改用系統預設的）。開始之後才有值。
-    var notice: String? { get }
-    /// 收音用的裝置：麥克風是它的 UID，系統音訊是開始時的預設輸出裝置的 UID，音檔是 nil。
-    /// 用來判斷裝置是不是不見了、預設輸出是不是換了。開始之後才有值。
-    var deviceUID: String? { get }
-    /// 裝置的 callback 被呼叫了幾次。一直沒有增加，代表收音停了。音檔來源一直是 0。
-    var callbackCount: Int { get }
-    /// 裝置回報樣本位置不連續的次數。
-    var discontinuityCount: Int { get }
-    /// 裝置第一次送來樣本的時間（`CLOCK_UPTIME_RAW` 的奈秒）。音檔來源一直是 nil。
-    var firstSampleUptimeNanoseconds: UInt64? { get }
-    /// 來源自己結束了（音檔播完）。在別的執行緒上被呼叫。要在 `start()` 之前設定。
-    var onEnded: (@Sendable () -> Void)? { get set }
-}
-
 extension AudioCapture: AudioCapturing {
     public var notice: String? { microphoneChoice?.notice }
     public var deviceUID: String? { microphoneChoice?.device.uid ?? outputDeviceUID }
@@ -514,3 +392,4 @@ extension AudioCapture: AudioCapturing {
     public var discontinuityCount: Int { mixer.discontinuityCount }
     public var firstSampleUptimeNanoseconds: UInt64? { mixer.firstFramesUptimeNanoseconds }
 }
+#endif

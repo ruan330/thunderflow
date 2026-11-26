@@ -16,6 +16,7 @@ make measure-app        # 啟動、閒置、App 大小的預算（約 3 分鐘�
 make measure-recording  # 錄音中 CPU 的預算（會顯示視窗約 1 分鐘，花費不到 US$0.02；ARGS=--hidden 隱藏執行）
 make phone       # iPhone 版（iOS/）編譯給模擬器，不需要簽章
 make phone-selftest     # iPhone 版在看不到的模擬器上用音檔跑一整場（會連線，30 秒約 US$0.01）
+make phone-install      # iPhone 版（Release）裝到用線接著的 iPhone：要先有 iOS/Local.xcconfig 的 DEVELOPMENT_TEAM
 ```
 
 所有邏輯都在 `Packages/ThunderKit`，用 `swift test` 就能驗證，不需要開 Xcode。

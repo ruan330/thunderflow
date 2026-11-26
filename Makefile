@@ -2,7 +2,7 @@
 
 PKG := Packages/ThunderKit
 
-.PHONY: build test test-tsan test-perf test-soak check app run measure-app measure-recording phone phone-selftest
+.PHONY: build test test-tsan test-perf test-soak check app run measure-app measure-recording phone phone-selftest phone-install
 
 ## 編譯全部（含測試）
 build:
@@ -44,6 +44,10 @@ phone:
 ## iPhone 版的自我檢查：在看不到的模擬器上用音檔跑一整場（會連線，30 秒約 US$0.01）
 phone-selftest:
 	Scripts/phone-selftest.sh build/phone-selftest
+
+## 把 iPhone 版裝到接著的 iPhone（要先有 iOS/Local.xcconfig 的 DEVELOPMENT_TEAM，Scripts/phone-install.sh 的說明）
+phone-install:
+	Scripts/phone-install.sh
 
 ## 量測整個 App：啟動時間、閒置的 CPU 與記憶體、App 大小，和空白的 SwiftUI App 比較（約 3 分鐘，不花 API 費用）
 measure-app:

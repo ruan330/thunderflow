@@ -13,8 +13,6 @@ struct SettingsView: View {
     @State private var isTesting = false
     /// 正在存入或刪除 Key（鑰匙圈可能正跳出授權視窗等使用者回答）：這時不能再按。
     @State private var isWorking = false
-    /// 選的收件匣不能用時的說明（例如選了 Library 裡面的資料夾）。
-    @State private var inboxNotice = ""
 
     var body: some View {
         @Bindable var settings = model.settings
@@ -72,7 +70,7 @@ struct SettingsView: View {
             Section("儲存") {
                 LabeledContent("資料夾") {
                     HStack {
-                        Text(settings.libraryPath).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                        Text(Self.displayPath(settings.libraryPath)).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
                         Button("更改…") { chooseLibrary() }
                         Button("在 Finder 中顯示") {
                             try? FileManager.default.createDirectory(at: settings.libraryRoot, withIntermediateDirectories: true)
@@ -81,31 +79,9 @@ struct SettingsView: View {
                     }
                 }
             }
-            // DESIGN.md 5.10 節（D36）。能不能用、看收件匣、收進來的規則都在 ThunderKit（SessionInbox）
-            Section("手機錄音的收件匣") {
-                LabeledContent("資料夾") {
-                    HStack {
-                        Text(settings.inboxPath.isEmpty ? "還沒有選" : settings.inboxPath)
-                            .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
-                            .foregroundStyle(settings.inboxPath.isEmpty ? .secondary : .primary)
-                        Button(settings.inboxPath.isEmpty ? "選擇…" : "更改…") { chooseInbox() }
-                        if !settings.inboxPath.isEmpty {
-                            Button("在 Finder 中顯示") {
-                                NSWorkspace.shared.activateFileViewerSelecting([
-                                    URL(fileURLWithPath: settings.inboxPath, isDirectory: true)
-                                ])
-                            }
-                            Button("不使用") {
-                                settings.inboxPath = ""
-                                inboxNotice = ""
-                                model.checkInbox()
-                            }
-                        }
-                    }
-                }
-                if !inboxNotice.isEmpty {
-                    Label(inboxNotice, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                }
+            // DESIGN.md 5.10 節（D36、D37）：收件匣在 iPhone 版自己的 iCloud 空間裡，兩邊都不用設定。
+            // 看收件匣、收進來的規則都在 ThunderKit（SessionInbox）
+            Section("iPhone 錄的場次") {
                 if let report = model.inboxReport {
                     if !report.waiting.isEmpty {
                         Text("有 \(report.waiting.count) 場還沒到齊（iCloud 還在同步），到齊之後會自動收進來。")
@@ -117,9 +93,8 @@ struct SettingsView: View {
                     }
                 }
                 Text(
-                    "iPhone 錄完的場次會放進這個資料夾，這台 Mac 收進來之後接著處理（搬進上面的資料夾、產生摘要），"
-                        + "收件匣裡的那一份移到垃圾桶。請在 iCloud 雲碟裡建一個專用的資料夾（例如「ThunderFlow 收件匣」），"
-                        + "iPhone 與這台 Mac 各選一次；不能是上面的資料夾，也不能在它裡面。"
+                    "iPhone 版的 ThunderFlow 按停止之後，這一場會經由 iCloud 自動交給這台 Mac：收進上面的資料夾、接著產生摘要，"
+                        + "和在 Mac 上錄的一樣。不用設定，iPhone 和這台 Mac 登入同一個 Apple 帳號、打開 iCloud 雲碟就好。"
                 )
                 .font(.caption).foregroundStyle(.secondary)
             }
@@ -239,20 +214,11 @@ struct SettingsView: View {
         }
     }
 
-    /// 選收件匣（DESIGN.md 5.10 節）：不能是 Library 本身，也不能在 Library 裡面。
-    private func chooseInbox() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.canCreateDirectories = true
-        panel.message = "選一個 iCloud 雲碟裡專用的資料夾：iPhone 錄完的場次會放在這裡"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        if let problem = SessionInbox.problem(inbox: url, library: model.settings.libraryRoot) {
-            inboxNotice = "沒有改用「\(url.lastPathComponent)」：\(problem)。"
-            return
-        }
-        inboxNotice = ""
-        model.settings.inboxPath = url.path
-        model.checkInbox()
+    /// 資料夾給人看的寫法：iCloud 雲碟裡的寫成「iCloud 雲碟/…」，不顯示系統內部的路徑。
+    static func displayPath(_ path: String) -> String {
+        let drive = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs").path
+        guard path == drive || path.hasPrefix(drive + "/") else { return path }
+        return "iCloud 雲碟" + path.dropFirst(drive.count)
     }
 }

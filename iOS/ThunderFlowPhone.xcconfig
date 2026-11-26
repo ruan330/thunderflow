@@ -2,3 +2,7 @@
 // 簽章用的開發團隊放在不進 git 的 Local.xcconfig（DEVELOPMENT_TEAM = 你的團隊 ID）：
 // 這個 repo 是公開的，而且簽章一律由負責人明確指定，不自動挑選（CLAUDE.md）。
 #include? "Local.xcconfig"
+
+// App 自己的 iCloud 空間（D37）：交給 Mac 的收件匣放在這裡，使用者不用選資料夾。
+// 只有實機版需要；模擬器版不簽章、沒有 iCloud（自動測試用 -selfTestInbox 換成 App 自己資料夾裡的收件匣）。
+CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*] = ThunderFlowPhone.entitlements

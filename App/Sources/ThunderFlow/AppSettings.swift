@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import ThunderCore
+import ThunderSession
 import ThunderUI
 
 /// 字幕的顯示方式。
@@ -56,9 +57,9 @@ final class AppSettings {
     }
     /// 預設的來源：`system`，或麥克風裝置的識別字串（空字串是系統預設的麥克風）。
     var sourceKey: String { didSet { defaults.set(sourceKey, forKey: "sourceKey") } }
+    /// 儲存錄音的資料夾（Library）。第一次打開時決定預設位置（D37：有 iCloud 雲碟就放那裡）並記下來，
+    /// 之後不會因為 iCloud 雲碟暫時不在而換位置。
     var libraryPath: String { didSet { defaults.set(libraryPath, forKey: "libraryPath") } }
-    /// 手機錄音的收件匣（DESIGN.md 5.10 節，D36）：iCloud 雲碟裡的一個資料夾。空字串是還沒有設定（不看收件匣）。
-    var inboxPath: String { didSet { defaults.set(inboxPath, forKey: "inboxPath") } }
     /// 鑰匙圈裡有沒有 Key。只是一個記號，讓畫面不用在啟動時就去讀鑰匙圈。
     var hasKey: Bool { didSet { defaults.set(hasKey, forKey: "hasKey") } }
 
@@ -80,23 +81,30 @@ final class AppSettings {
         floatingClickThrough = defaults.bool(forKey: "floatingClickThrough")
         floatingHiddenWhenSharing = defaults.bool(forKey: "floatingHiddenWhenSharing")
         sourceKey = defaults.string(forKey: "sourceKey") ?? "system"
-        libraryPath =
-            defaults.string(forKey: "libraryPath")
-            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("ThunderFlow").path
-        inboxPath = defaults.string(forKey: "inboxPath") ?? ""
+        if let stored = defaults.string(forKey: "libraryPath") {
+            libraryPath = stored
+        } else {
+            let path = SessionLibrary.defaultRoot(home: FileManager.default.homeDirectoryForCurrentUser).path
+            defaults.set(path, forKey: "libraryPath")
+            libraryPath = path
+        }
         hasKey = defaults.bool(forKey: "hasKey")
     }
 
     var libraryRoot: URL { URL(fileURLWithPath: libraryPath, isDirectory: true) }
 
-    /// 要看的收件匣；沒有設定時是 nil。
+    /// 要看的收件匣（DESIGN.md 5.10 節，D37）：iPhone 版自己的 iCloud 空間裡的 `Inbox`，不用設定。
+    /// iPhone 版還沒在這個 Apple 帳號打開過（這台 Mac 上還沒有那個資料夾）時是 nil。
     ///
     /// 自動測試的實例（用啟動參數 `-workingPath` 換掉工作目錄）只看啟動參數 `-inboxPath` 給的收件匣：
     /// 不會把使用者收件匣裡的場次收進暫存的工作目錄，再把收件匣裡的那一份移到垃圾桶。
+    /// 這兩個參數只從啟動參數讀（CLAUDE.md）。
     var inboxRoot: URL? {
         let arguments = defaults.volatileDomain(forName: UserDefaults.argumentDomain)
-        if arguments["workingPath"] != nil, arguments["inboxPath"] == nil { return nil }
-        return inboxPath.isEmpty ? nil : URL(fileURLWithPath: inboxPath, isDirectory: true)
+        if let path = arguments["inboxPath"] as? String, !path.isEmpty { return URL(fileURLWithPath: path, isDirectory: true) }
+        if arguments["workingPath"] != nil { return nil }
+        let inbox = SessionHandoff.macInbox(home: FileManager.default.homeDirectoryForCurrentUser)
+        return FileManager.default.fileExists(atPath: inbox.path) ? inbox : nil
     }
 
     /// 錄音中的暫存位置。不放在「文件」裡，避免 iCloud 在錄音途中上傳暫存檔。

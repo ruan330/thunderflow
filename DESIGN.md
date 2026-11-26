@@ -190,7 +190,7 @@ v1 的目標是把這四件事做到極致：
 | 缺口（Gap） | 一段沒有送到引擎、因此沒有字幕的音訊。錄音本身不受影響 |
 | 完整性計數 | App 自己記錄的掉音次數、沒有字幕的音訊長度、沒翻到的段數，存在 `session.json` |
 | 音訊時間 | 從場次開始算起、扣掉暫停的錄音時間。所有時間戳都用它，不受系統時鐘變更影響 |
-| Library | 存放所有場次資料夾的使用者資料夾，預設是 `~/Documents/ThunderFlow` |
+| Library | 存放所有場次資料夾的使用者資料夾，預設是 iCloud 雲碟裡的 `ThunderFlow`（沒有 iCloud 雲碟時是 `~/Documents/ThunderFlow`，5.9 節，D37） |
 | 工作目錄 | 錄音中的暫存位置：`~/Library/Application Support/ThunderFlow/Working/` |
 
 ---
@@ -216,7 +216,7 @@ v1 的目標是把這四件事做到極致：
 2. **授權麥克風與系統錄音**，然後按「測試系統音訊」：App 播放提示音，確認有收到聲音。
    - 系統音訊權限被拒時，macOS 只會給靜音，不會回報錯誤，所以只能用這種方式檢查。
    - 正式錄音時的擷取會排除 ThunderFlow 自己，收不到 App 播的提示音。所以這個測試另外開一個**不排除自己**的擷取，測完就關掉。
-3. **確認資料夾位置**（預設 `~/Documents/ThunderFlow`），完成。
+3. **確認資料夾位置**（預設是 iCloud 雲碟裡的 `ThunderFlow`，5.9 節），完成。
 
 ### 4.3 即時翻譯頁
 
@@ -895,7 +895,7 @@ v0.2 的首選是 `gpt-realtime-translate`：引擎自己斷句、自己翻譯�
 ### 5.9 資料與檔案
 
 ```
-~/Documents/ThunderFlow/                         ← Library（可在設定中更改）
+iCloud 雲碟/ThunderFlow/                         ← Library（預設位置見下面；可在設定中更改）
 └── 2026-12-02 1030 Building Agents with Bedrock/
     ├── recording.m4a
     ├── transcript.md
@@ -920,7 +920,13 @@ v0.2 的首選是 `gpt-realtime-translate`：引擎自己斷句、自己翻譯�
 - **寫入**：
   - `session.json`、`blocks.jsonl`、Markdown 檔：先寫進暫存檔，再以原子方式取代原檔。
   - `journal.jsonl`：只追加。每筆紀錄是「一行＋換行」一次寫出，直接交給作業系統。讀的時候，沒有以換行結尾的最後一行視為不完整，略過。
-- **錄音中的檔案**：只存在工作目錄，結束後才搬進 Library。這樣做，是為了避免使用者的「文件」資料夾有開 iCloud 同步時，在演講途中就開始上傳好幾 GB 的暫存檔。
+- **錄音中的檔案**：只存在工作目錄，結束後才搬進 Library。這樣做，是為了避免 Library 在 iCloud 雲碟裡（預設就是）、或「文件」資料夾有開 iCloud 同步時，在演講途中就開始上傳好幾 GB 的暫存檔。
+- **Library 的預設位置**（D37）：只有一個目的地，Mac 弄丟時錄音還在，手機的「檔案」App 也看得到逐字稿與摘要。
+  - 舊的預設位置 `~/Documents/ThunderFlow` 裡已經有場次：繼續用它，不替使用者搬檔案。
+  - 這台 Mac 有 iCloud 雲碟（`~/Library/Mobile Documents/com~apple~CloudDocs` 存在）：iCloud 雲碟裡的 `ThunderFlow`。
+  - 否則：`~/Documents/ThunderFlow`。
+  - 第一次打開時決定並記進設定，之後不會因為 iCloud 雲碟暫時不在而換位置。設定頁把 iCloud 雲碟裡的位置寫成「iCloud 雲碟/…」。
+  - 按停止、搬進 Library 之後才上傳：一小時約 30 MB，即時翻譯本身一小時就上傳約 220 MB。
 - **刪除**：移到垃圾桶（`NSWorkspace.recycle`），不直接永久刪除。
 - **格式版本**：`session.json` 有 `schemaVersion` 欄位。讀檔時忽略不認識的欄位、缺少的欄位用預設值；遇到比自己新的版本就明確拒絕。日誌遇到不認識的紀錄種類會跳過。
 - **一般設定**：存在 UserDefaults。API Key 只存在 Keychain。
@@ -993,14 +999,19 @@ So today we're going to talk about building production-ready agents...
   - 標記重點（只有當下能按，事後在電腦上補不回來）。
   - 鎖螢幕、切到別的 App 時錄音與字幕都繼續（背景音訊）。
   - 交接清單：哪幾場還沒交給 Mac、哪幾場 Mac 已經收走。
-  - 設定：OpenAI API Key（只存在這支手機的 Keychain，不同步到其他裝置；建議另建一把手機專用的）、收件匣資料夾。
+  - 設定：OpenAI API Key（只存在這支手機的 Keychain，不同步到其他裝置；建議另建一把手機專用的）。交給 Mac 不用設定（D37）。
   - 不放：過去錄音、逐字稿、摘要、命名、教材、複製路徑；暫停與場次資訊、關鍵詞先不做。
 - **收音**：AVAudioSession（`record`）加上 RemoteIO 的 input callback；callback 只做 memcpy 進 RingBuffer，和 Mac 的規則一樣（5.3 節）。固定用手機內建的麥克風：戴著 AirPods 也不改用耳機的麥克風（音質差，收到的又是耳邊的聲音）。RingBuffer 之後（Pump、CAF 分段、引擎、日誌、即時字幕）都是 ThunderKit 的同一份程式碼。`session.json` 的來源寫「iPhone 麥克風」。
 - **被打斷**（來電、Siri、別的 App 用了麥克風）：iOS 會停掉收音。打斷結束後自動接著錄同一場，日誌記一筆中斷（`why` 是 `interrupted`），逐字稿寫「〔錄音中斷：來電或其他 App 用了麥克風，約 N 秒沒有錄到〕」（只增不改，`schemaVersion` 維持 1）。
 - **交接（手機 → Mac，單向）**：
   1. 錄音中只寫在手機 App 自己的資料夾，不上傳（和 Mac 一樣，5.9 節）。
   2. 按停止後，手機做結束處理的步驟 1–4（都不需要網路）：基本段落、基本逐字稿、合併成 `recording.m4a`（約 29 MB／小時）。狀態維持 `finalizing`。
-  3. 複製到收件匣的 `<收件匣>/<場次 id>/`，**最後**寫 `.thunderflow/handoff.json`。收件匣是 iCloud 雲碟裡一個專用的資料夾（例如「ThunderFlow 收件匣」），不能是 Library 本身；手機與 Mac 第一次各選一次。手機用系統的資料夾選擇器取得權限，不需要 iCloud 的 entitlement。
+  3. 複製到收件匣的 `<收件匣>/<場次 id>/`，**最後**寫 `.thunderflow/handoff.json`。收件匣在 iPhone 版自己的 iCloud 空間（container `iCloud.io.github.ruan330.thunderflow`）裡的 `Inbox/`（D37）：
+     - 兩邊都不用選。container 不公開、收件匣也不在它的 `Documents/` 裡，使用者在 iCloud 雲碟裡看不到，不會誤動。
+     - 手機用 `FileManager.url(forUbiquityContainerIdentifier:)` 拿到 container，沒有 `Inbox/` 就建立。
+     - Mac 版是 ad-hoc 簽章、沒有 iCloud 的 entitlement，直接讀寫 `~/Library/Mobile Documents/iCloud~io~github~ruan330~thunderflow/Inbox/`。iPhone 版還沒在這個 Apple 帳號打開過（Mac 上沒有這個資料夾）時，Mac 不看收件匣。
+     - 實測（2026-11-25）：不公開的 container 也會同步到沒有裝這個 App 的 Mac，iPhone 版裝好之後不到 20 秒，Mac 上就出現了它的資料夾。
+     - iPhone 沒有登入 iCloud、或關掉 iCloud 雲碟時，場次留在手機上並說明原因，iCloud 能用之後自動交出去。
   4. Mac 在開啟時、回到前景時與每 30 秒看一次收件匣：`handoff.json` 讀得到、上面列的每個檔案都在而且大小一樣，才算收到（iCloud 一個檔案一個檔案同步，順序不一定）。先複製到工作目錄裡的暫存名稱、再核對一次大小，然後改名成 `<場次 id>/`，接著走一般的結束處理（步驟 5 之後：搬進 Library、摘要與自動命名）。同一個 id 已經在工作目錄或 Library 裡時不再複製。
   5. 收好之後把收件匣裡的那一份移到垃圾桶（iCloud 雲碟的刪除會同步到手機，iCloud 的「最近刪除」還留 30 天）。手機看到收件匣裡沒有了，就標成「Mac 已收走」。
   6. 交給收件匣之前，手機上的那一份留在 App 的資料夾裡；放進收件匣、`handoff.json` 寫好之後才刪掉手機上的那一份。
@@ -1017,11 +1028,11 @@ So today we're going to talk about building production-ready agents...
 
 實作補充的細節（`SessionHandoff`、`SessionInbox`；手機的結束處理是 `FinalizationOptions.lastStep = .audio`）：
 
-- **手機寫收件匣**：整個複製包在 `NSFileCoordinator` 的協調寫入裡（用資料夾選擇器拿到的 iCloud 雲碟資料夾要這樣寫，iCloud 才知道檔案變了）。同一場再交一次時，先刪掉收件匣裡上次的那一份（先刪它的 `handoff.json`）；複製到一半失敗時刪掉這一次的那一份。錄音中、或結束處理正持有場次的鎖時不交。
+- **手機寫收件匣**：整個複製包在 `NSFileCoordinator` 的協調寫入裡（iCloud 的 container 裡要這樣寫，iCloud 才知道檔案變了）。同一場再交一次時，先刪掉收件匣裡上次的那一份（先刪它的 `handoff.json`）；複製到一半失敗時刪掉這一次的那一份。錄音中、或結束處理正持有場次的鎖時不交。
 - **Mac 也不收的情況**（留在收件匣裡，設定頁說明原因）：`files` 沒有列出 `.thunderflow/session.json`、列出的是資料夾或符號連結；列出的檔案都到齊之後，`session.json` 讀不懂（比較新版的 App 寫的就說明要更新）、`id` 和 `handoff.json` 不一樣、或狀態還是 `recording`。讀不到的檔案（例如還在從 iCloud 下載）當成還沒到，下次再看。看收件匣只讀 `handoff.json` 與 `session.json` 兩個小檔，其他檔案只看大小，不會因此把大檔下載下來。
 - **Mac 收的時候**：只複製 `handoff.json` 列出的檔案（加上它自己），多出來的雜檔不帶進來。暫存位置是工作目錄裡的 `.receiving/<場次 id>/`：多一層，複製到一半就中斷時不會被當成還沒做完結束處理的場次。收完之後工作目錄所在的磁碟至少要留 1 GB 給錄音用，不夠就不收。收的期間鎖住收件匣裡的那一份（`SessionLock`），兩個 ThunderFlow 不會同時收同一份。收進來了、但收件匣裡的那一份移不走時，下次看到就當成已經收過，再移一次。
 - **錄音中照樣收**（低優先權，和結束處理一樣），只是不跳「收到 iPhone 錄的 N 場」的橫幅。
-- **收件匣不能在 Library 裡面**：設定頁選的時候就擋下；之後改了 Library 造成這種情況時，不看收件匣並在設定頁說明。
+- **收件匣不能在 Library 裡面**：使用者把 Library 改到收件匣裡面時，不看收件匣並在設定頁說明。
 - **自動測試的實例**（用啟動參數 `-workingPath` 換掉工作目錄）只看啟動參數 `-inboxPath` 給的收件匣，不會收走使用者收件匣裡的場次。
 
 - **建置與簽章**：iPhone 版用 Xcode 專案（`iOS/`）建置，ThunderKit 是本地 package，畫面只放 SwiftUI 與組裝。簽章用負責人明確指定的開發團隊（`DEVELOPMENT_TEAM` 放在不進 git 的設定檔），從命令列用 `xcodebuild` 建置、`devicectl` 裝到手機，不需要打開 Xcode。Mac 版仍然 ad-hoc。
@@ -1524,6 +1535,7 @@ M0 與 M0b 的實驗不適用測試先行：它們是探索未知的 API。實�
 | D34 | （2026-11-25 負責人要求）給使用者自己的 AI agent 眼睛與耳朵：錄音中多寫一份只有英文的 `live-transcript.txt`，即時翻譯頁複製它的路徑；詳細頁複製 `transcript.md` 的路徑（路徑不會再變才出現）；輸入教材網址時呼叫外部工具 workshop-archive，下載到這一場的 `workshop/`（每次一個子資料夾，舊的不刪），兩頁都能複製這個資料夾的路徑（4.3、4.6、5.9 節） | 負責人在 GameDay 讓自己的 agent（Claude Code）做大部分的操作，自己負責策略：agent 需要現場的話與教材，不用重看網站，也不用負責人轉述；到一段落再由負責人通知 agent 讀新的部分。日誌給 agent 讀太浪費（52 分鐘：836 KB，其中英文 56 KB）。教材和錄音放在同一場，事後一起整理 | 命令列工具或 MCP 讓 agent 即時接收（負責人只需要路徑）；ThunderFlow 自己寫下載器（重工，開發者會繼續改 workshop-archive）；把 workshop-archive 的程式碼放進來（沒有授權條款，又要 Python 與 Pandoc）；教材放在獨立的資料夾（和錄音分開，事後不好整理）；換網址時把舊的教材移到垃圾桶（負責人要保留） |
 | D35 | （2026-11-25 負責人回報）錄音中、暫停中都能換音訊來源，接著錄同一場：停掉原本的收音、開始新選的，日誌記一筆 `sourceChanged`（帶新來源的名稱），逐字稿寫「〔音訊來源：…〕」，`session.json` 的來源列出用過的每一個；新的來源開始不了就改回原本的接著錄（4.3、5.4、5.9 節） | 負責人錄到一半想從系統音訊改成麥克風（例如影片放完、換成現場講），原本開始之後來源選單就不能用，只能停止再開一場，同一場的逐字稿與教材就分成兩場。收音中途換來源的路（裝置不見、睡眠醒來）早就有了，只差讓使用者自己選 | 只在暫停中能換（多一個步驟，錄音中換的空檔一樣只有約 0.1 秒）；停止再開新的一場（一場被拆成兩場）；同時開兩個來源再切換（兩個來源寫同一個 RingBuffer 違反單一寫入者的規則） |
 | D36 | （2026-11-25 負責人決定：只做手機 → Mac 單向、要有標記、現在就做）iPhone 版只做錄音、即時翻譯與標記，其他都在 Mac。手機錄完做結束處理的步驟 1–4，經 iCloud 雲碟裡的收件匣交給 Mac，Mac 接著做之後的步驟（5.10 節） | 有些場次不方便拿出電腦。場次只有一種格式，之後的功能只做一次；手機不需要 Anthropic Key、摘要與 Library 畫面。ThunderKit 約 1 萬行，macOS 專用的只有約 700 行（系統音訊、裝置監看） | 整個 Library 放進 iCloud、在哪台錄就在哪台收尾（Library 放在 iCloud 有同步的風險，Mac 要改的多，2026-11-25 早上的方案）；手機做全部的結束處理（要 Anthropic Key 與摘要）；AirDrop 手動傳（兩台要在旁邊）；App 自己的 iCloud container（要付費帳號與 entitlement，container 建了就不能刪） |
+| D37 | （2026-11-25 負責人決定：只要一個目的地、手機不讓使用者選）Library 預設放 iCloud 雲碟裡的 `ThunderFlow`（舊位置已經有場次就繼續用；沒有 iCloud 雲碟時用「文件」）；手機的收件匣改到 iPhone 版自己的 iCloud container 裡（不公開），兩邊都不用選（5.9、5.10 節） | 負責人只有一台 Mac、iCloud 空間超過 1 TB、不在意隱私：Mac 弄丟時錄音還在，手機的「檔案」App 也看得到逐字稿與摘要。錄音中仍然只寫本機的工作目錄。只有 Mac 寫 Library，沒有 D36 早上方案兩邊同時寫的問題。收件匣還是要有：iCloud 一個檔案一個檔案同步，手機直接寫進 Library 時 Mac 會看到只到一半的場次，也不知道哪一場要接著處理。手機不選資料夾就要 iCloud 的 entitlement：container 一旦建立就不能刪，但不收費 | 收件匣放在 Library 裡的子資料夾（手機沒有 entitlement 就要使用者選資料夾）；公開 container、Library 也放進去（Mac 的 Library 位置要等手機先建好 container）；Mac 也加 entitlement（要改成正式簽章與描述檔） |
 
 ---
 
@@ -1549,7 +1561,7 @@ M2 的順序：先做不需要網路與硬體的部分（事件模型、停頓�
 1. **更多真實錄音**：已經用兩段錄音驗證過一次（一段英文演講的現場收音、一段中文講解）。還需要不同口音、多人對談、有背景音樂、系統音訊等情況的錄音，各 5–10 分鐘。
 2. 最低系統需求是否定為 macOS 26？（建議是；目前 package 以 macOS 26 設定，CI 也用 macOS 26 的工具鏈編譯通過）
 3. 時程：是否要在今年 re:Invent 之前就能使用？
-4. Library 預設位置是否用 `~/Documents/ThunderFlow`？
+4. Library 預設位置：已決定（2026-11-25，D37）：iCloud 雲碟裡的 `ThunderFlow`。
 5. Developer ID 的費用由誰負擔？Bundle ID 用哪個網域？
 6. 人工評分（譯文、摘要）由誰負責？
 7. **啟動時間相對於空白 App 的預算**（9.8 節，原本就標著待校正）：目前 1.48 倍（314 ms 對 212 ms），預算 1.3 倍。剩下的差距主要是即時翻譯頁上的標準控制項（約 70 ms），要達到 1.3 倍得拿掉或延後建立它們。建議把這一項校正為 1.6 倍、保留 400 ms 的絕對預算；或維持 1.3 倍，接受這一項暫時不通過。
@@ -1587,7 +1599,8 @@ M2 的順序：先做不需要網路與硬體的部分（事件模型、停頓�
 | 來源不是英文時（中文演講、中英夾雜） | 實測轉錄會完整輸出（中文是簡體），翻譯模型再轉成台灣繁體。v1 仍然只保證英文來源 |
 | 系統音訊權限被拒時，只會收到靜音（還沒有實際試過拒絕；還沒授權時開始會失敗，見 5.4 節） | 首次啟動與設定頁都提供測試（4.2 節） |
 | Swift 6 的並行檢查管不到即時音訊的 callback | 5.3 節的結構規則，加上測試與完整性計數 |
-| Library 位於 iCloud 同步的資料夾 | 錄音中只寫入工作目錄；設定頁偵測到時提醒使用者 |
+| Library 在 iCloud 雲碟裡（D37 的預設） | 錄音中只寫入工作目錄。開了「最佳化 Mac 儲存空間」時，舊場次的檔案可能被移出這台 Mac，離線時打不開：建議對 ThunderFlow 資料夾選「保持下載」 |
+| 同一個 Apple 帳號有兩台 Mac 開 ThunderFlow | 兩台會搶著收同一份收件匣、各做一次摘要（重複的場次、API 費用兩倍）。負責人只有一台 Mac，目前不處理（D37） |
 | 測試如果占著 Swift concurrency 的執行緒等待，在核心數少的機器上會互相卡住（CI 第一次執行時有 3 個測試因此逾時，已修正） | 測試工具提供不占執行緒的 `waitUntil`；async 的測試一律用它。本機可以用 `LIBDISPATCH_COOPERATIVE_POOL_STRICT=1` 把執行緒池限制成 1 條來檢查 |
 
 ---

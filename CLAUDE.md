@@ -76,7 +76,7 @@ open -W -n -g -j build/ThunderFlow.app --stdout $S/out --args -ApplePersistenceI
 
 iPhone 版（D36）：`make phone-selftest` 在看不到的模擬器上跑一整場，交到 App 自己資料夾裡的收件匣，跑完複製到 `build/phone-selftest/inbox`。
 要檢查 Mac 收得進來：把那個收件匣複製一份、`chmod -R a-w`（收好之後移不走，不會把東西丟進使用者的垃圾桶），
-再用隱藏的 Mac 版加上 `-inboxPath <那一份> -hasKey NO`（和 `-workingPath`、`-libraryPath` 一起；有 `-workingPath` 的實例不看設定裡的收件匣，
+再用隱藏的 Mac 版加上 `-inboxPath <那一份> -hasKey NO`（和 `-workingPath`、`-libraryPath` 一起；有 `-workingPath` 的實例不看 iPhone 版 iCloud 空間裡的收件匣，
 除非也給 `-inboxPath`）開一個實例，等 Library 出現 `complete` 的場次之後結束它。
 
 ## 目前進度

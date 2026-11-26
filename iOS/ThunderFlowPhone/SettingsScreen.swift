@@ -1,13 +1,11 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
-/// 設定（DESIGN.md 5.10 節）：OpenAI API Key、收件匣、顯示。
+/// 設定（DESIGN.md 5.10 節）：OpenAI API Key、交給 Mac、顯示。
 struct SettingsScreen: View {
     @Environment(PhoneModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var keyDraft = ""
     @State private var savingKey = false
-    @State private var choosingInbox = false
 
     var body: some View {
         @Bindable var model = model
@@ -36,12 +34,15 @@ struct SettingsScreen: View {
                 }
 
                 Section {
-                    LabeledContent("資料夾", value: model.handoff.inboxName ?? "還沒選")
-                    Button(model.handoff.inboxName == nil ? "選擇資料夾…" : "換一個資料夾…") { choosingInbox = true }
+                    if model.handoff.inboxAvailable == false {
+                        Label(PhoneHandoff.unavailable, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                    } else {
+                        LabeledContent("方式", value: "經由 iCloud 自動交給 Mac")
+                    }
                 } header: {
-                    Text("交給 Mac 的收件匣")
+                    Text("交給 Mac")
                 } footer: {
-                    Text("在 iCloud 雲碟裡建一個專用的資料夾（例如「ThunderFlow 收件匣」），這裡和 Mac 的設定各選一次。按停止之後，這一場會放進這個資料夾；Mac 收走之後就會從這裡消失。不要選 Mac 的 Library 本身。")
+                    Text("按停止之後，這一場會經由 iCloud 自動交給 Mac 上的 ThunderFlow（同一個 Apple 帳號），交出去之後手機上就不留了。不用選資料夾。")
                 }
 
                 Section {
@@ -54,9 +55,6 @@ struct SettingsScreen: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } }
-            }
-            .fileImporter(isPresented: $choosingInbox, allowedContentTypes: [.folder]) { result in
-                if case .success(let url) = result { model.handoff.chooseInbox(url) }
             }
         }
     }
@@ -72,14 +70,6 @@ struct HandoffScreen: View {
             List {
                 if let problem = model.handoff.problem {
                     Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
-                }
-                if model.handoff.inboxName == nil {
-                    Section {
-                        Button("還沒選收件匣：到設定選一個 iCloud 雲碟裡的資料夾") {
-                            dismiss()
-                            model.showsSettings = true
-                        }
-                    }
                 }
                 Section {
                     if model.handoff.items.isEmpty {

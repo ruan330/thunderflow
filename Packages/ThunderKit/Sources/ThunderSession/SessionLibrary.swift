@@ -7,8 +7,22 @@ import ThunderCore
 /// 資料夾名稱只是給人看的，使用者在 Finder 裡改名或搬移都不會出問題。
 public enum SessionLibrary {
     /// 預設的 Library 位置（D37）。`home` 是使用者的家目錄。
+    ///
+    /// - 舊的預設位置「文件/ThunderFlow」裡已經有場次：繼續用它。不替使用者搬檔案，過去錄音也不會突然變空。
+    /// - 這台 Mac 有 iCloud 雲碟（`~/Library/Mobile Documents/com~apple~CloudDocs` 存在）：iCloud 雲碟裡的「ThunderFlow」。
+    ///   錄音中只寫本機的工作目錄（5.9 節），按停止、搬進 Library 之後才上傳。
+    /// - 否則：「文件/ThunderFlow」。
+    ///
+    /// App 第一次決定之後就記下來（設定裡的資料夾），之後不會因為 iCloud 雲碟暫時不在而換位置。
     public static func defaultRoot(home: URL) -> URL {
-        home
+        let documents = home.appendingPathComponent("Documents/ThunderFlow", isDirectory: true)
+        if !list(root: documents).isEmpty { return documents }
+        let drive = home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: drive.path, isDirectory: &isDirectory), isDirectory.boolValue {
+            return drive.appendingPathComponent("ThunderFlow", isDirectory: true)
+        }
+        return documents
     }
 
     public struct Item: Sendable, Equatable, Identifiable {

@@ -297,7 +297,7 @@ public struct SessionInbox: Sendable {
     public func collect() -> InboxReport {
         var report = InboxReport()
         if let problem = Self.problem(inbox: inbox, library: libraryRoot) {
-            report.problems.append(InboxReport.Problem(folder: inbox, reason: "\(problem)，請到「設定」重新選擇收件匣"))
+            report.problems.append(InboxReport.Problem(folder: inbox, reason: "\(problem)，請到「設定」換一個儲存錄音的資料夾"))
             return report
         }
         let entries: [InboxEntry]

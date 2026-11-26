@@ -60,4 +60,4 @@ if ! codesign --verify --deep --strict "$app" 2>/dev/null; then
     codesign --verify --deep --strict "$app"
 fi
 xcrun devicectl device install app --device "$device" "$app"
-echo "已經裝到 iPhone（$bundle）。第一次打開時請允許麥克風。"
+echo "已經裝到 iPhone（${bundle}）。第一次打開時請允許麥克風。"
